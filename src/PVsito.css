@@ -1,0 +1,325 @@
+/* Stili per il body e la classe App */
+body {
+  /* Imposta lo sfondo come immagine di sfondo del body */
+  background-image: url("Sfondo.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+  background-attachment: fixed;
+  margin: 0;
+  padding: 0;
+}
+
+.App {
+  text-align: center;
+  height: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 100vh;
+  /* Imposta l'altezza minima al 100% della viewport per occupare almeno tutta la schermata visibile */
+}
+
+/* Stili per l'header */
+.header {
+  background-color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-bottom: 3px solid rgb(199, 171, 43);
+  padding: 10px;
+  box-shadow: 10px 10px 25px rgba(0, 0, 0, 0.5);
+  position: fixed;
+  top: 0;
+  /* Posiziona l'header in alto rispetto alla finestra del browser */
+  left: 0;
+  /* Posiziona l'header a sinistra rispetto alla finestra del browser */
+  width: 100%;
+  /* Imposta la larghezza dell'header al 100% della finestra del browser */
+  z-index: 1;
+}
+
+.Logo {
+  width: 20%;
+  padding: 10;
+}
+
+/* Stili per i dettagli */
+.dettagli {
+  margin-top: 5%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.dettagliScritte {
+  margin: 10px;
+  font-family: "Bahnschrift", sans-serif;
+  font-size: 15pt;
+  letter-spacing: 20px;
+}
+
+/* Stili per il contenitore principale */
+.container {
+  display: flex;
+  justify-content: center;
+  max-width: 100%;
+}
+
+/* Stili per le colonne */
+.col {
+  flex: 1;
+  max-width: 300px;
+  /* Imposta la larghezza delle colonne laterali */
+}
+
+/* Stili per la colonna centrale */
+.col.central {
+  flex: 3;
+  /* Aumenta la flessibilità della colonna centrale */
+  max-width: 900px;
+  /* Aumenta la larghezza massima della colonna centrale */
+}
+
+/* Stili per il contenitore dei riquadri */
+.containerDiv {
+  display: flex;
+  flex-direction: column;
+  padding: 5px;
+}
+
+/* Stili per la scritta affianco all'icona */
+.scrittaIcona {
+  font-family: "Bahnschrift", sans-serif;
+  font-size: 25pt;
+  margin-bottom: 50px;
+  padding: 5px;
+}
+
+/* Stili per l'icona ruotante */
+.rotate-icon {
+  width: 25px;
+  margin-right: 10px;
+  cursor: pointer;
+  transition: transform 0.5s ease;
+  z-index: 2;
+}
+
+/* Stili per l'icona ruotante quando è ruotata */
+.rotate-icon-ruotata {
+  transform: rotate(90deg);
+  z-index: 2;
+}
+
+/* Stili per il riquadro */
+.riquadro {
+  background-color: #ffffff;
+  border: none;
+  border: 3px solid rgb(199, 171, 43);
+  border-radius: 5px;
+  padding: 10px;
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-bottom: 10%;
+  box-shadow: 10px 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+/* Stili per gli input all'interno del riquadro */
+.riquadro input {
+  margin-bottom: 10px;
+  padding: 5px;
+  border: none;
+  border-bottom: 1px solid #ccc;
+  border-radius: 0;
+  outline: none;
+}
+
+/* Stili per l'input quando è in focus */
+.riquadro input:focus {
+  border-bottom: 2px solid rgb(199, 171, 43);
+}
+
+.inputRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.colonna {
+  grid-column: span 1;
+}
+
+.PdfRiquadro {
+  display: flex;
+  flex-direction: column; /* Imposta la direzione in "column" per posizionare gli elementi uno sotto l'altro */
+  justify-content: center;
+  align-items: center;
+}
+
+/* Stili per il riquadro di caricamento del PDF */
+.uploadRiquadro {
+  background-color: #ffffff;
+  border: 3px solid rgb(199, 171, 43);
+  padding: 10px;
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 300px;
+}
+
+.uploadRiquadro label {
+  margin-bottom: 10px;
+}
+
+.uploadRiquadro input[type="file"] {
+  outline: none;
+}
+
+/* Stili per l'immagine della copertina del PDF */
+.copertinaPDF {
+  width: 50%;
+  height: auto;
+  display: block;
+  margin: 0 auto; /* Aggiunto margin: 0 auto; per centrare l'immagine orizzontalmente */
+}
+
+
+/* Stili per il testo "Carica il tuo PDF" */
+.richiestaPDF {
+  display: flex;
+  justify-content: center;
+}
+
+/* Stili per le opzioni */
+.opzione {
+  display: flex;
+  align-items: center;
+  font-size: 18px;
+  margin: 10px 0;
+  /* Aggiungi spazio tra le opzioni */
+  cursor: pointer;
+}
+
+/* Stili per nascondere gli input radio */
+.opzione input[type="radio"] {
+  display: none;
+}
+
+/* Stili per il pallino vuoto */
+.pallino {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 2px solid rgb(199, 171, 43);
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+/* Stili per il pallino colorato quando l'opzione è selezionata */
+.opzione input[type="radio"]:checked+label .pallino {
+  background-color: rgb(199, 171, 43);
+  border-color: rgb(199, 171, 43);
+}
+
+/* Stile per le scritte piccole */
+.testoPiccolo {
+  font-size: 12pt;
+  font-family: "Bahnschrift", sans-serif;
+  letter-spacing: 2px;
+}
+
+.testoPiccoloDa {
+  font-size: 12pt;
+  font-family: "Bahnschrift", sans-serif;
+  letter-spacing: 2px;
+  margin-bottom: 2%;
+}
+
+.testoPiccoloA {
+  font-size: 12pt;
+  font-family: "Bahnschrift", sans-serif;
+  letter-spacing: 2px;
+  margin-top: -10%;
+  margin-left: 7%;
+}
+
+.pulsantePerContinuareLaStampa{
+  color: rgb(199, 171, 43);
+  font-weight: bold;
+  display: flex;
+  justify-content: center;
+  text-decoration: none;
+  font-family: "Bahnschrift", sans-serif;
+  font-size: large;
+  letter-spacing: 2px;
+  margin-top: 3%;
+}
+
+/* Media query per dispositivi di larghezza massima 768px (ad esempio, tablet e smartphone) */
+@media screen and (max-width: 768px) {
+
+  /* Stili per l'header */
+  .header {
+    background-size: 50%;
+    justify-content: center;
+  }
+
+  .Logo {
+    width: 40%;
+  }
+
+  .dettagli {
+    margin-top: 10%;
+  }
+
+  .dettagliScritte {
+    margin: 4%;
+    font-family: "Bahnschrift", sans-serif;
+    font-size: 10pt;
+    letter-spacing: 2px;
+  }
+
+  .container {
+    flex-direction: column;
+    /* Imposta i riquadri uno sopra l'altro */
+    align-items: center;
+    /* Centra i riquadri orizzontalmente */
+  }
+
+  .col {
+    max-width: 100%;
+    /* Imposta la larghezza massima delle colonne al 100% */
+  }
+
+  .scrittaIcona {
+    margin-bottom: 30px;
+    /* Riduci il margine inferiore della scritta affianco all'icona */
+  }
+
+  .riquadro {
+    margin: 5% 0;
+    /* Riduci il margine superiore e inferiore dei riquadri */
+  }
+
+  .uploadRiquadro {
+    margin: 5% 0;
+    /* Riduci il margine superiore e inferiore del riquadro di caricamento del PDF */
+  }
+
+  .copertinaPDF {
+    width: 80%;
+    /* Riduci la larghezza dell'immagine della copertina del PDF */
+  }
+}
+
+/* Media query per dispositivi di larghezza massima 576px (ad esempio, smartphone in modalità portrait) */
+@media screen and (max-width: 576px) {
+  .scrittaIcona {
+    font-size: 18pt;
+    /* Riduci la dimensione del testo della scritta affianco all'icona */
+  }
+}
