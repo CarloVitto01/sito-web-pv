@@ -32,31 +32,26 @@ body {
   box-shadow: 10px 10px 25px rgba(0, 0, 0, 0.5);
   position: fixed;
   top: 0;
-  /* Posiziona l'header in alto rispetto alla finestra del browser */
   left: 0;
-  /* Posiziona l'header a sinistra rispetto alla finestra del browser */
   width: 100%;
-  /* Imposta la larghezza dell'header al 100% della finestra del browser */
   z-index: 1;
 }
 
-.Logo {
-  width: 20%;
-  padding: 10;
+.header-section {
+  flex: 1; /* Per dividere il contenuto in parti uguali */
+  text-align: center; /* Per centrare il contenuto all'interno di ciascuna sezione */
+  padding: 5px; /* Aggiungi uno spazio tra le sezioni, se necessario */
 }
 
-/* Stili per i dettagli */
-.dettagli {
-  margin-top: 5%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.Logo {
+  width: 95%;
+  padding: 10;
 }
 
 .dettagliScritte {
   margin: 10px;
   font-family: "Bahnschrift", sans-serif;
-  font-size: 15pt;
+  font-size: 10pt;
   letter-spacing: 20px;
 }
 
@@ -65,6 +60,7 @@ body {
   display: flex;
   justify-content: center;
   max-width: 100%;
+  margin-top: 10%;
 }
 
 /* Stili per le colonne */

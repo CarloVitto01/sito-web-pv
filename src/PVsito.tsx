@@ -39,15 +39,21 @@ function PVsito() {
     <div className="sfondo">
       <div>
         <div className="header">
-          {/* Immagine del logo */}
-          <img
-            src={logo}
-            alt="Logo"
-            className='Logo'
-          />
-        </div>
-        <div className="dettagli">
-          <p className="dettagliScritte">GRAFICA - STAMPE - FOTO - VIDEO</p>
+          <div className="header-section">
+            <p className="dettagliScritte">GRAFICA</p>
+          </div>
+          <div className="header-section">
+            <p className="dettagliScritte">STAMPE</p>
+          </div>
+          <div className="header-section">
+            <img src={logo} alt="Logo" className='Logo' />
+          </div>
+          <div className="header-section">
+            <p className="dettagliScritte">FOTO</p>
+          </div>
+          <div className="header-section">
+            <p className="dettagliScritte">VIDEO</p>
+          </div>
         </div>
         <div className="container">
           <div className="col">
@@ -339,7 +345,7 @@ function PVsito() {
                       </div>
                     </div>
 
-                      <a href="#" className='pulsantePerContinuareLaStampa'>CLICCA QUI PER CONTINUARE CON LA STAMPA</a>
+                    <a href="#" className='pulsantePerContinuareLaStampa'>CLICCA QUI PER CONTINUARE CON LA STAMPA</a>
 
 
                   </div>
