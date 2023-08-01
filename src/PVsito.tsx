@@ -7,6 +7,7 @@ function PVsito() {
   // Stati per gestire la visibilità dei riquadri e la rotazione delle icone
   const [riquadriAperti, setRiquadriAperti] = useState([false, false, false, false]);
   const [copertinaPDF, setCopertinaPDF] = useState<string | null>(null); // Modifica il tipo di dato
+  const [copertinaZIP, setCopertinaZIP] = useState<string | null>(null); // Modifica il tipo di dato
 
   // Funzione per aprire o chiudere il riquadro e ruotare l'icona
   const toggleRiquadro = (index: number) => {
@@ -27,6 +28,17 @@ function PVsito() {
     }
   };
 
+  // Funzione per gestire il caricamento del file ZIP
+  const handleCaricaZIP = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]; // Utilizza il safe navigation operator per accedere a event.target.files
+    if (file) {
+      // Leggi l'immagine della copertina del ZIP utilizzando URL.createObjectURL
+      const copertina = URL.createObjectURL(file);
+      setCopertinaZIP(copertina); // Assumi che `setCopertinaZIP` sia la funzione per impostare lo stato dell'immagine del file ZIP
+    }
+  };
+
+
   // Stato per gestire la visibilità dell'intervallo personalizzato
   const [showIntervalloPersonalizzato, setShowIntervalloPersonalizzato] = useState(false);
 
@@ -39,20 +51,30 @@ function PVsito() {
     <div className="sfondo">
       <div>
         <div className="header">
-          <div className="header-section">
-            <p className="dettagliScritte">GRAFICA</p>
-          </div>
-          <div className="header-section">
-            <p className="dettagliScritte">STAMPE</p>
+          <div className="header-section1">
+            <div className="header-section-text">
+              <p className="dettagliScritte">GRAFICA</p>
+            </div>
+            <div className="header-section-text">
+              <p className="dettagliScritte">-</p>
+            </div>
+            <div className="header-section-text">
+              <p className="dettagliScritte">STAMPE</p>
+            </div>
           </div>
           <div className="header-section">
             <img src={logo} alt="Logo" className='Logo' />
           </div>
-          <div className="header-section">
-            <p className="dettagliScritte">FOTO</p>
-          </div>
-          <div className="header-section">
-            <p className="dettagliScritte">VIDEO</p>
+          <div className="header-section1">
+            <div className="header-section-text">
+              <p className="dettagliScritte">FOTO</p>
+            </div>
+            <div className="header-section-text">
+              <p className="dettagliScritte">-</p>
+            </div>
+            <div className="header-section-text">
+              <p className="dettagliScritte">VIDEO</p>
+            </div>
           </div>
         </div>
         <div className="container">
@@ -60,7 +82,7 @@ function PVsito() {
           </div>
           <div className="col central">
             <div className="containerDiv">
-              <div className="box1">
+              <div className="box1">{/*Riquadro per descrizione di chi siamo*/}
                 <div style={{ padding: "2.5px" }}>
                   <img
                     src={rotateIcon}
@@ -76,7 +98,7 @@ function PVsito() {
                   </div>
                 )}
               </div>
-              <div className="box2">
+              <div className="box2">{/*Riquadro per la stampa pdf*/}
                 <div style={{ padding: "2.5px" }}>
                   <img
                     src={rotateIcon}
@@ -134,11 +156,6 @@ function PVsito() {
                       <p className="richiestaPDF testoPiccolo">Carica il tuo PDF:</p>
                       <div className="uploadRiquadro">
                         <input type="file" id="pdf" name="pdf" onChange={handleCaricaPDF} />
-                        {copertinaPDF && (
-                          <div className="copertinaPDFContainer">
-                            <img src={copertinaPDF} alt="Copertina PDF" className="copertinaPDF" />
-                          </div>
-                        )}
                       </div>
                     </div>
                     <div className="inputRow">
@@ -346,13 +363,16 @@ function PVsito() {
                     </div>
 
                     <a href="#" className='pulsantePerContinuareLaStampa'>CLICCA QUI PER CONTINUARE CON LA STAMPA</a>
-
-
                   </div>
-
                 )}
               </div>
-              <div className="box3">
+
+
+
+
+
+
+              <div className="box3">{/*Riquadro per la stampa delle foto*/}
                 <div style={{ padding: "2.5px" }}>
                   <img
                     src={rotateIcon}
@@ -364,11 +384,131 @@ function PVsito() {
                 </div>
                 {riquadriAperti[2] && (
                   <div className="riquadro">
-                    {/* Contenuto per il riquadro 3 */}
+                    <div className="inputRow">
+                      <div className="colonna">
+                        {/* Contenuto per la prima colonna */}
+                      </div>
+                      <div className="colonna">
+                        <div className="inputRowDivS">
+                          <label htmlFor="nome">Nome:</label>
+                          <input type="text" id="nome" name="nome" />
+                        </div>
+                      </div>
+                      <div className="colonna">
+                        <div className="inputRowDivD">
+                          <label htmlFor="cognome">Cognome:</label>
+                          <input type="text" id="cognome" name="cognome" />
+                        </div>
+                      </div>
+
+                      <div className="colonna">
+                        {/* Contenuto per la quarta colonna */}
+                      </div>
+                    </div>
+                    <div className="inputRow">
+                      <div className="colonna">
+                        {/* Contenuto per la prima
+                         colonna */}
+                      </div>
+                      <div className="colonna">
+                        <div className="inputRowDivS">
+                          <label htmlFor="email">Email:</label>
+                          <input type="email" id="email" name="email" />
+                        </div>
+                      </div>
+                      <div className="colonna">
+                        <div className="inputRowDivD">
+                          <label htmlFor="cellulare">Cellulare:</label>
+                          <input type="tel" id="cellulare" name="cellulare" />
+                        </div>
+                      </div>
+                      <div className="colonna">
+                        {/* Contenuto per la quarta colonna */}
+                      </div>
+                    </div>
+                    <div className='ZipRiquadro'>
+                      <p className="richiestaZIP testoPiccolo">Carica il tuo file ZIP:</p>
+                      <div className="uploadRiquadro">
+                        <input
+                          type="file"
+                          id="zip"
+                          name="zip"
+                          accept=".zip"
+                          onChange={handleCaricaZIP}
+                        />
+                        
+                      </div>
+                    </div>
+                    <div className="inputRowTreCol">
+                      <div className="colonna">
+                        <p className="testoPiccolo">Dimensione:</p>
+                        <div className="opzioni">
+                          <div className="opzione">
+                            <input type="radio" name="sceltaDimensione" value="opzione1" id="opzione1SDimensione" />
+                            <label htmlFor="opzione1SDimensione">
+                              <span className="pallino"></span>
+                              Formato cartolina
+                            </label>
+                          </div>
+                          <div className="opzione">
+                            <input type="radio" name="sceltaDimensione" value="opzione2" id="opzione2SDimensione" />
+                            <label htmlFor="opzione2SDimensione">
+                              <span className="pallino"></span>
+                              A5
+                            </label>
+                          </div>
+                          <div className="opzione">
+                            <input type="radio" name="sceltaDimensione" value="opzione2" id="opzione2SDimensione" />
+                            <label htmlFor="opzione2SDimensione">
+                              <span className="pallino"></span>
+                              A4
+                            </label>
+                          </div>
+                          <div className="opzione">
+                            <input type="radio" name="sceltaDimensione" value="opzione2" id="opzione2SDimensione" />
+                            <label htmlFor="opzione2SDimensione">
+                              <span className="pallino"></span>
+                              A3
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="colonna">
+                        <div className="inputRowDivD">
+                          <p className="testoPiccolo">Colore:</p>
+                          <div className="opzioni">
+                            <div className="opzione">
+                              <input type="radio" name="sceltaColore" value="opzione1" id="opzione1DColore" />
+                              <label htmlFor="opzione1DColore">
+                                <span className="pallino"></span>
+                                Colore
+                              </label>
+                            </div>
+                            <div className="opzione">
+                              <input type="radio" name="sceltaColore" value="opzione2" id="opzione2DColore" />
+                              <label htmlFor="opzione2DColore">
+                                <span className="pallino"></span>
+                                Bianco e nero
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="colonna">
+                        <p className="testoPiccolo">Numero copie:</p>
+                        <div className="inputRowDivS">
+                          <input type="number" id="numeriCopie" name="numeriCopie" style={{ width: "60px" }} inputMode="numeric" />
+                        </div>
+                      </div>
+                    </div>
+
+
+                    <a href="#" className='pulsantePerContinuareLaStampa'>CLICCA QUI PER CONTINUARE CON LA STAMPA</a>
                   </div>
+
                 )}
               </div>
-              <div className="box4">
+              <div className="box4">{/*Riquadro per la stampa biglietti da visita*/}
                 <div style={{ padding: "2.5px" }}>
                   <img
                     src={rotateIcon}
@@ -379,6 +519,38 @@ function PVsito() {
                   <span className="scrittaIcona">STAMPA I TUI BIGLIETTI DA VISITA</span>
                 </div>
                 {riquadriAperti[3] && (
+                  <div className="riquadro">
+                    {/* Contenuto per il riquadro 4 */}
+                  </div>
+                )}
+              </div>
+              <div className="box5">{/*Riquadro per creazione del logo*/}
+                <div style={{ padding: "2.5px" }}>
+                  <img
+                    src={rotateIcon}
+                    alt="Rotate Icon"
+                    className={riquadriAperti[4] ? "rotate-icon rotate-icon-ruotata" : "rotate-icon"}
+                    onClick={() => toggleRiquadro(4)}
+                  />
+                  <span className="scrittaIcona">CREA IL TUO LOGO</span>
+                </div>
+                {riquadriAperti[4] && (
+                  <div className="riquadro">
+                    {/* Contenuto per il riquadro 4 */}
+                  </div>
+                )}
+              </div>
+              <div className="box5">{/*Riquadro per shooting fotografico*/}
+                <div style={{ padding: "2.5px" }}>
+                  <img
+                    src={rotateIcon}
+                    alt="Rotate Icon"
+                    className={riquadriAperti[5] ? "rotate-icon rotate-icon-ruotata" : "rotate-icon"}
+                    onClick={() => toggleRiquadro(5)}
+                  />
+                  <span className="scrittaIcona">REALIZZA IL TUO SHOOTING FOTOGRAFICO</span>
+                </div>
+                {riquadriAperti[5] && (
                   <div className="riquadro">
                     {/* Contenuto per il riquadro 4 */}
                   </div>

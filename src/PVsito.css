@@ -25,7 +25,7 @@ body {
 .header {
   background-color: white;
   display: flex;
-  justify-content: center;
+  justify-content: space-between; /* Per distribuire le sezioni dell'header uniformemente */
   align-items: center;
   border-bottom: 3px solid rgb(199, 171, 43);
   padding: 10px;
@@ -38,22 +38,34 @@ body {
 }
 
 .header-section {
-  flex: 1; /* Per dividere il contenuto in parti uguali */
+  flex: 1; /* Per distribuire lo spazio disponibile in modo uniforme tra le sezioni */
   text-align: center; /* Per centrare il contenuto all'interno di ciascuna sezione */
-  padding: 5px; /* Aggiungi uno spazio tra le sezioni, se necessario */
+  padding: 10px;
+}
+
+.header-section1 {
+  flex: 1; /* Per distribuire lo spazio disponibile in modo uniforme tra le sezioni */
+  text-align: center; /* Per allineare a destra il contenuto all'interno di ciascuna sezione */
+  padding-right: 20px; /* Aggiunge un margine a destra per distanziare il testo dal trattino */
+  display: flex;
+}
+
+.header-section-text{
+  flex: 1;
+  align-items: center;
 }
 
 .Logo {
-  width: 95%;
-  padding: 10;
+  width: 50%; /* Imposta la larghezza desiderata */
 }
 
 .dettagliScritte {
-  margin: 10px;
+  margin: 0; /* Rimuove il margine predefinito per il paragrafo */
   font-family: "Bahnschrift", sans-serif;
   font-size: 10pt;
   letter-spacing: 20px;
 }
+
 
 /* Stili per il contenitore principale */
 .container {
@@ -66,7 +78,7 @@ body {
 /* Stili per le colonne */
 .col {
   flex: 1;
-  max-width: 300px;
+  max-width: 350px;
   /* Imposta la larghezza delle colonne laterali */
 }
 
@@ -142,10 +154,21 @@ body {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 20px;
+  margin-top: 2%;
+}
+
+.inputRowTreCol{
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-top: 2%;
 }
 
 .colonna {
   grid-column: span 1;
+  align-items: center;
+  display: flex;
+  flex-direction: column;
 }
 
 .PdfRiquadro {
@@ -189,6 +212,48 @@ body {
   display: flex;
   justify-content: center;
 }
+
+.ZipRiquadro {
+  display: flex;
+  flex-direction: column; /* Imposta la direzione in "column" per posizionare gli elementi uno sotto l'altro */
+  justify-content: center;
+  align-items: center;
+}
+
+/* Stili per il riquadro di caricamento del file ZIP */
+.uploadRiquadroZip {
+  background-color: #ffffff;
+  border: 3px solid rgb(199, 171, 43);
+  padding: 10px;
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 300px;
+}
+
+.uploadRiquadroZip label {
+  margin-bottom: 10px;
+}
+
+.uploadRiquadroZip input[type="file"] {
+  outline: none;
+}
+
+/* Stili per l'immagine della copertina del file ZIP */
+.copertinaZip {
+  width: 50%;
+  height: auto;
+  display: block;
+  margin: 0 auto; /* Aggiunto margin: 0 auto; per centrare l'immagine orizzontalmente */
+}
+
+/* Stili per il testo "Carica il tuo file ZIP" */
+.richiestaZIP {
+  display: flex;
+  justify-content: center;
+}
+
 
 /* Stili per le opzioni */
 .opzione {
@@ -252,7 +317,7 @@ body {
   font-family: "Bahnschrift", sans-serif;
   font-size: large;
   letter-spacing: 2px;
-  margin-top: 3%;
+  margin: 3%;
 }
 
 /* Media query per dispositivi di larghezza massima 768px (ad esempio, tablet e smartphone) */
