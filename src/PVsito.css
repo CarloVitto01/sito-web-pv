@@ -1,31 +1,18 @@
-/* Stili per il body e la classe App */
+/* Stili globali */
 body {
-  /* Imposta lo sfondo come immagine di sfondo del body */
   background-image: url("Sfondo.png");
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
   background-attachment: fixed;
-  margin: 0;
   padding: 0;
-}
-
-.App {
-  text-align: center;
-  height: 100%;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  min-height: 100vh;
-  /* Imposta l'altezza minima al 100% della viewport per occupare almeno tutta la schermata visibile */
 }
 
 /* Stili per l'header */
 .header {
   background-color: white;
   display: flex;
-  justify-content: space-between; /* Per distribuire le sezioni dell'header uniformemente */
+  justify-content: center;
   align-items: center;
   border-bottom: 3px solid rgb(199, 171, 43);
   padding: 10px;
@@ -33,354 +20,223 @@ body {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
+  width: auto;
   z-index: 1;
+  border-radius: 15px;
 }
 
 .header-section {
-  flex: 1; /* Per distribuire lo spazio disponibile in modo uniforme tra le sezioni */
-  text-align: center; /* Per centrare il contenuto all'interno di ciascuna sezione */
-  padding: 10px;
-}
-
-.header-section1 {
-  flex: 1; /* Per distribuire lo spazio disponibile in modo uniforme tra le sezioni */
-  text-align: center; /* Per allineare a destra il contenuto all'interno di ciascuna sezione */
-  padding-right: 20px; /* Aggiunge un margine a destra per distanziare il testo dal trattino */
-  display: flex;
-}
-
-.header-section-text{
   flex: 1;
-  align-items: center;
+  text-align: center;
 }
 
 .Logo {
-  width: 50%; /* Imposta la larghezza desiderata */
+  width: 60%;
 }
 
-.dettagliScritte {
-  margin: 0; /* Rimuove il margine predefinito per il paragrafo */
-  font-family: "Bahnschrift", sans-serif;
-  font-size: 10pt;
-  letter-spacing: 20px;
+.logo_menu {
+  width: 7%;
+}
+
+.menu-button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  display: flex;
+  margin-left: 3%;
+}
+
+.sidebar-menu {
+  position: fixed;
+  left: 0; /* Cambia il valore da -250px a 0 */
+  top: 0;
+  width: 250px; /* Cambia la larghezza del menu */
+  height: 100%;
+  background-color: rgb(199, 171, 43);
+  color: #fff;
+  padding: 1rem;
+  transition: left 0.3s ease; /* Cambia la durata della transizione */
+  z-index: 1;
 }
 
 
-/* Stili per il contenitore principale */
-.container {
+.close-menu-button {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #fff;
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+}
+
+.menu-list,
+.sub-menu-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.menu-list li,
+.sub-menu-list li {
+  position: relative;
+}
+
+.menu-list li::before,
+.sub-menu-list li::before {
+  content: "▶";
+  position: absolute;
+  left: 0;
+}
+
+.sub-menu-list {
+  padding-left: 1rem;
+  margin-top: 0.5rem;
+}
+
+.menu-list a,
+.sub-menu-list a {
+  color: #ffffff;
+  text-decoration: none;
+  margin-bottom: 0.5rem;
+}
+
+.riquadroStudente{
   display: flex;
   justify-content: center;
-  max-width: 100%;
+}
+
+.riquadroInternoStudente{
+  text-align: center;
+  background-color: rgb(199, 171, 43);
+  margin-top: 7%;
+  width: 60%;
+  border-radius: 10px;
+}
+
+.textStudente{
+  font-size: 25px;
+  font-family: "Roboto";
+  letter-spacing: 2px;
+}
+
+/* Stili per il container */
+.containerRettangoli {
+  display: flex;
+  justify-content: center;
+  margin-top: 3%;
+  position: relative;
+  z-index: 0;
+  margin-bottom: 20%;
+}
+
+.rectangle {
+  width: 350px;
+  background-color: #ffffff;
+  margin: 0 25px;
+  z-index: 2;
+  border: 2px solid rgb(199, 171, 43);
+  border-radius: 20px;
+}
+/* Stili per i titoli dei riquadri */
+
+.titoloRiquadri {
+  font-size: 200%;
+  color: rgb(199, 171, 43);
+  padding: 2%;
+  margin: 0;
+  margin-left: 6%;
+  margin-top: 4%;
+  font-family: "Roboto";
+  font-weight: 450;
+}
+
+.immagineRiquadri {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  margin-top: 5%;
+}
+
+.logoRiquadri {
+  width: 40%;
+}
+
+/* Stili per i sotto titoli dei riquadri */
+.sottoTitoloRiquadro {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 2%;
   margin-top: 10%;
 }
 
-/* Stili per le colonne */
-.col {
-  flex: 1;
-  max-width: 350px;
-  /* Imposta la larghezza delle colonne laterali */
-}
-
-/* Stili per la colonna centrale */
-.col.central {
-  flex: 3;
-  /* Aumenta la flessibilità della colonna centrale */
-  max-width: 900px;
-  /* Aumenta la larghezza massima della colonna centrale */
-}
-
-/* Stili per il contenitore dei riquadri */
-.containerDiv {
-  display: flex;
-  flex-direction: column;
-  padding: 5px;
-}
-
-/* Stili per la scritta affianco all'icona */
-.scrittaIcona {
-  font-family: "Bahnschrift", sans-serif;
-  font-size: 25pt;
-  margin-bottom: 50px;
-  padding: 5px;
-}
-
-/* Stili per l'icona ruotante */
-.rotate-icon {
-  width: 25px;
-  margin-right: 10px;
-  cursor: pointer;
-  transition: transform 0.5s ease;
-  z-index: 2;
-}
-
-/* Stili per l'icona ruotante quando è ruotata */
-.rotate-icon-ruotata {
-  transform: rotate(90deg);
-  z-index: 2;
-}
-
-/* Stili per il riquadro */
-.riquadro {
-  background-color: #ffffff;
-  border: none;
-  border: 3px solid rgb(199, 171, 43);
-  border-radius: 5px;
-  padding: 10px;
-  margin-top: 10px;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  margin-bottom: 10%;
-  box-shadow: 10px 10px 25px rgba(0, 0, 0, 0.5);
-}
-
-/* Stili per gli input all'interno del riquadro */
-.riquadro input {
-  margin-bottom: 10px;
-  padding: 5px;
-  border: none;
-  border-bottom: 1px solid #ccc;
-  border-radius: 0;
-  outline: none;
-}
-
-/* Stili per l'input quando è in focus */
-.riquadro input:focus {
-  border-bottom: 2px solid rgb(199, 171, 43);
-}
-
-.inputRow {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-  margin-top: 2%;
-}
-
-.inputRowTreCol{
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-  margin-top: 2%;
-}
-
-.colonna {
-  grid-column: span 1;
-  align-items: center;
-  display: flex;
-  flex-direction: column;
-}
-
-.PdfRiquadro {
-  display: flex;
-  flex-direction: column; /* Imposta la direzione in "column" per posizionare gli elementi uno sotto l'altro */
-  justify-content: center;
-  align-items: center;
-}
-
-/* Stili per il riquadro di caricamento del PDF */
-.uploadRiquadro {
-  background-color: #ffffff;
-  border: 3px solid rgb(199, 171, 43);
-  padding: 10px;
-  margin-top: 10px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 300px;
-}
-
-.uploadRiquadro label {
-  margin-bottom: 10px;
-}
-
-.uploadRiquadro input[type="file"] {
-  outline: none;
-}
-
-/* Stili per l'immagine della copertina del PDF */
-.copertinaPDF {
-  width: 50%;
-  height: auto;
-  display: block;
-  margin: 0 auto; /* Aggiunto margin: 0 auto; per centrare l'immagine orizzontalmente */
-}
-
-
-/* Stili per il testo "Carica il tuo PDF" */
-.richiestaPDF {
+.sottoTitolo {
   display: flex;
   justify-content: center;
-}
-
-.ZipRiquadro {
-  display: flex;
-  flex-direction: column; /* Imposta la direzione in "column" per posizionare gli elementi uno sotto l'altro */
-  justify-content: center;
   align-items: center;
-}
-
-/* Stili per il riquadro di caricamento del file ZIP */
-.uploadRiquadroZip {
-  background-color: #ffffff;
-  border: 3px solid rgb(199, 171, 43);
-  padding: 10px;
-  margin-top: 10px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 300px;
-}
-
-.uploadRiquadroZip label {
-  margin-bottom: 10px;
-}
-
-.uploadRiquadroZip input[type="file"] {
-  outline: none;
-}
-
-/* Stili per l'immagine della copertina del file ZIP */
-.copertinaZip {
-  width: 50%;
-  height: auto;
-  display: block;
-  margin: 0 auto; /* Aggiunto margin: 0 auto; per centrare l'immagine orizzontalmente */
-}
-
-/* Stili per il testo "Carica il tuo file ZIP" */
-.richiestaZIP {
-  display: flex;
-  justify-content: center;
-}
-
-
-/* Stili per le opzioni */
-.opzione {
-  display: flex;
-  align-items: center;
-  font-size: 18px;
-  margin: 10px 0;
-  /* Aggiungi spazio tra le opzioni */
-  cursor: pointer;
-}
-
-/* Stili per nascondere gli input radio */
-.opzione input[type="radio"] {
-  display: none;
-}
-
-/* Stili per il pallino vuoto */
-.pallino {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border: 2px solid rgb(199, 171, 43);
-  border-radius: 50%;
-  margin-right: 8px;
-}
-
-/* Stili per il pallino colorato quando l'opzione è selezionata */
-.opzione input[type="radio"]:checked+label .pallino {
-  background-color: rgb(199, 171, 43);
-  border-color: rgb(199, 171, 43);
-}
-
-/* Stile per le scritte piccole */
-.testoPiccolo {
-  font-size: 12pt;
-  font-family: "Bahnschrift", sans-serif;
-  letter-spacing: 2px;
-}
-
-.testoPiccoloDa {
-  font-size: 12pt;
-  font-family: "Bahnschrift", sans-serif;
-  letter-spacing: 2px;
-  margin-bottom: 2%;
-}
-
-.testoPiccoloA {
-  font-size: 12pt;
-  font-family: "Bahnschrift", sans-serif;
-  letter-spacing: 2px;
-  margin-top: -10%;
-  margin-left: 7%;
-}
-
-.pulsantePerContinuareLaStampa{
+  font-size: 130%;
+  font-family: "Roboto";
   color: rgb(199, 171, 43);
-  font-weight: bold;
+  font-weight: 500;
+  word-spacing: 2px;
+  text-align: center;
+}
+
+/* Stili per il testo dei riquadri */
+.testoRiquadri {
+  width: 90%;
   display: flex;
-  justify-content: center;
-  text-decoration: none;
-  font-family: "Bahnschrift", sans-serif;
-  font-size: large;
-  letter-spacing: 2px;
   margin: 3%;
+  margin-bottom: 5%;
+  margin-top: 5%;
 }
 
-/* Media query per dispositivi di larghezza massima 768px (ad esempio, tablet e smartphone) */
-@media screen and (max-width: 768px) {
-
-  /* Stili per l'header */
-  .header {
-    background-size: 50%;
-    justify-content: center;
-  }
-
-  .Logo {
-    width: 40%;
-  }
-
-  .dettagli {
-    margin-top: 10%;
-  }
-
-  .dettagliScritte {
-    margin: 4%;
-    font-family: "Bahnschrift", sans-serif;
-    font-size: 10pt;
-    letter-spacing: 2px;
-  }
-
-  .container {
-    flex-direction: column;
-    /* Imposta i riquadri uno sopra l'altro */
-    align-items: center;
-    /* Centra i riquadri orizzontalmente */
-  }
-
-  .col {
-    max-width: 100%;
-    /* Imposta la larghezza massima delle colonne al 100% */
-  }
-
-  .scrittaIcona {
-    margin-bottom: 30px;
-    /* Riduci il margine inferiore della scritta affianco all'icona */
-  }
-
-  .riquadro {
-    margin: 5% 0;
-    /* Riduci il margine superiore e inferiore dei riquadri */
-  }
-
-  .uploadRiquadro {
-    margin: 5% 0;
-    /* Riduci il margine superiore e inferiore del riquadro di caricamento del PDF */
-  }
-
-  .copertinaPDF {
-    width: 80%;
-    /* Riduci la larghezza dell'immagine della copertina del PDF */
-  }
+.testo {
+  font-size: 110%;
+  font-family: "Roboto";
+  letter-spacing: 1px;
 }
 
-/* Media query per dispositivi di larghezza massima 576px (ad esempio, smartphone in modalità portrait) */
-@media screen and (max-width: 576px) {
-  .scrittaIcona {
-    font-size: 18pt;
-    /* Riduci la dimensione del testo della scritta affianco all'icona */
-  }
+/* Stili per il footer */
+.footer {
+  background-color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 3px solid rgb(199, 171, 43);
+  padding: 10px;
+  box-shadow: 10px -10px 25px rgba(0, 0, 0, 0.5);
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1;
+  border-radius: 15px;
+}
+
+.footer-section {
+  flex: 1;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.footer-logo {
+  width: 7%;
+  max-width: 100px;
+  padding: 1%;
+}
+
+.footer-text {
+  font-size: 15px;
+  font-family: "Roboto", sans-serif;
+  color: black;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-left: 10px; /* Aggiungi margine per separare l'immagine dal testo */
 }
