@@ -16,13 +16,14 @@ body {
   align-items: center;
   border-bottom: 3px solid rgb(199, 171, 43);
   padding: 10px;
-  box-shadow: 10px 10px 25px rgba(0, 0, 0, 0.5);
+  box-shadow: 10px 10px 25px rgba(0, 0, 0, 0.4);
   position: fixed;
   top: 0;
   left: 0;
   width: auto;
   z-index: 1;
-  border-radius: 15px;
+  border-bottom-left-radius: 15px;
+  border-bottom-right-radius: 15px;
 }
 
 .header-section {
@@ -36,6 +37,17 @@ body {
 
 .logo_menu {
   width: 7%;
+}
+
+.Logo_Carrello{
+  width: 8%; 
+}
+
+.header-section.header-section-right {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding-right: 10px; /* Aggiungi spazio tra il logo e il bordo destra */
 }
 
 .menu-button {
@@ -83,12 +95,14 @@ body {
   position: relative;
 }
 
-.menu-list li::before,
+/*.menu-list li::before,
 .sub-menu-list li::before {
   content: "▶";
   position: absolute;
   left: 0;
-}
+}*/
+
+
 
 .sub-menu-list {
   padding-left: 1rem;
@@ -128,7 +142,7 @@ body {
   margin-top: 3%;
   position: relative;
   z-index: 0;
-  margin-bottom: 20%;
+  margin-bottom: 4%;
 }
 
 .rectangle {
@@ -148,8 +162,8 @@ body {
   margin: 0;
   margin-left: 6%;
   margin-top: 4%;
-  font-family: "Roboto";
-  font-weight: 450;
+  font-family: "Roboto", sans-serif;
+  font-weight: bold;
 }
 
 .immagineRiquadri {
@@ -207,13 +221,14 @@ body {
   align-items: center;
   border-top: 3px solid rgb(199, 171, 43);
   padding: 10px;
-  box-shadow: 10px -10px 25px rgba(0, 0, 0, 0.5);
+  box-shadow: 10px -10px 25px rgba(0, 0, 0, 0.4);
   position: fixed;
   bottom: 0;
   left: 0;
-  width: 100%;
+  width: 99%;
   z-index: 1;
-  border-radius: 15px;
+  border-top-left-radius: 15px;
+  border-top-right-radius: 15px;
 }
 
 .footer-section {
@@ -239,4 +254,25 @@ body {
   align-items: center;
   justify-content: center;
   margin-left: 10px; /* Aggiungi margine per separare l'immagine dal testo */
+}
+
+.chiSiamoRiquadro{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0%;
+}
+
+.chiSiamoTitolo{
+  text-align: center;
+  margin-bottom: 1%;
+  font-size: 150%;
+  font-family: "Roboto";
+  color: rgb(199, 171, 43);
+}
+
+.chiSiamoDescrizione{
+  width: 80%;
+  height: auto;
+  margin-bottom: 10%;
 }
