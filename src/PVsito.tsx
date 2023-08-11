@@ -11,6 +11,7 @@ import Logo_Telegram from './Logo_Telegram.png';
 import Logo_mail from './Logo_mail.png';
 import Logo_Instagram from './Logo_Instagram.png';
 import logo_carrello from './logo_carrello.jpg';
+import Freccetta_Nera from './Freccetta_Nera.png';
 
 function PVsito() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -20,7 +21,7 @@ function PVsito() {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  const toggleSubMenu = (index: number) => { // Aggiunto il tipo 'number' al parametro
+  const toggleSubMenu = (index: number) => {
     setActiveSubMenu(activeSubMenu === index ? null : index);
   };
 
@@ -42,14 +43,53 @@ function PVsito() {
                   ✕
                 </button>
                 <ul className="menu-list">
-                  <li><a href="#">Home</a></li>
-                  <li><a href="#">Link 2</a></li>
+                  <li><a href="#">Home page</a></li>
                   <li>
-                    <a href="#" onClick={() => toggleSubMenu(0)}>Link 3</a>
+                  <a href="#" onClick={() => toggleSubMenu(0)}>
+                      <img src={Freccetta_Nera} alt="" className={`frecciaNeraRotante ${activeSubMenu === 0 ? 'rotated' : ''}`} />
+                      <span className="fontScritteTitoliMenu">Grafiche</span>
+                    </a>
                     {activeSubMenu === 0 && (
                       <ul className="sub-menu-list">
-                        <li><a href="#">Sublink 1</a></li>
-                        <li><a href="#">Sublink 2</a></li>
+                        <li><a href="#"><img src={Freccetta_Nera} alt="" className="frecciaNera" /> <text className="fontScritteSottoMenu">Crea il tuo logo</text></a></li>
+                        <li><a href="#"><img src={Freccetta_Nera} alt="" className="frecciaNera" /> <text className="fontScritteSottoMenu">Biglietti da visita</text></a></li>
+                        <li><a href="#"><img src={Freccetta_Nera} alt="" className="frecciaNera" /> <text className="fontScritteSottoMenu">La tua locandina</text></a></li>
+                      </ul>
+                    )}
+                  </li>
+                  <li>
+                    <a href="#" onClick={() => toggleSubMenu(1)}>
+                      <img src={Freccetta_Nera} alt="" className={`frecciaNeraRotante ${activeSubMenu === 1 ? 'rotated' : ''}`} />
+                      <span className="fontScritteTitoliMenu">Stampe</span>
+                    </a>
+                    {activeSubMenu === 1 && (
+                      <ul className="sub-menu-list">
+                        <li><a href="#"><img src={Freccetta_Nera} alt="" className="frecciaNera" /> <text className="fontScritteSottoMenu">Stampa il tuo documento</text></a></li>
+                        <li><a href="#"><img src={Freccetta_Nera} alt="" className="frecciaNera" /> <text className="fontScritteSottoMenu">Stampa le tue foto</text></a></li>
+                        <li><a href="#"><img src={Freccetta_Nera} alt="" className="frecciaNera" /> <text className="fontScritteSottoMenu">Stampa i tuoi biglietti da visita</text></a></li>
+                      </ul>
+                    )}
+                  </li>
+                  <li>
+                  <a href="#" onClick={() => toggleSubMenu(2)}>
+                      <img src={Freccetta_Nera} alt="" className={`frecciaNeraRotante ${activeSubMenu === 2 ? 'rotated' : ''}`} />
+                      <span className="fontScritteTitoliMenu">Foto</span>
+                    </a>
+                    {activeSubMenu === 2 && (
+                      <ul className="sub-menu-list">
+                        <li><a href="#"><img src={Freccetta_Nera} alt="" className="frecciaNera" /> <text className="fontScritteSottoMenu">Fototessere</text></a></li>
+                        <li><a href="#"><img src={Freccetta_Nera} alt="" className="frecciaNera" /> <text className="fontScritteSottoMenu">Foto ricordo</text></a></li>
+                      </ul>
+                    )}
+                  </li>
+                  <li>
+                  <a href="#" onClick={() => toggleSubMenu(3)}>
+                      <img src={Freccetta_Nera} alt="" className={`frecciaNeraRotante ${activeSubMenu === 3 ? 'rotated' : ''}`} />
+                      <span className="fontScritteTitoliMenu">Video</span>
+                    </a>
+                    {activeSubMenu === 3 && (
+                      <ul className="sub-menu-list">
+                        <li><a href="#"><img src={Freccetta_Nera} alt="" className="frecciaNera" /> <text className="fontScritteSottoMenu">Realizza il tuo video</text></a></li>
                       </ul>
                     )}
                   </li>
@@ -61,8 +101,8 @@ function PVsito() {
             <img src={logo} alt="Logo" className="Logo" />
           </div>
           <div className="header-section header-section-right">
-    <img src={logo_carrello} alt="Logo_Carrello" className="Logo_Carrello" />
-  </div>
+            <img src={logo_carrello} alt="Logo_Carrello" className="Logo_Carrello" />
+          </div>
         </div>
         <div className="riquadroStudente">{/*RIQUADRO STUDENTE SULLO SCONTO DEL 10%*/}
           <div className="riquadroInternoStudente">

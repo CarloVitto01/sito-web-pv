@@ -8,6 +8,18 @@ body {
   padding: 0;
 }
 
+
+.fontScritteTitoliMenu{
+  font-family: "Roboto", sans-serif;
+}
+
+.fontScritteSottoMenu{
+  font-family: "Roboto", sans-serif;
+  font-size: 80%;
+}
+
+
+
 /* Stili per l'header */
 .header {
   background-color: white;
@@ -63,15 +75,15 @@ body {
   position: fixed;
   left: 0; /* Cambia il valore da -250px a 0 */
   top: 0;
-  width: 250px; /* Cambia la larghezza del menu */
+  width: 300px; /* Cambia la larghezza del menu */
   height: 100%;
   background-color: rgb(199, 171, 43);
   color: #fff;
-  padding: 1rem;
-  transition: left 0.3s ease; /* Cambia la durata della transizione */
+  transition: left 0.1s ease; /* Cambia la durata della transizione */
   z-index: 1;
+  display: flex;
+  flex-direction: column;
 }
-
 
 .close-menu-button {
   background: none;
@@ -84,29 +96,42 @@ body {
   right: 0.5rem;
 }
 
-.menu-list,
+.menu-list{
+  font-size: 1.3rem;
+  text-align: left;
+  margin: 5%;
+  padding: 5%;
+}
+
+.menu-list li {
+  position: relative;
+  padding: 5px 0; /* Aggiungi spazio sopra e sotto */
+}
+
+.menu-list > li::before {
+  content: "";
+  position: absolute;
+  bottom: 5%;
+  left: 0%;
+  width: 100%; /* Modifica la lunghezza desiderata, ad esempio 70% */
+  height: 2px;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+
+.sub-menu-list li {
+  position: relative; /* Aggiungi questa proprietà per evitare spostamenti */
+}
+
+/* Stili per il sottomenu */
 .sub-menu-list {
   list-style: none;
   padding-left: 0;
-}
-
-.menu-list li,
-.sub-menu-list li {
-  position: relative;
-}
-
-/*.menu-list li::before,
-.sub-menu-list li::before {
-  content: "▶";
-  position: absolute;
-  left: 0;
-}*/
-
-
-
-.sub-menu-list {
-  padding-left: 1rem;
-  margin-top: 0.5rem;
+  margin-left: 20%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  position: relative; /* Aggiungi questa proprietà per evitare spostamenti */
 }
 
 .menu-list a,
@@ -114,7 +139,39 @@ body {
   color: #ffffff;
   text-decoration: none;
   margin-bottom: 0.5rem;
+  text-align: start;
 }
+
+.menu-list,
+.sub-menu-list {
+  list-style: none;
+  padding-left: 0;
+  display: flex;
+  flex-direction: column; /* Cambia la direzione del flexbox a colonna */
+}
+
+.menu-list a,
+.sub-menu-list a {
+  color: #ffffff;
+  text-decoration: none;
+  margin-bottom: 0.5rem;
+  text-align: start; /* Allinea il testo a sinistra */
+}
+
+.frecciaNera {
+  width: 5%;
+}
+
+.frecciaNeraRotante{
+  width: 5%;
+  margin-right: 2%;
+}
+
+.rotated {
+  transform: rotate(90deg);
+  transition: transform 0.3s ease;
+}
+
 
 .riquadroStudente{
   display: flex;
