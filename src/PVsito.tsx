@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import './PVsito.css';
-import logo from './logo.png';
-import logo_menu from './Logo_menu.png';
-import logo_grafica from './Logo_grafica.jpg';
-import Logo_macchina_fotografica from './Logo_macchina_fotografica.jpg';
-import Logo_stampante from './Logo_stampante.jpg';
-import Logo_video from './Logo_video.jpg';
-import Logo_Whatsapp from './Logo_Whatsapp.png';
-import Logo_Telegram from './Logo_Telegram.png';
-import Logo_mail from './Logo_mail.png';
-import Logo_Instagram from './Logo_Instagram.png';
-import logo_carrello from './logo_carrello.jpg';
-import Freccetta_Nera from './Freccetta_Nera.png';
+import logo from './assets/logo.png';
+import logo_menu from './assets/Logo_menu.png';
+import logo_grafica from './assets/Logo_grafica.jpg';
+import Logo_macchina_fotografica from './assets/Logo_macchina_fotografica.jpg';
+import Logo_stampante from './assets/Logo_stampante.jpg';
+import Logo_video from './assets/Logo_video.jpg';
+import Logo_Whatsapp from './assets/Logo_Whatsapp.png';
+import Logo_Telegram from './assets/Logo_Telegram.png';
+import Logo_mail from './assets/Logo_mail.png';
+import Logo_Instagram from './assets/Logo_Instagram.png';
+import logo_carrello from './assets/logo_carrello.jpg';
+import Freccetta_Nera from './assets/Freccetta_Nera.png';
 
 function PVsito() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
