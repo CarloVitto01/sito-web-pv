@@ -6,24 +6,23 @@ const Modal = () => {
 
   const closeHandler = () => {
     setIsVisible(false);
-  }
+  };
 
   const content = (
-    <div className={classes.riquadroStudente}>
+    <div className={`${classes.riquadroStudente} ${isVisible ? "" : classes.fadeOut}`}>
       <div className={classes.riquadroInternoStudente}>
-        <span className={classes.closeButton} onClick={closeHandler}>x</span>
+        <span className={classes.closeButton} onClick={closeHandler}>
+          x
+        </span>
         <p className={classes.textStudente}>
           Se sei uno studente universitario hai il 10% di sconto!
         </p>
       </div>
     </div>
+
   );
 
-  return (
-    <>
-      {isVisible && content}
-    </>
-  );
+  return <>{isVisible && content}</>;
 };
 
 export default Modal;

@@ -10,7 +10,7 @@
 
 .item {
   position: relative;
-  padding: 5px 0; /* Aggiungi spazio sopra e sotto */
+  padding: 10px 0; /* Aggiungi spazio sopra e sotto */
 }
 
 .item::before {
@@ -31,7 +31,7 @@
 }
 
 .sub-menu-list {
-  list-style: none; /* Rimuove gli elenchi puntati */
+  list-style: none;
   padding-left: 0;
   margin-left: 20%;
   display: flex;

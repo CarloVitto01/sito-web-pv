@@ -6,9 +6,3 @@
   position: relative; /* Aggiungi questa proprietà per evitare spostamenti */
 }
 
-.item par {
-  color: white;
-  text-decoration: none;
-  margin-bottom: 0.5rem;
-  text-align: start; 
-}
