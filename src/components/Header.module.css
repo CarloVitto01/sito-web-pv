@@ -1,0 +1,47 @@
+/* Header.module.css */
+
+/* Stili per l'header */
+.header {
+  background-color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 3px solid rgb(199, 171, 43);
+  padding: 10px;
+  box-shadow: 10px 10px 25px rgba(0, 0, 0, 0.4);
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 98.7%;
+  z-index: 1;
+  border-bottom-left-radius: 15px;
+  border-bottom-right-radius: 15px;
+}
+
+.header-section {
+  display: flex;
+  align-items: center;
+}
+
+.Logo {
+  max-width: 200px;
+  width: 100%;
+}
+
+.menu-button,
+.carrello-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin: 0 10px; /* Aggiungi un margine ai pulsanti per l'allineamento */
+}
+
+.logo_menu {
+  width: 24px;
+  max-width: 100%;
+}
+
+.Logo_Carrello {
+  width: 30px;
+  max-width: 100%;
+}

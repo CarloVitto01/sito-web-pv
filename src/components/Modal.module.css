@@ -1,0 +1,27 @@
+.riquadroStudente {
+  display: flex;
+  justify-content: center;
+}
+
+.riquadroInternoStudente {
+  text-align: center;
+  background-color: rgb(199, 171, 43);
+  margin-top: 7%;
+  width: 60%;
+  border-radius: 10px;
+  position: relative;
+}
+
+.textStudente {
+  font-size: 25px;
+  font-family: "Roboto";
+  letter-spacing: 2px;
+}
+
+.closeButton {
+  position: absolute;
+  top: 10px;
+  left: 840px;
+  font-size: 20px;
+  cursor: pointer;
+}
