@@ -2,24 +2,15 @@
   display: flex;
   justify-content: center;
   opacity: 1;
-  transition: opacity 0.5s ease-in-out;
-  margin-bottom: -4rem;
+  margin-bottom: -4%;
 }
-
-.riquadroStudenteNonVisible {
-  opacity: 0;
-  margin-bottom: 0%;
-  transition: opacity 0.5s ease-in-out;
-}
-
-
 
 
 .riquadroInternoStudente {
   text-align: center;
   background-color: rgb(199, 171, 43);
   margin-top: 7%;
-  width: 60%;
+  width: 58%;
   border-radius: 10px;
   position: relative;
 }
@@ -33,7 +24,7 @@
 .closeButton {
   position: absolute;
   top: 10px;
-  left: 840px;
+  left: 820px;
   font-size: 20px;
   cursor: pointer;
 }

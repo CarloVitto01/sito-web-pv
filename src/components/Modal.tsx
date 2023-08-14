@@ -9,7 +9,7 @@ const Modal = () => {
   };
 
   const content = (
-    <div className={`${isVisible ? classes['riquadroStudenteVisible'] : classes['riquadroStudenteNonVisible']}`}>
+    <div className={`${isVisible ? classes['riquadroStudenteVisible'] : undefined}`}>
       <div className={classes.riquadroInternoStudente}>
         <span className={classes.closeButton} onClick={closeHandler}>
           x
