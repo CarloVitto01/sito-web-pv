@@ -1,7 +1,19 @@
-.riquadroStudente {
+.riquadroStudenteVisible {
   display: flex;
   justify-content: center;
+  opacity: 1;
+  transition: opacity 0.5s ease-in-out;
+  margin-bottom: -4rem;
 }
+
+.riquadroStudenteNonVisible {
+  opacity: 0;
+  margin-bottom: 0%;
+  transition: opacity 0.5s ease-in-out;
+}
+
+
+
 
 .riquadroInternoStudente {
   text-align: center;
