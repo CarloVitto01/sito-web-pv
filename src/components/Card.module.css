@@ -7,6 +7,10 @@
     border-radius: 20px;
 }
 
+.noUnderline {
+  text-decoration: none;
+}
+
 .titoloRiquadri {
     font-size: 200%;
     color: rgb(199, 171, 43);
@@ -63,4 +67,5 @@
     font-size: 110%;
     font-family: "Roboto";
     letter-spacing: 1px;
+    color: rgb(0, 0, 0);
   }
