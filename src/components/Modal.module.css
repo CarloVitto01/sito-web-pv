@@ -2,14 +2,13 @@
   display: flex;
   justify-content: center;
   opacity: 1;
-  margin-bottom: -4%;
+  margin-top: 3%;
 }
 
 
 .riquadroInternoStudente {
   text-align: center;
   background-color: rgb(199, 171, 43);
-  margin-top: 7%;
   width: 58%;
   border-radius: 10px;
   position: relative;

@@ -9,11 +9,9 @@
   border-bottom: 3px solid rgb(199, 171, 43);
   padding: 10px;
   box-shadow: 10px 10px 25px rgba(0, 0, 0, 0.4);
-  position: fixed;
   top: 0;
   left: 0;
   width: 98.7%;
-  z-index: 1;
   border-bottom-left-radius: 15px;
   border-bottom-right-radius: 15px;
 }
