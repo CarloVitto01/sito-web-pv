@@ -1,25 +1,22 @@
-import "./PVsito.css";
-import logo_grafica from "./assets/Logo_grafica.jpg";
-import Logo_macchina_fotografica from "./assets/Logo_macchina_fotografica.jpg";
-import Logo_stampante from "./assets/Logo_stampante.jpg";
-import Logo_video from "./assets/Logo_video.jpg";
-import Header from "./components/Header";
-import Card from "./components/Card";
-import Footer from "./components/Footer";
-import Modal from "./components/Modal";
+import logo_grafica from "../assets/Logo_grafica.jpg";
+import Logo_macchina_fotografica from "../assets/Logo_macchina_fotografica.jpg";
+import Logo_stampante from "../assets/Logo_stampante.jpg";
+import Logo_video from "../assets/Logo_video.jpg";
+import Card from "../components/Card";
+import Modal from "../components/Modal";
 
-function PVsito() {
+const HomePage = () => {
+
   return (
     <div className="sfondo">
-      <Header />
-      <Modal/>
+      <Modal />
       <div className="containerRettangoli">
         <Card
           title="GRAFICA"
           subtitle="Esprimi te stesso con stile."
           img={logo_grafica}
           text="Creiamo il tuo marchio unico: dall'arte dei <b>loghi personalizzati</b>, all'eleganza dei <b>biglietti da visita</b>, fino all'impatto delle <b>locandine</b> su misura.
-              </p>"
+            </p>"
         />
         <Card
           title="STAMPA"
@@ -99,9 +96,8 @@ function PVsito() {
           <br />
         </div>
       </div>
-      <Footer />
     </div>
   );
-}
+};
 
-export default PVsito;
+export default HomePage;

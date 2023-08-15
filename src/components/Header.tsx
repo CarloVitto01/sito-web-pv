@@ -4,6 +4,7 @@ import logo_carrello from "../assets/logo_carrello.jpg";
 import classes from "./Header.module.css";
 import { useState } from "react";
 import SideBarMenu from "./SideBarMenu";
+import {NavLink} from 'react-router-dom'
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -30,7 +31,9 @@ const Header = () => {
         {isMenuOpen && <SideBarMenu closeMenu={closeMenuHandler} />}
       </div>
       <div className={classes["header-section"]}>
+        <NavLink to="/">
         <img src={logo} alt="Logo" className={classes["Logo"]} />
+        </NavLink>
       </div>
       <div className={classes["header-section"]}>
         <button className={classes["carrello-button"]}>

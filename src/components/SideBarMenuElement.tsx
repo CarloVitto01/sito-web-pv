@@ -1,31 +1,32 @@
 import Freccetta_Nera from "../assets/Freccetta_Nera.png";
-import { useState } from "react";
-import SubMenuElement from "./SubMenuElement";
+// import { useState } from "react";
+// import SubMenuElement from "./SubMenuElement";
 import classes from './SideBarMenuElement.module.css'
+import {NavLink} from 'react-router-dom'
 
-const SideBarMenuElement: React.FC<{elements: string[], title: string}> = (props) => {
+const SideBarMenuElement: React.FC<{elements: string[], title: string, closeMenu: ()=>void}> = (props) => {
 
-  const [activeSubMenu, setActiveSubMenu] = useState<boolean>(false);
-  
-  const toggleSubMenu = () => {
-    setActiveSubMenu(!activeSubMenu);
-  };
+  // const [activeSubMenu, setActiveSubMenu] = useState<boolean>(false);
+  // const toggleSubMenu = () => {
+  //   setActiveSubMenu(!activeSubMenu);
+  // };
 
   return (
     <li className={classes['item']}>
-      <a href="#" onClick={() => toggleSubMenu()}>
+      <NavLink to={props.title.toLowerCase()} onClick={props.closeMenu}>
         <img
           src={Freccetta_Nera}
           alt=""
-          className={`${classes.frecciaNeraRotante} ${activeSubMenu ? classes.rotated : ""}`}
+          //className={`${classes.frecciaNeraRotante} ${activeSubMenu ? classes.rotated : ""}`}
+          className={classes.frecciaNeraRotante}
         />
         <span className="fontScritteTitoliMenu">{props.title}</span>
-      </a>
-      {activeSubMenu && (
+      </NavLink>
+      {/* {activeSubMenu && (
         <ul className={classes["sub-menu-list"]}>
           {props.elements.map((textElement) => <SubMenuElement text={textElement}/>)}
         </ul>
-      )}
+      )} */}
     </li>
   );
 };
