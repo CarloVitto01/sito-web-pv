@@ -6,7 +6,7 @@ const ErrorPage = () => {
       <Header />
       <main>
         <h1>Errore</h1>
-        <p>Non è possibile trovare questa pagina.</p>
+        <p>Non è stato possibile trovare questa pagina.</p>
       </main>
     </>
   );

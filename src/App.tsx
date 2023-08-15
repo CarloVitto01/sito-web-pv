@@ -7,6 +7,7 @@ import GraficaPage from "./pages/Grafica";
 import StampaPage from "./pages/Stampa";
 import FotoPage from "./pages/Foto";
 import VideoPage from "./pages/Video";
+import CarrelloPage from "./pages/Carrello";
 
 const router = createBrowserRouter([
   {
@@ -19,6 +20,7 @@ const router = createBrowserRouter([
       { path: "stampa", element: <StampaPage /> },
       { path: "foto", element: <FotoPage /> },
       { path: "video", element: <VideoPage /> },
+      { path: "carrello", element: <CarrelloPage /> },
     ],
   },
 ]);

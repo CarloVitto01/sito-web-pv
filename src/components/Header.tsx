@@ -37,11 +37,13 @@ const Header = () => {
       </div>
       <div className={classes["header-section"]}>
         <button className={classes["carrello-button"]}>
+          <NavLink to="/carrello">
           <img
             src={logo_carrello}
             alt="Logo_Carrello"
             className={classes["Logo_Carrello"]}
           />
+          </NavLink>
         </button>
       </div>
     </div>
