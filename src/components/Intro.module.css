@@ -1,0 +1,18 @@
+.title{
+    color: rgb(199, 171, 43);
+    font-weight: normal;
+    font-size: 250%;
+    display: flex;
+    justify-content: center;
+}
+
+.text{
+    margin-left: 10%;
+    margin-right: 10%;
+    font-size: 155%;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}

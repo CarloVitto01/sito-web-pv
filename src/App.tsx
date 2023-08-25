@@ -1,32 +1,20 @@
 import "./App.css";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import RootLayout from "./pages/Root";
-import ErrorPage from "./pages/Error";
-import HomePage from "./pages/Home";
-import GraficaPage from "./pages/Grafica";
-import StampaPage from "./pages/Stampa";
-import FotoPage from "./pages/Foto";
-import VideoPage from "./pages/Video";
-import CarrelloPage from "./pages/Carrello";
+import Card from "./components/Card";
+import Footer from "./components/Footer";
+import Header from "./components/Header";
+import Intro from "./components/Intro";
 
-const router = createBrowserRouter([
-  {
-    path: "",
-    element: <RootLayout />,
-    errorElement: <ErrorPage />,
-    children: [
-      { index: true, element: <HomePage /> },
-      { path: "grafica", element: <GraficaPage /> },
-      { path: "stampa", element: <StampaPage /> },
-      { path: "foto", element: <FotoPage /> },
-      { path: "video", element: <VideoPage /> },
-      { path: "carrello", element: <CarrelloPage /> },
-    ],
-  },
-]);
+const App = () => {
 
-function App() {
-  return <RouterProvider router={router} />;
-}
+  return (
+    <div className="sfondo">
+      <Header/>
+      <Intro/>
+    
+
+      <Footer/>
+    </div>
+  );
+};
 
 export default App;
