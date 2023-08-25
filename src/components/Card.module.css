@@ -1,0 +1,71 @@
+.rectangle {
+    width: 350px;
+    background-color: #ffffff;
+    margin: 0 25px;
+    z-index: 2;
+    border: 2px solid rgb(199, 171, 43);
+    border-radius: 20px;
+}
+
+.noUnderline {
+  text-decoration: none;
+}
+
+.titoloRiquadri {
+    font-size: 200%;
+    color: rgb(199, 171, 43);
+    padding: 2%;
+    margin: 0;
+    margin-left: 6%;
+    margin-top: 4%;
+    font-family: "Roboto", sans-serif;
+    font-weight: bold;
+  }
+  
+  .immagineRiquadri {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    margin-top: 5%;
+  }
+  
+  .logoRiquadri {
+    width: 40%;
+  }
+  
+  /* Stili per i sotto titoli dei riquadri */
+  .sottoTitoloRiquadro {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 2%;
+    margin-top: 10%;
+  }
+  
+  .sottoTitolo {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 130%;
+    font-family: "Roboto";
+    color: rgb(199, 171, 43);
+    font-weight: 500;
+    word-spacing: 2px;
+    text-align: center;
+  }
+  
+  /* Stili per il testo dei riquadri */
+  .testoRiquadri {
+    width: 90%;
+    display: flex;
+    margin: 3%;
+    margin-bottom: 5%;
+    margin-top: 5%;
+  }
+  
+  .testo {
+    font-size: 110%;
+    font-family: "Roboto";
+    letter-spacing: 1px;
+    color: rgb(0, 0, 0);
+  }

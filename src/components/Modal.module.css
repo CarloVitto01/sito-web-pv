@@ -1,0 +1,29 @@
+.riquadroStudenteVisible {
+  display: flex;
+  justify-content: center;
+  opacity: 1;
+  margin-top: 3%;
+}
+
+
+.riquadroInternoStudente {
+  text-align: center;
+  background-color: rgb(199, 171, 43);
+  width: 58%;
+  border-radius: 10px;
+  position: relative;
+}
+
+.textStudente {
+  font-size: 25px;
+  font-family: "Roboto";
+  letter-spacing: 2px;
+}
+
+.closeButton {
+  position: absolute;
+  top: 10px;
+  left: 820px;
+  font-size: 20px;
+  cursor: pointer;
+}

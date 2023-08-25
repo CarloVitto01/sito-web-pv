@@ -1,0 +1,56 @@
+.menu-list {
+  font-size: 1.3rem;
+  text-align: left;
+  margin: 5%;
+  padding: 5%;
+  list-style: none;
+}
+.frecciaNera {
+  width: 5%;
+}
+
+.sidebar-menu {
+  position: fixed;
+  left: 0; /* Cambia il valore da -250px a 0 */
+  top: 0;
+  width: 300px; /* Cambia la larghezza del menu */
+  height: 100%;
+  background-color: rgb(199, 171, 43);
+  color: #fff;
+  transition: left 0.1s ease; /* Cambia la durata della transizione */
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+}
+.item {
+  position: relative;
+  padding: 10px 0; /* Aggiungi spazio sopra e sotto */
+}
+
+.item::before {
+  content: "";
+  position: absolute;
+  bottom: 5%;
+  left: 0%;
+  width: 100%; /* Modifica la lunghezza desiderata, ad esempio 70% */
+  height: 2px;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.item a {
+  color: white;
+  text-decoration: none;
+  margin-bottom: 0.5rem;
+  text-align: start;
+}
+
+.close-menu-button {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #fff;
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+}

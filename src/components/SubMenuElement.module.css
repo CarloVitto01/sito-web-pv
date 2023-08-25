@@ -1,0 +1,8 @@
+.frecciaNera {
+  width: 5%;
+}
+
+.item {
+  position: relative; /* Aggiungi questa proprietà per evitare spostamenti */
+}
+

@@ -1,0 +1,44 @@
+.frecciaNeraRotante {
+  width: 5%;
+  margin-right: 2%;
+}
+
+.rotated {
+  transform: rotate(90deg);
+  transition: transform 0.3s ease;
+}
+
+.item {
+  position: relative;
+  padding: 10px 0; /* Aggiungi spazio sopra e sotto */
+}
+
+.item::before {
+  content: "";
+  position: absolute;
+  bottom: 5%;
+  left: 0%;
+  width: 100%; /* Modifica la lunghezza desiderata, ad esempio 70% */
+  height: 2px;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.item a {
+  color: white;
+  text-decoration: none;
+  margin-bottom: 0.5rem;
+  text-align: start;
+}
+
+.sub-menu-list {
+  list-style: none;
+  padding-left: 0;
+  margin-left: 20%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  position: relative;
+}
+
+
+
