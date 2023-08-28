@@ -1,8 +1,9 @@
 import "./App.css";
-import Card from "./components/Card";
+import Delimiter from "./components/Delimiter";
 import Footer from "./components/Footer";
 import Header from "./components/Header";
 import Intro from "./components/Intro";
+import Form from "./components/Form";
 
 const App = () => {
 
@@ -10,7 +11,13 @@ const App = () => {
     <div className="sfondo">
       <Header/>
       <Intro/>
-    
+      <Delimiter/>
+      <Form/>
+      <Delimiter/>
+
+      <Delimiter/>
+      
+      <Delimiter/>
 
       <Footer/>
     </div>

@@ -8,6 +8,7 @@
   align-items: center;
   border-bottom: 3px solid rgb(199, 171, 43);
   box-shadow: 10px 10px 25px rgba(0, 0, 0, 0.4);
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
