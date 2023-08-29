@@ -8,11 +8,13 @@ interface propsContainer {
 
 const ContainerCards: React.FC<propsContainer> = ({ title, components }) => {
 
-    return (<> <h1 className={classes["title"]}>{title}</h1>
-        <div className={classes["container"]}>
-
-            {components.map(component => <Card title={component.title} imageSrc={component.imageSrc} />)}
-        </div></>
+    return (
+        <>
+            <h1 className={classes["title"]}>{title}</h1>
+            <div className={classes["container"]}>
+                {components.map(component => <Card title={component.title} imageSrc={component.imageSrc} />)}
+            </div>
+        </>
     );
 };
 
