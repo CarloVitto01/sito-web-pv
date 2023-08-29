@@ -1,30 +1,36 @@
 .form {
-    display: flex;
-    justify-content: center;
+  display: flex;
 }
 
 .container-form {
-    display: flex;
-    justify-content: space-between;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
 }
 
 .credentials {
-    display: flex;
-    flex-direction: column;
-    padding: 0 80px 0 80px;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
 }
 
-.credential{
-    padding: 0 0 25px 0;
+.credential {
+  padding: 0 0 25px 0;
+  margin-left: 50px;
+  margin-right: 50px;
 }
 
 .voice {
-    font-size: 155%;
-    color: rgb(199, 171, 43);
+  font-size: 155%;
+  color: rgb(199, 171, 43);
+  margin-right: 20px;
 }
 
 .voice-input {
-    border: none;
-    background-color: transparent;
-    border-bottom: 0.5px solid gray;
+  border: none;
+  background-color: transparent;
+  border-bottom: 0.5px solid gray;
+  font-size: 22px;
+  width: 300px;
 }

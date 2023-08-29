@@ -6,20 +6,15 @@ import Intro from "./components/Intro";
 import Form from "./components/Form";
 
 const App = () => {
-
   return (
-    <div className="sfondo">
-      <Header/>
-      <Intro/>
-      <Delimiter/>
-      <Form/>
-      <Delimiter/>
-
-      <Delimiter/>
-      
-      <Delimiter/>
-
-      <Footer/>
+    <div>
+      <Header />
+      <Intro />
+      <Delimiter>
+        <Form />
+      </Delimiter>
+      <Delimiter>{/* COMING SOON*/}</Delimiter>
+      <Footer />
     </div>
   );
 };
