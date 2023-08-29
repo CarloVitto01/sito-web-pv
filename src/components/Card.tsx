@@ -1,36 +1,17 @@
-import classes from "./Card.module.css";
-import { Link } from "react-router-dom";
-const parse = require("html-react-parser");
 
-const Card: React.FC<{
-  title: string;
-  subtitle: string;
-  img: string;
-  text: string;
-}> = (props) => {
+import classes from "./Card.module.css";
+
+const Card = ({imageSrc, title}: any) => {
   return (
     <div className={classes["rectangle"]}>
-      <Link to={props.title.toLowerCase() } className={classes['noUnderline']}>
-        {/*GRAFICA*/}
-        <div>
-          <p className={classes["titoloRiquadri"]}>{props.title}</p>
-        </div>
-        <div className={classes["immagineRiquadri"]}>
-          <img
-            src={props.img}
-            alt="logo_grafica"
-            className={classes["logoRiquadri"]}
-          />
-        </div>
-        <div className={classes["sottoTitoloRiquadro"]}>
-          <p className={classes["sottoTitolo"]}>{props.subtitle}</p>
-        </div>
-        <div className={classes["testoRiquadri"]}>
-          <p className={classes["testo"]}>{parse(props.text)}</p>
-        </div>
-      </Link>
+      <div className={classes["box-img"]}>
+          <img src={imageSrc} alt={title} className={classes["img"]}/>
+      </div>
+      <div className={classes["box-title"]}>
+        <p className={classes["title"]}>{title}</p>
+      </div>
     </div>
   );
-};
+}
 
 export default Card;
