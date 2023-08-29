@@ -8,7 +8,7 @@ const Intro = () => {
         In questa pagina potrai ordinare la stampa del tuo documento, inserisci
         le caratteristiche disponibili nelle varie sezioni per poter avere dei
         documenti cartacei di qualità. <br />
-        Photo and Vision utilizza una carta da 80gr in formato A4. <br />
+        Photo and Vision utilizza una carta da 80 gr/m² in formato A4. <br />
         Le opzioni di pagamento saranno fornite una volta che avrai confermato
         il tuo ordine.
       </p>
