@@ -41,9 +41,9 @@
     align-items: center;
 }
 
-input[type="number"] {
+.number {
     width: 40px;
-    border: none;
+    border: transparent;
     border-bottom: 1px solid gray;
     background-color: transparent;
     margin-left: 10%;

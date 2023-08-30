@@ -65,6 +65,7 @@ const IntervalloPagine = () => {
                                 inputMode="numeric"
                                 value={numeriDa}
                                 onChange={handleNumeriDaChange}
+                                className={classes["number"]}
                             />
                         </div>
                         <div className={classes["inputRowDivS"]}>
@@ -75,6 +76,7 @@ const IntervalloPagine = () => {
                                 inputMode="numeric"
                                 value={numeriA}
                                 onChange={handleNumeriAChange}
+                                className={classes["number"]}
                             />
                         </div>
                     </div>

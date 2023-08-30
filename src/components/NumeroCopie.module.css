@@ -1,0 +1,29 @@
+.copy-number{
+    display: flex;
+    justify-content: center;
+}
+
+.container{
+    display: flex;
+    align-items: center;
+    width: 100%;
+    justify-content: center;
+}
+
+.title {
+    font-size: 150%;
+    font-family: Oswald;
+    color: rgb(199, 171, 43);
+    margin: 0%;
+    margin-right: 3%;
+}
+
+.number{
+    display: flex;
+    justify-content: start;
+    flex-direction: row;
+    border: none;
+    border-bottom: 2px solid gray;
+    background-color: transparent;
+    width: 5%;
+}
