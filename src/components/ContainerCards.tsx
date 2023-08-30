@@ -12,7 +12,7 @@ const ContainerCards: React.FC<propsContainer> = ({ title, components }) => {
         <>
             <h1 className={classes["title"]}>{title}</h1>
             <div className={classes["container"]}>
-                {components.map(component => <Card title={component.title} imageSrc={component.imageSrc} />)}
+                {components.map(component => <Card key={Math.round(Math.random()*1000)} title={component.title} imageSrc={component.imageSrc} />)}
             </div>
         </>
     );

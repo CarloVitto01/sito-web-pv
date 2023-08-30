@@ -14,6 +14,14 @@ const Input = () => {
   const [file, setFile] = useState<any>();
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
+  const [newPage, setNewPage] = useState<number>(0);
+
+  const handleKeyPress = (e: any) => {
+    if(e.key === "enter"){
+      setPageNumber(newPage);
+      console.log("Enter");
+    }
+  }
 
   function onDocumentLoadSuccess({ numPages }: { numPages: number }): void {
     setNumPages(numPages);
@@ -66,10 +74,20 @@ const Input = () => {
               </div>
             </Document>
             <div>
-              <p className={classes["pagesText"]}>
-                Pagina {pageNumber || (numPages ? 1 : "--")} di{" "}
-                {numPages || "--"}
-              </p>
+              <div className={classes["pages-container"]}>
+                <p className={classes["pagesText"]}>
+                  Pagina {pageNumber || (numPages ? 1 : "--")} di{" "}
+                  {numPages || "--"}
+                </p>
+                <div className={classes["select-page"]}>
+                <p style={{whiteSpace: "nowrap"}}>Vai a pagina: </p>
+                <input
+                  type="number"
+                  onChange={(e)=>setNewPage(parseInt(e.target.value))}
+                  onKeyDown={handleKeyPress}
+                />
+                </div>
+              </div>
               <div className={classes["buttonsContainer"]}>
                 <button
                   className={classes["buttonPage"]}

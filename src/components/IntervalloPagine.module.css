@@ -1,0 +1,69 @@
+.page-range {
+    display: flex;
+    justify-content: center;
+}
+
+.title {
+    font-size: 150%;
+    font-family: Oswald;
+    color: rgb(199, 171, 43);
+    margin: 0%;
+    margin-right: 3%;
+}
+
+.options {
+    display: flex;
+    justify-content: start;
+    margin: 0%;
+}
+
+.container-text {
+    display: flex;
+    align-items: center;
+}
+
+.text {
+    font-size: 150%;
+    margin: 0%;
+    font-family: Oswald;
+}
+
+.text-page {
+    font-size: 120%;
+    margin: 0%;
+    text-align: center;
+    font-family: Oswald;
+}
+
+.inputRowDivS{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+input[type="number"] {
+    width: 40px;
+    border: none;
+    border-bottom: 1px solid gray;
+    background-color: transparent;
+    margin-left: 10%;
+
+}
+
+.options input[type="radio"] {
+    display: none;
+}
+
+.pallino {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border: 2px solid rgb(199, 171, 43);
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.options input[type="radio"]:checked+label .pallino {
+    background-color: rgb(199, 171, 43);
+    border-color: rgb(199, 171, 43);
+}

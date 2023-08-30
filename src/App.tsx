@@ -6,6 +6,8 @@ import Intro from "./components/Intro";
 import Form from "./components/Form";
 import Input from "./components/Input";
 import ContainerCards from "./components/ContainerCards";
+import IntervalloPagine from "./components/IntervalloPagine";
+import SingleDelimiter from "./components/SingleDelimiter";
 
 const App = () => {
   return (
@@ -16,7 +18,7 @@ const App = () => {
         <Form />
       </Delimiter>
       <Input />
-      <Delimiter>
+        <SingleDelimiter />
         <ContainerCards
           title="Colore:"
           components={[
@@ -27,8 +29,7 @@ const App = () => {
             { title: "Colore", imageSrc: require("./assets/Colore.jpg") },
           ]}
         />
-      </Delimiter>
-      <Delimiter>
+      <SingleDelimiter />
         <ContainerCards
           title="Gestione pagina:"
           components={[
@@ -39,8 +40,7 @@ const App = () => {
             { title: "Fronte", imageSrc: require("./assets/Fronte.png") },
           ]}
         />
-      </Delimiter>
-      <Delimiter>
+        <SingleDelimiter />
         <ContainerCards
           title="Layout:"
           components={[
@@ -59,8 +59,7 @@ const App = () => {
             },
           ]}
         />
-      </Delimiter>
-      <Delimiter>
+      <SingleDelimiter/>
         <ContainerCards
           title="Rilegatura:"
           components={[
@@ -73,7 +72,9 @@ const App = () => {
             { title: "Nessuna", imageSrc: require("./assets/Nessuna.jpg") },
           ]}
         />
-      </Delimiter>
+
+      <SingleDelimiter/>
+        <IntervalloPagine />
       <Footer />
     </div>
   );
