@@ -15,9 +15,7 @@ const App = () => {
       <Delimiter>
         <Form />
       </Delimiter>
-
       <Input />
-
       <Delimiter>
         <ContainerCards
           title="Colore:"
