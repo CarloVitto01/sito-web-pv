@@ -1,0 +1,30 @@
+.container {
+    top: 0;
+    left: 0;
+    width: 400px;
+    height: 526px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .text {
+    margin: 0;
+    text-align: center;
+  }
+  
+  .spinner {
+    animation: spin 2s linear infinite;
+    font-size: 48px; 
+    color: rgb(199, 171, 43);
+  }
+  
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+  
