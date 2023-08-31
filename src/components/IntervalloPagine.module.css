@@ -13,7 +13,7 @@
 
 .options {
     display: flex;
-    justify-content: start;
+    justify-content: flex-start;
     margin: 0%;
 }
 
@@ -35,7 +35,7 @@
     font-family: Oswald;
 }
 
-.inputRowDivS{
+.inputRowDivS {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -47,7 +47,9 @@
     border-bottom: 1px solid gray;
     background-color: transparent;
     margin-left: 10%;
-
+    font-size: 100%;
+    font-family: Oswald;
+    text-align: left
 }
 
 .options input[type="radio"] {
@@ -66,4 +68,24 @@
 .options input[type="radio"]:checked+label .pallino {
     background-color: rgb(199, 171, 43);
     border-color: rgb(199, 171, 43);
+}
+
+@media screen and (max-width:500px) {
+
+
+    .title {
+        font-size: 120%;
+    }
+
+
+
+    .text {
+        font-size: 120%;
+    }
+
+    .text-page {
+        font-size: 100%;
+    }
+
+
 }

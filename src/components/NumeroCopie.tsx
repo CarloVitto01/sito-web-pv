@@ -5,7 +5,7 @@ const NumeroCopie = () => {
         <div className={classes["copy-number"]}>
             <div className={classes["container"]}>
                 <p className={classes["title"]}>Numero Copie:</p>
-                <input type="number" value="Numero copie" className={classes["number"]}/>
+                <input type="number" className={classes["number"]}/>
             </div>
         </div>
     );

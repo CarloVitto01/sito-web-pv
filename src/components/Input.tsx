@@ -1,7 +1,7 @@
 import { useDropzone } from "react-dropzone";
 import classes from "./Input.module.css";
 import { Document, Page } from "react-pdf";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { pdfjs } from "react-pdf";
 import Loading from "./Loading";
 
@@ -16,10 +16,21 @@ const Input = () => {
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [newPage, setNewPage] = useState<number>(0);
 
-  const handleKeyPress = (e: any) => {
-    if(e.key === "enter"){
+  useEffect(() => {
+    if(!newPage){
+      setNewPage(1);
+    }
+    const timerId = setTimeout(() => {
       setPageNumber(newPage);
-      console.log("Enter");
+    }, 0);
+
+    return () => clearTimeout(timerId);
+  }, [newPage]);
+
+  const handleKeyPress = (e: any) => {
+    console.log(e.key);
+    if (e.key === 'Enter') {
+      setPageNumber(newPage);
     }
   }
 
@@ -44,11 +55,13 @@ const Input = () => {
     },
   });
 
+  const width = window.innerWidth;
+
   return (
     <div className={classes["container"]}>
       <div {...getRootProps({ className: "dropzone" })}>
         <input {...getInputProps()} />
-        <p className={classes["text"]}>Inserisci il file qui</p>
+        <p className={classes["text"]}>Inserisci il file PDF qui</p>
       </div>
       <div>
         {file && (
@@ -63,12 +76,13 @@ const Input = () => {
               <div>
                 <Page
                   pageNumber={pageNumber}
-                  height={600}
-                  width={400}
+                  height={width <= 500 ? 50 : 600}
+                  width={width <= 500 ? 150 : 400}
                   renderAnnotationLayer={false}
                   renderTextLayer={false}
                   className={classes["pdfPage"]}
                   loading={<Loading />}
+                  error={<p style={{whiteSpace: "nowrap"}}>Pagina non disponible</p>}
                   canvasBackground="white"
                 />
               </div>
@@ -80,17 +94,17 @@ const Input = () => {
                   {numPages || "--"}
                 </p>
                 <div className={classes["select-page"]}>
-                <p style={{whiteSpace: "nowrap"}}>Vai a pagina: </p>
-                <input
-                  type="number"
-                  onChange={(e)=>setNewPage(parseInt(e.target.value))}
-                  onKeyDown={handleKeyPress}
-                />
+                  <p style={{ whiteSpace: "nowrap" }}>Vai a pagina: </p>
+                  <input
+                    className={classes["numberInput"]}
+                    type="number"
+                    onChange={(e) => setNewPage(parseInt(e.target.value))}
+                    onKeyDown={handleKeyPress}
+                  />
                 </div>
               </div>
               <div className={classes["buttonsContainer"]}>
                 <button
-                  className={classes["buttonPage"]}
                   type="button"
                   disabled={pageNumber <= 1}
                   onClick={() => changePage(-1)}
@@ -98,7 +112,6 @@ const Input = () => {
                   {"<"}
                 </button>
                 <button
-                  className={classes["buttonPage"]}
                   type="button"
                   disabled={pageNumber >= numPages}
                   onClick={() => changePage(1)}

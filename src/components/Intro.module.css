@@ -1,4 +1,4 @@
-.title{
+.title {
     color: rgb(199, 171, 43);
     font-weight: normal;
     font-size: 250%;
@@ -8,7 +8,7 @@
     font-family: Oswald;
 }
 
-.text{
+.text {
     margin-left: 10%;
     margin-right: 10%;
     font-size: 155%;
@@ -18,4 +18,16 @@
     justify-content: center;
     text-align: center;
     font-family: "Oswald";
+}
+
+@media screen and (max-width: 500px) {
+    .title {
+        font-size: 130%;
+        font-weight: bold;
+        margin-top: 27%;
+    }
+
+    .text {
+        font-size: 85%;
+    }
 }

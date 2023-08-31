@@ -1,9 +1,9 @@
-.copy-number{
+.copy-number {
     display: flex;
     justify-content: center;
 }
 
-.container{
+.container {
     display: flex;
     align-items: center;
     width: 100%;
@@ -18,12 +18,20 @@
     margin-right: 3%;
 }
 
-.number{
+.number {
     display: flex;
-    justify-content: start;
+    justify-content: flex-start;
     flex-direction: row;
     border: none;
     border-bottom: 2px solid gray;
     background-color: transparent;
     width: 5%;
+    font-size: 110%;
+}
+
+@media screen and (max-width: 500px) {
+    .title {
+        font-size: 120%;
+    }
+
 }

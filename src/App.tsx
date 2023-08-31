@@ -9,10 +9,11 @@ import ContainerCards from "./components/ContainerCards";
 import IntervalloPagine from "./components/IntervalloPagine";
 import SingleDelimiter from "./components/SingleDelimiter";
 import NumeroCopie from "./components/NumeroCopie";
+import Modal from "./components/Modal";
 
 const App = () => {
   return (
-    <div>
+    <div className="container">
       <Header />
       <Intro />
       <Delimiter>
@@ -78,8 +79,8 @@ const App = () => {
       <IntervalloPagine />
       <SingleDelimiter />
       <NumeroCopie />
-      
       <SingleDelimiter />
+      <Modal />
       <Footer />
     </div>
   );

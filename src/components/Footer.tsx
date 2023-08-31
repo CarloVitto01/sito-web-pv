@@ -10,7 +10,6 @@ const Footer = () => {
       <div className={classes["title-Footer"]}>
         <h2>Per maggiori informazioni contattaci:</h2>
       </div>
-      {/*FOOTER*/}
       <div className={classes["container-info"]}>
         <div className={classes["section"]}>
           <img src={Logo_mail} alt="Logo1" className={classes["footer-logo"]} />

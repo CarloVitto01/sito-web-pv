@@ -14,7 +14,6 @@
 
 .title-Footer {
   flex-direction: row;
-  flex: 1;
 }
 
 .container-info {
@@ -46,4 +45,24 @@
   justify-content: center;
   margin-left: 10px;
   /* Aggiungi margine per separare l'immagine dal testo */
+}
+
+@media screen and (max-width:500px) {
+  
+  .title-Footer h2{
+    font-size: 100%;
+  }
+  
+  .container-info {
+    flex-direction: column;
+  }
+  
+  .footer-logo {
+    width: 4%;
+  }
+  
+  .footer-text {
+    font-size: 70%;
+  }
+  
 }

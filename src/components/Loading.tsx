@@ -1,4 +1,3 @@
-import React from "react";
 import classes from "./Loading.module.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";

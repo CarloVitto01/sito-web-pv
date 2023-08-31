@@ -1,13 +1,13 @@
-.rectangle{
+.rectangle {
     display: flex;
     flex-direction: column;
     align-items: center;
     width: 20%;
-    height: 320px;
+    height: 40vh;
     padding: 10px;
 }
 
-.box-img{
+.box-img {
     border: 3px solid rgb(199, 171, 43);
     background-color: white;
     border-radius: 15px;
@@ -16,15 +16,35 @@
     margin-top: 3%;
     cursor: pointer;
 }
+
 .img {
     max-width: 85%;
     height: auto;
     padding: 10%;
 }
 
-.title{
+.title {
     font-size: 150%;
     font-family: Oswald;
     color: black;
     text-align: center;
+}
+
+@media screen and (max-width: 500px) {
+    .rectangle {
+        margin: 0%;
+        width: 60%;
+        height: 25vh;
+        padding: 0%;
+    }
+
+    .img {
+        max-width: 100%;
+        overflow: hidden;
+    }
+
+    .title {
+        font-size: 120%;
+    }
+
 }

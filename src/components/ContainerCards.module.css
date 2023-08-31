@@ -1,17 +1,53 @@
-.title{
+.container-cards {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+  }
+  
+  .title {
     text-align: center;
     font-size: 200%;
     font-weight: normal;
     font-family: Oswald;
     color: rgb(199, 171, 43);
-}
-
-.container {
+  }
+  
+  .container {
     display: flex;
     flex-direction: row;
     justify-content: center;
     align-items: center;
     gap: 9%;
     margin-left: 10%;
-    margin-right: 10%
-}
+    margin-right: 10%;
+  }
+  
+  .container-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  @media screen and (max-width: 500px) {
+    .title {
+      font-size: 170%;
+    }
+    
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr; 
+      grid-column-gap: 2px;
+      grid-row-gap: 2px;
+      justify-items: center;
+      align-items: flex-start;
+    }
+  
+    .container-item {
+        min-width: 150px;
+        min-height: 150px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+  

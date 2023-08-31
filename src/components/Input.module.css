@@ -24,8 +24,10 @@
   
   
 .pdfPage {
+    display: flex;
+  justify-content: center;
+  align-items: center;
     margin: 0 auto; 
-    display: block;
     border: 2px solid rgb(199, 171, 43);
     border-radius: 10px;
     padding: 10px;
@@ -38,7 +40,7 @@
 
 .select-page {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     flex-direction: row;
 }
@@ -52,11 +54,74 @@
     align-items: center;
 }
 
-.buttonPage{
+.buttonsContainer button {
+    cursor: pointer;
     border: none;
     background-color: rgb(199, 171, 43);
     font-size: 30px;
     color: white;
     border: 2px solid white;
 }
+
+.buttonsContainer button:disabled {
+    background-color: gray;
+    color: white;
+  }
+
   
+.numberInput {
+    display: flex;
+    width: 20%;
+    margin-left: 5%;
+}
+
+@media screen and (max-width: 500px) {
+
+.text {
+    font-size: 105%;
+}
+
+.pages-container {
+    display: flex;
+    justify-content: space-between;
+    flex-direction: column;
+}
+
+.select-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: row;
+}
+.pagesText {
+    text-align: center;
+    font-size: 80%;
+}
+
+.buttonsContainer{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.buttonsContainer button {
+    cursor: pointer;
+    border: none;
+    background-color: rgb(199, 171, 43);
+    font-size: 30px;
+    color: white;
+    border: 2px solid white;
+}
+
+.buttonsContainer button:disabled {
+    background-color: gray;
+    color: white;
+  }
+
+  
+.numberInput {
+    display: flex;
+    width: 20%;
+    margin-left: 5%;
+}
+}

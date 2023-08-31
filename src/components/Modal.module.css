@@ -1,0 +1,74 @@
+.modal {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    margin-bottom: 2%;
+}
+
+.container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    border: 2px solid rgb(199, 171, 43);
+    border-radius: 10px;
+    padding: 1px;
+    background-color: white;
+    justify-content: center;
+    width: 60%;
+    max-width: 500px;
+}
+
+.text {
+    font-size: 150%;
+    font-family: Oswald;
+    color: rgb(199, 171, 43);
+}
+
+.total-order {
+    font-size: 150%;
+    font-family: Oswald;
+    margin-left: 3%;
+}
+
+.order-container {
+    display: flex;
+    flex-direction: row;
+    margin-right: 5%;
+}
+
+.order-container p {
+    white-space: nowrap;
+}
+
+.button-container button {
+    border: none;
+    background-color: transparent;
+    font-size: 150%;
+    font-family: Oswald;
+    color: rgb(199, 171, 43);
+    font-weight: bold;
+}
+
+@media screen and (max-width:500px) {
+
+    .container {
+        width: 95%;
+    }
+
+    .text {
+        font-size: 90%;
+    }
+
+    .total-order {
+        font-size: 90%;
+    }
+
+    .order-container {
+        margin-right: 15%;
+    }
+
+    .button-container button {
+        font-size: 90%;
+    }
+
+}
