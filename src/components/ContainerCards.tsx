@@ -6,13 +6,20 @@ interface propsContainer {
   title: string;
   components: any[];
   defaultValue: string;
+  onSendData: (value: string) => void;
 }
 
-const ContainerCards: React.FC<propsContainer> = ({ title, components, defaultValue }) => {
+const ContainerCards: React.FC<propsContainer> = ({
+  title,
+  components,
+  defaultValue,
+  onSendData,
+}) => {
   const [selectedCard, setSelectedCard] = useState<string>(defaultValue);
 
   const handleCardClick = (title: string) => {
     setSelectedCard(title);
+    onSendData(title);
   };
 
   return (
@@ -21,7 +28,7 @@ const ContainerCards: React.FC<propsContainer> = ({ title, components, defaultVa
       <div className={classes["container"]}>
         {components.map((component) => (
           <Card
-            key={Math.round(Math.random() * 1000)}
+            key={component.title}
             title={component.title}
             imageSrc={component.imageSrc}
             isSelected={selectedCard === component.title}
