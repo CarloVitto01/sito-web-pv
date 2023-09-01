@@ -1,22 +1,24 @@
 .modal {
+    position: sticky;
+    bottom: 0;
     display: flex;
     flex-direction: row;
-    justify-content: center;
-    margin-bottom: 2%;
+    justify-content: flex-end; /* Posiziona tutto a destra */
+    margin-bottom: 3vh;
+    margin-right: 3vh; /* Ancora il riquadro al bordo destro */
 }
-
 .container {
     display: flex;
     flex-direction: column;
     align-items: center;
     border: 2px solid rgb(199, 171, 43);
     border-radius: 10px;
-    padding: 2px;
+    padding: 0.5vw;
     background-color: white;
     justify-content: center;
-    width: 50%;
+    width: 40vw;
+    margin-bottom: 2vh;
 }
-
 
 .container header {
     display: flex;
@@ -26,9 +28,7 @@
 }
 
 .container img {
-    width: 20px;
-    height: 20px;
-
+    width: 1.3vw;
 }
 
 .inner-container {
@@ -36,29 +36,25 @@
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    margin-bottom: 3%;
+    margin-bottom: 1.3vw;
 }
 
 .text {
     font-size: 2.3vw;
-    font-family: Oswald;
     color: rgb(199, 171, 43);
-    margin: 0%;
-    margin-left: 7%;
+    margin: 0;
 }
 
 .total-order {
     font-size: 2.3vw;
-    font-family: Oswald;
-    margin: 0%;
-    margin-left: 3%;
-
+    margin: 0;
+    margin-left: 0.5vw;
 }
 
 .order-container {
     display: flex;
     flex-direction: row;
-    margin-right: 13%;
+    margin-right: 2.5vw;
 }
 
 .order-container p {
@@ -73,48 +69,59 @@
 
 .text-container p {
     text-align: center;
-    width: 80%;
+    width: 30vw;
     margin: 0;
-    margin-bottom: 4%;
+    margin-bottom: 2vh;
     font-size: 2vh;
 }
-
-
 
 .button-container button {
     border: none;
     background-color: transparent;
-    font-size: 150%;
-    font-family: Oswald;
+    font-size: 2vw;
     color: rgb(199, 171, 43);
     font-weight: bold;
 }
 
 @media screen and (max-width:500px) {
 
+    .modal{
+        margin-bottom: 2vh;
+    }
+
     .container {
-        width: 95%;
+        width: 90vw;
+        margin-bottom: 1vh;
     }
 
     .text {
-        font-size: 90%;
+        font-size: 4.5vw;
     }
 
     .total-order {
-        font-size: 90%;
+        font-size: 4.5vw;
     }
 
     .order-container {
-        margin-right: 15%;
+        margin-right: 5vw;
     }
 
     .button-container button {
-        font-size: 90%;
+        font-size: 4vw;
     }
 
     .container img {
-        width: 18px;
-        height: 18px;
+        width: 4vw;
     }
 
+    .inner-container {
+        margin-bottom: 2.8vw;
+    }
+
+    .text-container p {
+        width: 80vw;
+        margin: 0;
+        margin-bottom: 2vh;
+        font-size: 1.7vh;
+    }
 }

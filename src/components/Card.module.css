@@ -18,13 +18,16 @@
 
 .selected {
     border: 6px solid rgb(199, 171, 43);
-  }
-
+}
 
 .img {
     max-width: 13vw;
     height: auto;
     padding: 1.2vw;
+}
+
+.img:hover {
+    max-width: 15vw;
 }
 
 .title {
@@ -41,8 +44,11 @@
     }
 
     .img {
-        max-width: 100%;
-        overflow: hidden;
+        max-width: 30vw;
+    }
+
+    .img:hover {
+        max-width: 30vw;
     }
 
     .title {

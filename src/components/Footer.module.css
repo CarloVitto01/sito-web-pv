@@ -1,7 +1,7 @@
 .footer {
   background-color: white;
-  flex-direction: column;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   border-top: 3px solid rgb(199, 171, 43);

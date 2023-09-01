@@ -11,7 +11,7 @@ interface CardProps {
 const Card: React.FC<CardProps> = ({imageSrc, title, isSelected, onClick}: any) => {
 
   return (
-    <div className={classes["rectangle"]}>
+    <div className={classes["rectangle"]} tabIndex={1}>
       <div className={`${classes["box-img"]} ${isSelected ? classes["selected"] : ""}`} onClick={onClick}>
           <img src={imageSrc} alt={title} className={classes["img"]}/>
       </div>

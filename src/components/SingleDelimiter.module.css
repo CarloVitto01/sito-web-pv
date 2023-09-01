@@ -8,5 +8,6 @@
 .line-delimiter {
     border: 1px solid rgb(199, 171, 43);
     width: 80vw;
+    border-radius: 50px;
 }
 
