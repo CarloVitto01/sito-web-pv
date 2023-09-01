@@ -1,5 +1,4 @@
 import "./App.css";
-import Delimiter from "./components/Delimiter";
 import Footer from "./components/Footer";
 import Header from "./components/Header";
 import Intro from "./components/Intro";
@@ -16,9 +15,9 @@ const App = () => {
     <div className="container">
       <Header />
       <Intro />
-      <Delimiter>
+      <SingleDelimiter />
         <Form />
-      </Delimiter>
+      <SingleDelimiter />
       <Input />
       <SingleDelimiter />
       <ContainerCards
