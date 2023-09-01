@@ -1,7 +1,7 @@
 import classes from "./Modal.module.css"
 import { useState } from "react";
 
-const Modal = () => {
+const Modal: React.FC<{totalOrder : string}>= ({totalOrder}) => {
 
     const [isShowing, setIsShowing] = useState<boolean>(false);
 
@@ -17,7 +17,7 @@ const Modal = () => {
                 <div className={classes["inner-container"]}>
                     <div className={classes["order-container"]}>
                         <p className={classes["text"]}>Totale ordine:</p>
-                        <p className={classes["total-order"]}>€ 000.00</p>
+                        <p className={classes["total-order"]}>€ {totalOrder}</p>
                     </div>
                     <div className={classes["button-container"]}>
                         <button>CONFERMA</button>

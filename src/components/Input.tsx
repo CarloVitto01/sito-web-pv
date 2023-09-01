@@ -10,7 +10,11 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url
 ).toString();
 
-const Input = () => {
+interface propsContainer{
+  onSendData: (value: number) => void; 
+}
+
+const Input : React.FC<propsContainer> = ({onSendData}) => {
   const [file, setFile] = useState<any>();
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
@@ -37,6 +41,7 @@ const Input = () => {
   function onDocumentLoadSuccess({ numPages }: { numPages: number }): void {
     setNumPages(numPages);
     setPageNumber(1);
+    onSendData(numPages);
   }
 
   async function changePage(offset: number) {

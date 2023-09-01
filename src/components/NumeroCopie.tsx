@@ -1,14 +1,38 @@
 import classes from "./NumeroCopie.module.css";
+import { useState, useEffect } from "react";
 
-const NumeroCopie = () => {
-    return(
-        <div className={classes["copy-number"]}>
-            <div className={classes["container"]}>
-                <p className={classes["title"]}>Numero Copie:</p>
-                <input type="number" className={classes["number"]}/>
-            </div>
-        </div>
-    );
+interface propsContainer {
+  onSendData: (value: number) => void;
+}
+const NumeroCopie: React.FC<propsContainer> = ({ onSendData }) => {
+  const [copies, setCopies] = useState<number>(1);
+
+  useEffect(() => {
+    onSendData(copies);
+  }, [onSendData, copies]);
+
+  const copiesHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    const num = parseInt(value);
+    if (!isNaN(num)) {
+      setCopies(num);
+    }
+  };
+
+  return (
+    <div className={classes["copy-number"]}>
+      <div className={classes["container"]}>
+        <p className={classes["title"]}>Numero Copie:</p>
+        <input
+          type="number"
+          className={classes["number"]}
+          onChange={copiesHandler}
+          value={copies}
+          min={1}
+        />
+      </div>
+    </div>
+  );
 };
 
 export default NumeroCopie;
