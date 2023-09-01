@@ -30,6 +30,7 @@ const App = () => {
           },
           { title: "Colore", imageSrc: require("./assets/Colore.jpg") },
         ]}
+        defaultValue="Bianco e nero"
       />
       <SingleDelimiter />
       <ContainerCards
@@ -41,6 +42,7 @@ const App = () => {
           },
           { title: "Fronte", imageSrc: require("./assets/Fronte.png") },
         ]}
+        defaultValue="Fronte-retro"
       />
       <SingleDelimiter />
       <ContainerCards
@@ -60,6 +62,7 @@ const App = () => {
             imageSrc: require("./assets/2in1Verticale.jpg"),
           },
         ]}
+        defaultValue="Verticale"
       />
       <SingleDelimiter />
       <ContainerCards
@@ -73,6 +76,7 @@ const App = () => {
           },
           { title: "Nessuna", imageSrc: require("./assets/Nessuna.jpg") },
         ]}
+        defaultValue="Anelli"
       />
 
       <SingleDelimiter />

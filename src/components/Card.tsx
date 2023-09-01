@@ -1,10 +1,18 @@
 
 import classes from "./Card.module.css";
 
-const Card = ({imageSrc, title}: any) => {
+interface CardProps {
+  title: string;
+  imageSrc: string;
+  isSelected: boolean;
+  onClick: () => void;
+}
+
+const Card: React.FC<CardProps> = ({imageSrc, title, isSelected, onClick}: any) => {
+
   return (
     <div className={classes["rectangle"]}>
-      <div className={classes["box-img"]}>
+      <div className={`${classes["box-img"]} ${isSelected ? classes["selected"] : ""}`} onClick={onClick}>
           <img src={imageSrc} alt={title} className={classes["img"]}/>
       </div>
       <div className={classes["box-title"]}>

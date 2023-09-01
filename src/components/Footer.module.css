@@ -18,32 +18,32 @@
 
 .container-info {
   display: flex;
+  width: 100%;
   justify-content: space-between;
   width: auto;
-  margin-bottom: 1%;
+  margin: 1vw;
 }
 
 .section{
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 1vw;
 }
 
 .footer-logo {
-  width: 7%;
-  max-width: 100px;
-  padding: 1%;
+  width: 2vw;
+  padding: 0.2vw;
 }
 
 .footer-text {
-  font-size: 15px;
-  font-family: "Roboto", sans-serif;
+  font-size: 1.3vw;
   color: black;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  margin-left: 10px;
+  margin: 0;
   /* Aggiungi margine per separare l'immagine dal testo */
 }
 
@@ -58,11 +58,12 @@
   }
   
   .footer-logo {
-    width: 4%;
+    width: 5vw;
   }
   
   .footer-text {
-    font-size: 70%;
+    margin: 1.5vw; 
+    font-size: 3vw;
   }
   
 }

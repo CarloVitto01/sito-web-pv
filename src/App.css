@@ -7,3 +7,10 @@ body {
   background-attachment: fixed;
   padding: 0;
 }
+
+@media screen and (max-width: 500px){
+  body {
+    background-image: url("./assets/Sfondo_Mobile.png");
+  }
+}
+

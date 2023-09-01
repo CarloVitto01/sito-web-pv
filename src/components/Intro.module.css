@@ -1,33 +1,44 @@
+.container {
+    width: 100vw;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+}
+
 .title {
     color: rgb(199, 171, 43);
     font-weight: normal;
-    font-size: 250%;
+    font-size: 5vw;
     display: flex;
     justify-content: center;
-    margin-top: 6%;
-    font-family: Oswald;
+    margin-top: 12vh;
 }
 
 .text {
-    margin-left: 10%;
-    margin-right: 10%;
-    font-size: 155%;
-    font-weight: 500;
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
-    font-family: "Oswald";
+    width: 80vw;
+    font-size: 1.8vw;
+    font-weight: 500;
 }
 
 @media screen and (max-width: 500px) {
     .title {
-        font-size: 130%;
+        font-size: 6vw;
         font-weight: bold;
-        margin-top: 27%;
+        margin-top: 13vh;
     }
 
     .text {
-        font-size: 85%;
+        font-size: 4vw;
+    }
+}
+
+@media screen and (max-width: 900px) and (min-width: 500px) {
+    .title {
+        margin-top: 28vh;
     }
 }

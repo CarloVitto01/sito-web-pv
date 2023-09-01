@@ -2,9 +2,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 20%;
-    height: 40vh;
-    padding: 10px;
+    width: 12vw;
+    padding: 1vw;
 }
 
 .box-img {
@@ -13,20 +12,23 @@
     border-radius: 15px;
     display: flex;
     justify-content: center;
-    margin-top: 3%;
+    margin-top: 1vw;
     cursor: pointer;
 }
 
+.selected {
+    border: 6px solid rgb(199, 171, 43);
+  }
+
+
 .img {
-    max-width: 85%;
+    max-width: 13vw;
     height: auto;
-    padding: 10%;
+    padding: 1.2vw;
 }
 
 .title {
-    font-size: 150%;
-    font-family: Oswald;
-    color: black;
+    font-size: 1.9vw;
     text-align: center;
 }
 
