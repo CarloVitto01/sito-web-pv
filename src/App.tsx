@@ -50,7 +50,7 @@ const App = () => {
   const [layout, setLayout] = useState<number>(layoutEnum.VERTICALE);
   const [rilegatura, setRilegatura] = useState<number>(rilegaturaEnum.ANELLI);
   const [intervalloPagine, setIntervalloPagine] = useState<number>(1);
-  const [numerPaginePDF, setNumeroPaginePDF] = useState<number>(1);
+  const [numerPaginePDF, setNumeroPaginePDF] = useState<number>(0);
   const [numeroCopie, setNumeroCopie] = useState<number>(1);
   const [preventivo, setPreventivo] = useState<string>("0.00");
 
@@ -135,7 +135,6 @@ const App = () => {
   };
 
   useEffect(() => {
-    console.log("Here");
     const calcoloPreventivo = () => {
       let totale = 0;
       let fogli = intervalloPagine;
@@ -166,8 +165,10 @@ const App = () => {
       }
       return totale.toFixed(2);
     };
-    let total = calcoloPreventivo();
-    setPreventivo(total);
+    if(numerPaginePDF > 0){
+      let total = calcoloPreventivo();
+      setPreventivo(total);
+    }
   }, [
     inchiostro,
     pagina,
