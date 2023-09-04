@@ -17,6 +17,9 @@ const NumeroCopie: React.FC<propsContainer> = ({ onSendData }) => {
     if (!isNaN(num)) {
       setCopies(num);
     }
+    else{
+      setCopies(1);
+    }
   };
 
   return (
@@ -27,7 +30,7 @@ const NumeroCopie: React.FC<propsContainer> = ({ onSendData }) => {
           type="number"
           className={classes["number"]}
           onChange={copiesHandler}
-          value={copies}
+          defaultValue={1}
           min={1}
         />
       </div>
