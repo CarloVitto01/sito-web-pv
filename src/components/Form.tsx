@@ -16,7 +16,11 @@ const containsOnlyNumbers = (number: string) => {
   return regex.test(number);
 };
 
-const Form = () => {
+interface propsContainer {
+  onSendData: (value: any) => void;
+}
+
+const Form: React.FC<propsContainer> = ({ onSendData }) => {
   const [enteredName, setEnteredName] = useState<string>("");
   const [nameIsValid, setNameIsValid] = useState<boolean>();
   const [enteredSurname, setEnteredSurname] = useState<string>("");
@@ -27,7 +31,7 @@ const Form = () => {
     useState<string>("");
   const [telephoneNumberIsValid, setTelephoneNumberIsValid] =
     useState<boolean>();
-  const [formIsValid, setFormIsValid] = useState<boolean>();
+  const [data, setData] = useState<any>();
 
   useEffect(() => {
     if (enteredName) {
@@ -54,21 +58,36 @@ const Form = () => {
   }, [enteredTelephoneNumber]);
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      setFormIsValid(
-        nameIsValid && surnameIsValid && emailIsValid && telephoneNumberIsValid
-      );
-    }, 500);
-
-    return () => {
-      clearTimeout(timeout);
-    };
+    setData({
+      name: enteredName,
+      surname: enteredSurname,
+      email: enteredEmail,
+      telephoneNumber: enteredTelephoneNumber,
+    });
   }, [
+    enteredName,
+    enteredSurname,
+    enteredEmail,
+    enteredTelephoneNumber,
+    setData,
+  ]);
+
+  useEffect(() => {
+    if (
+      nameIsValid &&
+      surnameIsValid &&
+      emailIsValid &&
+      telephoneNumberIsValid
+    ) {
+      onSendData(data);
+    }
+  }, [
+    data,
+    onSendData,
     nameIsValid,
     surnameIsValid,
     emailIsValid,
     telephoneNumberIsValid,
-    setFormIsValid,
   ]);
 
   const nameChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -90,12 +109,12 @@ const Form = () => {
   };
 
   const validateNameHandler = (name: string) => {
-    setNameIsValid(name.trim().length > 0 && containsOnlyLetters(name));
+    setNameIsValid(name.trim().length > 0 && containsOnlyLetters(name.trim()));
   };
 
   const validateSurnameHandler = (surname: string) => {
     setSurnameIsValid(
-      surname.trim().length > 0 && containsOnlyLetters(surname)
+      surname.trim().length > 0 && containsOnlyLetters(surname.trim())
     );
   };
 
@@ -110,13 +129,8 @@ const Form = () => {
     );
   };
 
-  const submitHandler = (event: any) => {
-    event.preventDefault();
-    console.log("Submitted");
-  };
-
   return (
-    <form className={classes["form"]} onSubmit={submitHandler}>
+    <form className={classes["form"]}>
       <div className={classes["container-form"]}>
         <div className={classes["credentials"]}>
           <div
