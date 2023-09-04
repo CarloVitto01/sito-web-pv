@@ -51,11 +51,10 @@
 }
 
 @media screen and (max-width: 500px) {
-  
+
   .credentials {
     display: flex;
     flex-direction: column;
-    width: 80vw;
     justify-content: center;
   }
   
@@ -68,10 +67,10 @@
     color: rgb(199, 171, 43);
     margin-right: 1vw;
   }
-  
-  .voice-input {
+
+  .credential input {
     font-size: 4vw;
-    width: 100%;
+    width: 48vw;
   }
   
 }
