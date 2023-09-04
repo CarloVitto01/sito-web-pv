@@ -26,6 +26,7 @@
 .box-img.selected {
     border: 6px solid rgb(199, 171, 43);
     transition: border-width 0.1s;
+    margin-top: 0.5vw;
 }
 
 .img {
