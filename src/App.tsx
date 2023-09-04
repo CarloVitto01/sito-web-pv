@@ -163,9 +163,12 @@ const App = () => {
       } else if (rilegatura === rilegaturaEnum.CIAPPATURA) {
         totale += ciappatura * numeroCopie;
       }
+      if(numeroCopie === 0){
+        totale = 0;
+      }
       return totale.toFixed(2);
     };
-    if(numerPaginePDF > 0){
+    if (numerPaginePDF > 0) {
       let total = calcoloPreventivo();
       setPreventivo(total);
     }
@@ -182,80 +185,82 @@ const App = () => {
   return (
     <div className="container">
       <Header />
-      <Intro />
-      <SingleDelimiter />
-      <Form />
-      <SingleDelimiter />
-      <Input onSendData={setPagesHandler} />
-      <SingleDelimiter />
-      <ContainerCards
-        title="Colore:"
-        components={[
-          {
-            title: "Bianco e nero",
-            imageSrc: require("./assets/Bianco_e_nero.jpg"),
-          },
-          { title: "Colore", imageSrc: require("./assets/Colore.jpg") },
-        ]}
-        defaultValue="Bianco e nero"
-        onSendData={newValue}
-      />
-      <SingleDelimiter />
-      <ContainerCards
-        title="Gestione pagina:"
-        components={[
-          {
-            title: "Fronte-retro",
-            imageSrc: require("./assets/Fronte_retro.png"),
-          },
-          { title: "Fronte", imageSrc: require("./assets/Fronte.png") },
-        ]}
-        defaultValue="Fronte-retro"
-        onSendData={newValue}
-      />
-      <SingleDelimiter />
-      <ContainerCards
-        title="Layout:"
-        components={[
-          { title: "Verticale", imageSrc: require("./assets/Verticale.jpg") },
-          {
-            title: "Orizzontale",
-            imageSrc: require("./assets/Orizzontale.jpg"),
-          },
-          {
-            title: "2 pagine in 1 orizzontale",
-            imageSrc: require("./assets/2in1Orizzontale.jpg"),
-          },
-          {
-            title: "2 pagine in 1 verticale",
-            imageSrc: require("./assets/2in1Verticale.jpg"),
-          },
-        ]}
-        defaultValue="Verticale"
-        onSendData={newValue}
-      />
-      <SingleDelimiter />
-      <ContainerCards
-        title="Rilegatura:"
-        components={[
-          { title: "Anelli", imageSrc: require("./assets/Anelli.jpg") },
-          { title: "Fascetta", imageSrc: require("./assets/Fascetta.jpg") },
-          {
-            title: "Ciappatura",
-            imageSrc: require("./assets/Ciappatura.jpg"),
-          },
-          { title: "Nessuna", imageSrc: require("./assets/Nessuna.jpg") },
-        ]}
-        defaultValue="Anelli"
-        onSendData={newValue}
-      />
+      <body>
+        <Intro />
+        <SingleDelimiter />
+        <Form />
+        <SingleDelimiter />
+        <Input onSendData={setPagesHandler} />
+        <SingleDelimiter />
+        <ContainerCards
+          title="Colore:"
+          components={[
+            {
+              title: "Bianco e nero",
+              imageSrc: require("./assets/Bianco_e_nero.jpg"),
+            },
+            { title: "Colore", imageSrc: require("./assets/Colore.jpg") },
+          ]}
+          defaultValue="Bianco e nero"
+          onSendData={newValue}
+        />
+        <SingleDelimiter />
+        <ContainerCards
+          title="Gestione pagina:"
+          components={[
+            {
+              title: "Fronte-retro",
+              imageSrc: require("./assets/Fronte_retro.png"),
+            },
+            { title: "Fronte", imageSrc: require("./assets/Fronte.png") },
+          ]}
+          defaultValue="Fronte-retro"
+          onSendData={newValue}
+        />
+        <SingleDelimiter />
+        <ContainerCards
+          title="Layout:"
+          components={[
+            { title: "Verticale", imageSrc: require("./assets/Verticale.jpg") },
+            {
+              title: "Orizzontale",
+              imageSrc: require("./assets/Orizzontale.jpg"),
+            },
+            {
+              title: "2 pagine in 1 orizzontale",
+              imageSrc: require("./assets/2in1Orizzontale.jpg"),
+            },
+            {
+              title: "2 pagine in 1 verticale",
+              imageSrc: require("./assets/2in1Verticale.jpg"),
+            },
+          ]}
+          defaultValue="Verticale"
+          onSendData={newValue}
+        />
+        <SingleDelimiter />
+        <ContainerCards
+          title="Rilegatura:"
+          components={[
+            { title: "Anelli", imageSrc: require("./assets/Anelli.jpg") },
+            { title: "Fascetta", imageSrc: require("./assets/Fascetta.jpg") },
+            {
+              title: "Ciappatura",
+              imageSrc: require("./assets/Ciappatura.jpg"),
+            },
+            { title: "Nessuna", imageSrc: require("./assets/Nessuna.jpg") },
+          ]}
+          defaultValue="Anelli"
+          onSendData={newValue}
+        />
 
-      <SingleDelimiter />
-      <IntervalloPagine onSendData={setRangePagesHandler} />
-      <SingleDelimiter />
-      <NumeroCopie onSendData={setCopiesHandler} />
-      <SingleDelimiter />
-      <Modal totalOrder={preventivo} />
+        <SingleDelimiter />
+        <IntervalloPagine onSendData={setRangePagesHandler} />
+        <SingleDelimiter />
+        <NumeroCopie onSendData={setCopiesHandler} />
+        <SingleDelimiter />
+        <Modal totalOrder={preventivo} />
+      </body>
       <Footer />
     </div>
   );

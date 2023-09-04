@@ -2,8 +2,9 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 12vw;
+    width: 15vw;
     padding: 1vw;
+    transition: transform 0.3s;
 }
 
 .box-img {
@@ -12,22 +13,24 @@
     border-radius: 15px;
     display: flex;
     justify-content: center;
+    align-items: center;
     margin-top: 1vw;
     cursor: pointer;
+    overflow: hidden;
 }
 
-.selected {
+.rectangle:hover {
+    transform: scale(1.15); /* Effetto hover */
+}
+
+.box-img.selected {
     border: 6px solid rgb(199, 171, 43);
+    transition: border-width 0.1s;
 }
 
 .img {
-    max-width: 13vw;
-    height: auto;
-    padding: 1.2vw;
-}
-
-.img:hover {
-    max-width: 15vw;
+    max-width: 12vw;
+    padding: 1.5vw;
 }
 
 .title {
@@ -38,21 +41,31 @@
 @media screen and (max-width: 500px) {
     .rectangle {
         margin: 0%;
-        width: 60%;
+        width: 25vw;
         height: 25vh;
         padding: 0%;
     }
 
-    .img {
-        max-width: 30vw;
+    .rectangle .selected {
+        transform: scale(1.2);
+        transition: transform 0.3s;
     }
 
-    .img:hover {
-        max-width: 30vw;
+    .rectangle:hover {
+        transform: scale(1);
+    }
+
+    .box-img {
+        width: auto;
+    }
+
+    .img {
+        max-width: 15vw;
+        height: 15vw;
+        padding: 1.5vw;
     }
 
     .title {
         font-size: 120%;
     }
-
 }

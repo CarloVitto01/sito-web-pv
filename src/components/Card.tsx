@@ -16,7 +16,7 @@ const Card: React.FC<CardProps> = ({imageSrc, title, isSelected, onClick}: any) 
           <img src={imageSrc} alt={title} className={classes["img"]}/>
       </div>
       <div className={classes["box-title"]}>
-        <p className={classes["title"]}>{title}</p>
+        <p className={`${classes["title"]} ${isSelected ? classes["selected"] : ""}`}>{title}</p>
       </div>
     </div>
   );
