@@ -1,0 +1,138 @@
+.backdrop{
+    position: fixed;
+    top:0;
+    left: 0;
+    height: 100vh;
+    width: 100vw;
+    background: rgba(0, 0, 0, 0.75);
+    z-index: 10;
+    pointer-events: none;
+}
+
+.container {
+    position: fixed;
+    top: 30vh;
+    left: 30vw;
+    z-index: 100;
+    border: 2px solid rgb(199, 171, 43);
+    border-radius: 15px;
+    background-color: white;
+    height: 30vh;
+    overflow: hidden;
+    width: 40vw;
+}
+
+.container header {
+    background-color: rgb(199, 171, 43);
+    padding: 0.6vw;
+}
+
+.container header h1{
+    margin: 0;
+    font-size: 2vw;
+    text-align: center;
+    color: white;
+}
+
+.content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.content p {
+    margin-top: 7vh;
+    text-align: center;
+    font-size: 1.4vw;
+    margin-bottom: 5vh;
+    margin-left: 0.5vw;
+    margin-right: 0.5vw;
+}
+
+.container footer {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.container button {
+    border: none;
+    background-color: rgb(199, 171, 43);
+    color: white;
+    border-radius: 7px;
+    font-size: 1.5vw;
+    font-weight: bold;
+    margin-right: 5vw;
+    padding: 0.3vw;
+    cursor: pointer;
+}
+
+.spinner-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 3vh;
+    flex-direction: column;
+    align-items: center;
+}
+
+.spinner-container p {
+    margin: 0;
+    margin-bottom: 2vh;
+    font-size: 1.5vw;
+}
+
+.spinner {
+    animation: spin 2s linear infinite;
+    font-size: 48px;
+    color: rgb(199, 171, 43);
+    margin-bottom: 2vh;
+}
+
+@keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media screen and (max-width: 500px) {
+
+    .container {
+        left: 20vw;
+        height: 25vh;
+        width: 60vw;
+    }
+    
+    .container header h1{
+        font-size: 100%;
+    }
+    
+    .content p {
+        margin-top: 6vh;
+        font-size: 90%;
+        margin-bottom: 4vh;
+    }
+    
+    .container button {
+        font-size: 95%;
+        padding: 0.8vw;
+    }
+    
+    .spinner-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 3vh;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .spinner-container p {
+        margin: 0;
+        margin-bottom: 2vh;
+        font-size: 80%;
+        margin-left: 2vw;
+        margin-right: 2vw;
+    }
+    
+  }

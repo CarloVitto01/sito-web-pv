@@ -14,7 +14,8 @@ import { storage } from "./backend/firebase";
 import { db } from "./backend/firebase";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { v4 } from "uuid";
-import { collection, doc, setDoc } from "firebase/firestore";
+import { collection, doc, setDoc, serverTimestamp } from "firebase/firestore";
+import FinalModal from "./components/FinalModal";
 
 const foglio = 0.019;
 const biancoNero: number = 0.009;
@@ -60,6 +61,9 @@ const App = () => {
   const [numeroPaginePDF, setNumeroPaginePDF] = useState<number>(0);
   const [numeroCopie, setNumeroCopie] = useState<number>(1);
   const [preventivo, setPreventivo] = useState<string>("0.00");
+  const [formSubmitted, setFormSubmitted] = useState<boolean>(false);
+  const [formSubmitting, setFormSubmitting] = useState<boolean>(false);
+  const [formError, setFormError] = useState<boolean>(false);
 
   //Debug
   // console.log(numeroPaginePDF);
@@ -77,7 +81,7 @@ const App = () => {
       surname: data.surname,
       email: data.email,
       telephoneNumber: data.telephoneNumber,
-      isValid: data.isValid
+      isValid: data.isValid,
     });
   }, []);
 
@@ -207,8 +211,8 @@ const App = () => {
 
   const submitFormHandler = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setFormSubmitting(true);
     if (!file || !data.isValid) {
-      console.log("Error");
       return;
     }
     const id = v4();
@@ -225,20 +229,57 @@ const App = () => {
     );
     uploadBytes(fileRef, file).then((snapshot) => {
       getDownloadURL(snapshot.ref).then((url) => {
-        const dataToUpload = { ...data, file: url };
+        const dataToUpload = {
+          nome: data.name,
+          cognome: data.surname,
+          email: data.email,
+          telefono: data.telephoneNumber,
+          file: url,
+          colore:
+            inchiostro === inchiostroEnum.BIANCOENERO
+              ? "Bianco e nero"
+              : "Colore",
+          pagina: pagina === 0 ? "Fronte-retro" : "Fronte",
+          layout:
+            layout === 0
+              ? "Verticale"
+              : layout === 1
+              ? "Orizzontale"
+              : layout === 2
+              ? "2 pagine in 1 orizzontale"
+              : "2 pagine in 1 verticale",
+          rilegatura:
+            rilegatura === 0
+              ? "Anelli"
+              : rilegatura === 1
+              ? "Fascetta"
+              : rilegatura === 2
+              ? "Ciappatura"
+              : "Nessuna",
+          pagine: intervalloPagine,
+          copie: numeroCopie,
+          timestamp: serverTimestamp(),
+        };
         const collectionRef = collection(db, "StampePDF");
         const PDFref = doc(collectionRef, id);
         setDoc(PDFref, dataToUpload)
           .then(() => {
-            console.log("Dati caricati con successo");
+            setFormSubmitting(false);
+            setFormSubmitted(true);
           })
           .catch((error) => {
-            console.log("Errore: " + error);
+            console.log(error);
+            setFormError(true);
+            setFormSubmitting(false);
           });
       });
-
-      alert("PDF Uploaded");
     });
+  };
+
+  const closeFinalModalHandler = () => {
+    setFormSubmitted(false);
+    setFormSubmitting(false);
+    setFormError(false);
   };
 
   return (
@@ -317,8 +358,21 @@ const App = () => {
       <SingleDelimiter />
       <NumeroCopie onSendData={setCopiesHandler} />
       <SingleDelimiter />
-      <Modal totalOrder={preventivo} onSubmit={submitFormHandler} disabled={!data.isValid || !file}/>
+      <Modal
+        totalOrder={preventivo}
+        onSubmit={submitFormHandler}
+        disabled={!data.isValid || !file}
+      />
       <Footer />
+      {(formSubmitted || formSubmitting) && (
+        <FinalModal
+          onConfirm={closeFinalModalHandler}
+          loading={formSubmitting ? "submitting" : "submitted"}
+        />
+      )}
+      {formError && (
+        <FinalModal onConfirm={closeFinalModalHandler} loading={"error"} />
+      )}
     </div>
   );
 };
