@@ -10,18 +10,18 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url
 ).toString();
 
-interface propsContainer{
-  onSendData: (value: number) => void; 
+interface propsContainer {
+  onSendData: (value: any) => void;
 }
 
-const Input : React.FC<propsContainer> = ({onSendData}) => {
+const Input: React.FC<propsContainer> = ({ onSendData }) => {
   const [file, setFile] = useState<any>();
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [newPage, setNewPage] = useState<number>(0);
 
   useEffect(() => {
-    if(!newPage){
+    if (!newPage) {
       setNewPage(1);
     }
     const timerId = setTimeout(() => {
@@ -33,15 +33,15 @@ const Input : React.FC<propsContainer> = ({onSendData}) => {
 
   const handleKeyPress = (e: any) => {
     console.log(e.key);
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       setPageNumber(newPage);
     }
-  }
+  };
 
   function onDocumentLoadSuccess({ numPages }: { numPages: number }): void {
     setNumPages(numPages);
     setPageNumber(1);
-    onSendData(numPages);
+    onSendData({ numPages, file });
   }
 
   async function changePage(offset: number) {
@@ -87,7 +87,11 @@ const Input : React.FC<propsContainer> = ({onSendData}) => {
                   renderTextLayer={false}
                   className={classes["pdfPage"]}
                   loading={<Loading />}
-                  error={<p style={{whiteSpace: "nowrap"}}>Pagina non disponible</p>}
+                  error={
+                    <p style={{ whiteSpace: "nowrap" }}>
+                      Pagina non disponible
+                    </p>
+                  }
                   canvasBackground="white"
                 />
               </div>

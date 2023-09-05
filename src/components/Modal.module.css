@@ -128,6 +128,12 @@
     font-size: 2vw;
     color: rgb(199, 171, 43);
     font-weight: bold;
+    cursor: pointer;
+}
+
+.button-container button:disabled{
+    color: rgb(203, 203, 203);
+    cursor: not-allowed;
 }
 
 @media screen and (max-width:500px) {

@@ -2,7 +2,12 @@ import classes from "./Modal.module.css";
 import Sticky from "./Sticky";
 import { useState } from "react";
 
-const Modal: React.FC<{ totalOrder: string }> = ({ totalOrder }) => {
+interface propsContainer{
+  totalOrder: string,
+  onSubmit: (event : any) => void;
+  disabled: boolean
+}
+const Modal: React.FC<propsContainer> = ({ totalOrder, onSubmit, disabled }) => {
   const [isShowing, setIsShowing] = useState<boolean>(false);
 
   const showHandler = () => {
@@ -29,7 +34,7 @@ const Modal: React.FC<{ totalOrder: string }> = ({ totalOrder }) => {
               <p className={classes["total-order"]}>€ {totalOrder}</p>
             </div>
             <div className={classes["button-container"]}>
-              <button>CONFERMA</button>
+              <button onClick={onSubmit} disabled={disabled}>CONFERMA</button>
             </div>
           </div>
           <div className={classes["text-container"]}>

@@ -73,14 +73,11 @@ const Form: React.FC<propsContainer> = ({ onSendData }) => {
   ]);
 
   useEffect(() => {
-    if (
-      nameIsValid &&
-      surnameIsValid &&
-      emailIsValid &&
-      telephoneNumberIsValid
-    ) {
-      onSendData(data);
-    }
+    onSendData({
+      ...data,
+      isValid:
+        nameIsValid && surnameIsValid && emailIsValid && telephoneNumberIsValid,
+    });
   }, [
     data,
     onSendData,

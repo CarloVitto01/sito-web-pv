@@ -9,7 +9,12 @@ import IntervalloPagine from "./components/IntervalloPagine";
 import SingleDelimiter from "./components/SingleDelimiter";
 import NumeroCopie from "./components/NumeroCopie";
 import Modal from "./components/Modal";
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { storage } from "./backend/firebase";
+import { db } from "./backend/firebase";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { v4 } from "uuid";
+import { collection, doc, setDoc } from "firebase/firestore";
 
 const foglio = 0.019;
 const biancoNero: number = 0.009;
@@ -44,6 +49,7 @@ const rilegaturaEnum = {
 
 const App = () => {
   const [data, setData] = useState<any>({});
+  const [file, setFile] = useState<any>();
   const [inchiostro, setInchiostro] = useState<number>(
     inchiostroEnum.BIANCOENERO
   );
@@ -71,8 +77,8 @@ const App = () => {
       surname: data.surname,
       email: data.email,
       telephoneNumber: data.telephoneNumber,
+      isValid: data.isValid
     });
-    // console.log(data); Debug
   }, []);
 
   const newValue = useCallback((value: string) => {
@@ -116,8 +122,9 @@ const App = () => {
     }
   }, []);
 
-  const setPagesHandler = useCallback((value: number) => {
-    setNumeroPaginePDF(value);
+  const setPDFHandler = useCallback((value: any) => {
+    setNumeroPaginePDF(value.numPages);
+    setFile(value.file);
   }, []);
 
   const setRangePagesHandler = useCallback(
@@ -196,6 +203,44 @@ const App = () => {
     numeroCopie,
   ]);
 
+  //Send data to the Firebase server
+
+  const submitFormHandler = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!file || !data.isValid) {
+      console.log("Error");
+      return;
+    }
+    const id = v4();
+    const fileRef = ref(
+      storage,
+      `PDF/${
+        data.surname +
+        data.name +
+        "|" +
+        file.name.trim().replace(".pdf", "").replace(/\s/g, "") +
+        "|" +
+        id
+      }.pdf`
+    );
+    uploadBytes(fileRef, file).then((snapshot) => {
+      getDownloadURL(snapshot.ref).then((url) => {
+        const dataToUpload = { ...data, file: url };
+        const collectionRef = collection(db, "StampePDF");
+        const PDFref = doc(collectionRef, id);
+        setDoc(PDFref, dataToUpload)
+          .then(() => {
+            console.log("Dati caricati con successo");
+          })
+          .catch((error) => {
+            console.log("Errore: " + error);
+          });
+      });
+
+      alert("PDF Uploaded");
+    });
+  };
+
   return (
     <div className="container">
       <Header />
@@ -203,7 +248,7 @@ const App = () => {
       <SingleDelimiter />
       <Form onSendData={setDataHandler} />
       <SingleDelimiter />
-      <Input onSendData={setPagesHandler} />
+      <Input onSendData={setPDFHandler} />
       <SingleDelimiter />
       <ContainerCards
         title="Colore:"
@@ -272,7 +317,7 @@ const App = () => {
       <SingleDelimiter />
       <NumeroCopie onSendData={setCopiesHandler} />
       <SingleDelimiter />
-      <Modal totalOrder={preventivo} />
+      <Modal totalOrder={preventivo} onSubmit={submitFormHandler} disabled={!data.isValid || !file}/>
       <Footer />
     </div>
   );
