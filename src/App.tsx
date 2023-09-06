@@ -16,6 +16,7 @@ import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { v4 } from "uuid";
 import { collection, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import FinalModal from "./components/FinalModal";
+import { TOKEN, CHAT_ID } from "./backend/telegram";
 
 const foglio = 0.019;
 const biancoNero: number = 0.009;
@@ -266,6 +267,48 @@ const App = () => {
           .then(() => {
             setFormSubmitting(false);
             setFormSubmitted(true);
+            //Send message to telegram channel
+            const messageText = `
+            *NUOVO ORDINE*
+            
+            *Nome*: ${dataToUpload.nome}
+            *Cognome*: ${dataToUpload.cognome}
+            *Email*: ${dataToUpload.email}
+            *Telefono*: ${dataToUpload.telefono}
+            *File*: [Link al file](${dataToUpload.file})
+            *Colore*: ${dataToUpload.colore}
+            *Pagina*: ${dataToUpload.pagina}
+            *Layout*: ${dataToUpload.layout}
+            *Rilegatura*: ${dataToUpload.rilegatura}
+            *Pagine*: ${dataToUpload.pagine}
+            *Copie*: ${dataToUpload.copie}
+            
+            `;
+            const apiUrl = `https://api.telegram.org/bot${TOKEN}/sendMessage`;
+            const data = {
+              chat_id: CHAT_ID,
+              text: messageText,
+              parse_mode: "Markdown",
+            };
+            const requestOptions = {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(data),
+            };
+            fetch(apiUrl, requestOptions)
+              .then((response) => {
+                if (response.ok) {
+                  console.log("Messaggio inviato con successo");
+                } else {
+                  console.log(
+                    "Errore durante l'invio del messaggio:",
+                    response.statusText
+                  );
+                }
+              })
+              .catch((error) => {
+                console.error("Errore durante l'invio del messaggio:", error);
+              });
           })
           .catch((error) => {
             console.log(error);
