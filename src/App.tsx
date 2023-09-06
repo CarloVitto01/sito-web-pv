@@ -144,7 +144,7 @@ const App = () => {
       } else {
         let from = value.from;
         let to = value.to;
-        setDaA(""+from + "-" + to);
+        setDaA("" + from + "-" + to);
         if (isNaN(from) || isNaN(to)) {
           return;
         }
@@ -233,6 +233,7 @@ const App = () => {
     uploadBytes(fileRef, file).then((snapshot) => {
       getDownloadURL(snapshot.ref).then((url) => {
         const dataToUpload = {
+          id: id,
           nome: data.name,
           cognome: data.surname,
           email: data.email,
