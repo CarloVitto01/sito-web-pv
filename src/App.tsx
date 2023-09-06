@@ -65,6 +65,7 @@ const App = () => {
   const [formSubmitted, setFormSubmitted] = useState<boolean>(false);
   const [formSubmitting, setFormSubmitting] = useState<boolean>(false);
   const [formError, setFormError] = useState<boolean>(false);
+  const [daA, setDaA] = useState<string>("Tutte");
 
   //Debug
   // console.log(numeroPaginePDF);
@@ -143,6 +144,7 @@ const App = () => {
       } else {
         let from = value.from;
         let to = value.to;
+        setDaA(""+from + "-" + to);
         if (isNaN(from) || isNaN(to)) {
           return;
         }
@@ -257,7 +259,7 @@ const App = () => {
               : rilegatura === 2
               ? "Ciappatura"
               : "Nessuna",
-          pagine: intervalloPagine,
+          pagine: daA,
           copie: numeroCopie,
           timestamp: serverTimestamp(),
         };
