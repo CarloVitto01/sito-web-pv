@@ -25,6 +25,10 @@
     display: none;
 }
 
+.stuck .text-container p {
+    display: none;
+}
+
 .stuck .order-container {
     display: flex;
     text-align: center;

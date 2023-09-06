@@ -219,21 +219,20 @@ const App = () => {
       return;
     }
     const id = v4();
-    const fileRef = ref(
-      storage,
-      `PDF/${
-        data.surname +
-        data.name +
-        "|" +
-        file.name.trim().replace(".pdf", "").replace(/\s/g, "") +
-        "|" +
-        id
-      }.pdf`
-    );
+    const path = `PDF/${
+      data.surname +
+      data.name +
+      "|" +
+      file.name.trim().replace(".pdf", "").replace(/\s/g, "") +
+      "|" +
+      id
+    }.pdf`;
+    const fileRef = ref(storage, path);
     uploadBytes(fileRef, file).then((snapshot) => {
       getDownloadURL(snapshot.ref).then((url) => {
         const dataToUpload = {
           id: id,
+          path: path, 
           nome: data.name,
           cognome: data.surname,
           email: data.email,
