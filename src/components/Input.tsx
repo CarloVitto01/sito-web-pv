@@ -20,6 +20,8 @@ const Input: React.FC<propsContainer> = ({ onSendData }) => {
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [newPage, setNewPage] = useState<number>(0);
 
+  //Change page live
+
   useEffect(() => {
     if (!newPage) {
       setNewPage(1);
@@ -31,6 +33,8 @@ const Input: React.FC<propsContainer> = ({ onSendData }) => {
     return () => clearTimeout(timerId);
   }, [newPage]);
 
+  //Change page on press (not working for Android devices)
+
   const handleKeyPress = (e: any) => {
     console.log(e.key);
     if (e.key === "Enter") {
@@ -38,19 +42,21 @@ const Input: React.FC<propsContainer> = ({ onSendData }) => {
     }
   };
 
-  function onDocumentLoadSuccess({ numPages }: { numPages: number }): void {
-    setNumPages(numPages);
-    setPageNumber(1);
-    onSendData({ numPages, file });
-  }
-
-  async function changePage(offset: number) {
-    setPageNumber((prevPageNumber) => prevPageNumber + offset);
-  }
+  //Document handling
 
   const onDrop = (acceptedFiles: any) => {
     const selectedFile = acceptedFiles[0];
     setFile(selectedFile);
+  };
+
+  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }): void => {
+    setNumPages(numPages);
+    setPageNumber(1);
+    onSendData({ numPages, file });
+  };
+
+  const changePage = async (offset: number) => {
+    setPageNumber((prevPageNumber) => prevPageNumber + offset);
   };
 
   const { getRootProps, getInputProps } = useDropzone({
@@ -59,6 +65,8 @@ const Input: React.FC<propsContainer> = ({ onSendData }) => {
       "application/pdf": [".pdf"],
     },
   });
+
+  //Save width for document display settings
 
   const width = window.innerWidth;
 

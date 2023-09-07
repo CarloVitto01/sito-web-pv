@@ -33,6 +33,8 @@ const Form: React.FC<propsContainer> = ({ onSendData }) => {
     useState<boolean>();
   const [data, setData] = useState<any>();
 
+  //Live validation
+
   useEffect(() => {
     if (enteredName) {
       validateNameHandler(enteredName);
@@ -57,6 +59,8 @@ const Form: React.FC<propsContainer> = ({ onSendData }) => {
     }
   }, [enteredTelephoneNumber]);
 
+  //Set Data
+
   useEffect(() => {
     setData({
       name: enteredName,
@@ -72,6 +76,8 @@ const Form: React.FC<propsContainer> = ({ onSendData }) => {
     setData,
   ]);
 
+  //Send Data
+
   useEffect(() => {
     onSendData({
       ...data,
@@ -86,6 +92,8 @@ const Form: React.FC<propsContainer> = ({ onSendData }) => {
     emailIsValid,
     telephoneNumberIsValid,
   ]);
+
+  //Change values handler
 
   const nameChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
     setEnteredName(event.target.value);
@@ -104,6 +112,8 @@ const Form: React.FC<propsContainer> = ({ onSendData }) => {
   ) => {
     setEnteredTelephoneNumber(event.target.value);
   };
+
+  //Validate values handler 
 
   const validateNameHandler = (name: string) => {
     setNameIsValid(name.trim().length > 0 && containsOnlyLetters(name.trim()));

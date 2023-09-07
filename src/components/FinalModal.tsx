@@ -9,8 +9,12 @@ interface finalModalOverlayProps {
   loading: "submitting" | "submitted" | "error";
 }
 
-const Backdrop: React.FC<{ onConfirm: () => void }> = ({ onConfirm }) => {
-  return <div className={classes["backdrop"]} onClick={onConfirm}/>;
+interface backdropProps {
+  onConfirm: () => void;
+}
+
+const Backdrop: React.FC<backdropProps> = ({ onConfirm }) => {
+  return <div className={classes["backdrop"]} onClick={onConfirm} />;
 };
 
 const FinalModalOverlay: React.FC<finalModalOverlayProps> = ({

@@ -16,8 +16,7 @@ const NumeroCopie: React.FC<propsContainer> = ({ onSendData }) => {
     const num = parseInt(value);
     if (!isNaN(num)) {
       setCopies(num);
-    }
-    else{
+    } else {
       setCopies(0);
     }
   };

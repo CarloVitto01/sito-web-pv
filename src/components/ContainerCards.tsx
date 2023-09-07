@@ -32,7 +32,7 @@ const ContainerCards: React.FC<propsContainer> = ({
             title={component.title}
             imageSrc={component.imageSrc}
             isSelected={selectedCard === component.title}
-            onClick={() => handleCardClick(component.title)}
+            onClick={handleCardClick.bind(null, component.title)}
           />
         ))}
       </div>

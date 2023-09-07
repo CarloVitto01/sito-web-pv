@@ -18,12 +18,16 @@ import { collection, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import FinalModal from "./components/FinalModal";
 import { TOKEN, CHAT_ID } from "./backend/telegram";
 
+//Constants
+
 const foglio = 0.019;
 const biancoNero: number = 0.009;
 const colore: number = 0.028;
 const anelli = 1.5;
 const fascetta = 1;
 const ciappatura = 0.1;
+
+//Enum
 
 const inchiostroEnum = {
   BIANCOENERO: 0,
@@ -52,6 +56,7 @@ const rilegaturaEnum = {
 const App = () => {
   const [data, setData] = useState<any>({});
   const [file, setFile] = useState<any>();
+  const [numeroPaginePDF, setNumeroPaginePDF] = useState<number>(0);
   const [inchiostro, setInchiostro] = useState<number>(
     inchiostroEnum.BIANCOENERO
   );
@@ -59,13 +64,14 @@ const App = () => {
   const [layout, setLayout] = useState<number>(layoutEnum.VERTICALE);
   const [rilegatura, setRilegatura] = useState<number>(rilegaturaEnum.ANELLI);
   const [intervalloPagine, setIntervalloPagine] = useState<number>(1);
-  const [numeroPaginePDF, setNumeroPaginePDF] = useState<number>(0);
+  const [daA, setDaA] = useState<string>("Tutte");
+  const [intervalloPagineIsValid, setIntervalloPagineIsValid] =
+    useState<boolean>(true);
   const [numeroCopie, setNumeroCopie] = useState<number>(1);
   const [preventivo, setPreventivo] = useState<string>("0.00");
   const [formSubmitted, setFormSubmitted] = useState<boolean>(false);
   const [formSubmitting, setFormSubmitting] = useState<boolean>(false);
   const [formError, setFormError] = useState<boolean>(false);
-  const [daA, setDaA] = useState<string>("Tutte");
 
   //Debug
   // console.log(numeroPaginePDF);
@@ -83,10 +89,9 @@ const App = () => {
     if (formSubmitted || formSubmitting || formError) {
       document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = "auto"; 
+      document.body.style.overflow = "auto";
     }
   }, [formSubmitted, formSubmitting, formError]);
-
 
   //Form Data Handling
 
@@ -155,6 +160,10 @@ const App = () => {
           setIntervalloPagine(1);
         }
       } else {
+        setIntervalloPagineIsValid(value.isValid);
+        if (!value.isValid) {
+          return;
+        }
         let from = value.from;
         let to = value.to;
         setDaA("" + from + "-" + to);
@@ -238,7 +247,12 @@ const App = () => {
       data.surname +
       data.name +
       "|" +
-      file.name.trim().replace(".pdf", "").replace(/\s/g, "").replace(/\(/g, '[').replace(/\)/g, ']') +
+      file.name
+        .trim()
+        .replace(".pdf", "")
+        .replace(/\s/g, "")
+        .replace(/\(/g, "[")
+        .replace(/\)/g, "]") +
       "|" +
       id
     }.pdf`;
@@ -247,7 +261,7 @@ const App = () => {
       getDownloadURL(snapshot.ref).then((url) => {
         const dataToUpload = {
           id: id,
-          path: path, 
+          path: path,
           nome: data.name,
           cognome: data.surname,
           email: data.email,
@@ -292,7 +306,9 @@ const App = () => {
             *Cognome*: ${dataToUpload.cognome}
             *Email*: ${dataToUpload.email}
             *Telefono*: ${dataToUpload.telefono}
-            *File*: [Link al file](${dataToUpload.file.replace(/\(/g, '[').replace(/\)/g, ']')})
+            *File*: [Link al file](${dataToUpload.file
+              .replace(/\(/g, "[")
+              .replace(/\)/g, "]")})
             *Colore*: ${dataToUpload.colore}
             *Pagina*: ${dataToUpload.pagina}
             *Layout*: ${dataToUpload.layout}
@@ -416,14 +432,17 @@ const App = () => {
       />
 
       <SingleDelimiter />
-      <IntervalloPagine onSendData={setRangePagesHandler} />
+      <IntervalloPagine
+        onSendData={setRangePagesHandler}
+        maxValue={numeroPaginePDF}
+      />
       <SingleDelimiter />
       <NumeroCopie onSendData={setCopiesHandler} />
       <SingleDelimiter />
       <Modal
         totalOrder={preventivo}
         onSubmit={submitFormHandler}
-        disabled={!data.isValid || !file}
+        disabled={!data.isValid || !file || !intervalloPagineIsValid}
       />
       <Footer />
       {(formSubmitted || formSubmitting) && (
