@@ -148,17 +148,15 @@ const IntervalloPagine: React.FC<propsContainer> = ({
                 inputMode="numeric"
                 value={from}
                 min={1}
-                max={maxValue}
+                max={maxValue >= 1 ? maxValue : 1}
                 onChange={handleFromChange}
                 className={classes["number"]}
               />
-              <div>
-                {!fromIsValid && (
-                  <p style={{ color: "red", whiteSpace: "nowrap" }}>
-                    Valore non valido!
-                  </p>
-                )}
-              </div>
+              {!fromIsValid && (
+                <p className={classes["invalid-input"]}>
+                Valore non valido!
+              </p>
+              )}
             </div>
             <div
               className={`${classes["inputRowDivS"]} ${
@@ -172,12 +170,12 @@ const IntervalloPagine: React.FC<propsContainer> = ({
                 inputMode="numeric"
                 value={to}
                 min={1}
-                max={maxValue}
+                max={maxValue >= 1 ? maxValue : 1}
                 onChange={handleToChange}
                 className={classes["number"]}
               />
               {!toIsValid && (
-                <p style={{ color: "red", whiteSpace: "nowrap" }}>
+                <p className={classes["invalid-input"]}>
                   Valore non valido!
                 </p>
               )}

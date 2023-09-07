@@ -39,16 +39,23 @@
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  width: 12vw;
 }
 
 .inputRowDivS input {
   margin-right: 2vw;
+  width: 5vw;
 }
 
 .inputRowDivS.invalid input {
   border-bottom: 2px solid rgb(199, 43, 43);
   background: rgb(255, 231, 231);
+}
+
+.invalid-input {
+  position: absolute;
+  color: red;
+  left: 63vw;
+
 }
 
 .number {
@@ -98,5 +105,9 @@
   .number {
     width: 12vw;
     font-size: 5vw;
+  }
+
+  .invalid-input{
+    left: 70vw;
   }
 }
