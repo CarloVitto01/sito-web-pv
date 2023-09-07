@@ -5,15 +5,14 @@
     height: 100vh;
     width: 100vw;
     background: rgba(0, 0, 0, 0.75);
-    z-index: 10;
-    pointer-events: none;
+    z-index: 998;
 }
 
 .container {
     position: fixed;
     top: 30vh;
     left: 30vw;
-    z-index: 100;
+    z-index: 999;
     border: 2px solid rgb(199, 171, 43);
     border-radius: 15px;
     background-color: white;

@@ -77,6 +77,14 @@ const App = () => {
   // console.log(numeroCopie);
   //
 
+  useEffect(() => {
+    if (formSubmitted || formSubmitting || formError) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto"; 
+    }
+  }, [formSubmitted, formSubmitting, formError]);
+
   const setDataHandler = useCallback((data: any) => {
     setData({
       name: data.name,
