@@ -238,7 +238,7 @@ const App = () => {
       data.surname +
       data.name +
       "|" +
-      file.name.trim().replace(".pdf", "").replace(/\s/g, "") +
+      file.name.trim().replace(".pdf", "").replace(/\s/g, "").replace(/\(/g, '[').replace(/\)/g, ']') +
       "|" +
       id
     }.pdf`;
@@ -292,7 +292,7 @@ const App = () => {
             *Cognome*: ${dataToUpload.cognome}
             *Email*: ${dataToUpload.email}
             *Telefono*: ${dataToUpload.telefono}
-            *File*: [Link al file](${dataToUpload.file})
+            *File*: [Link al file](${dataToUpload.file.replace(/\(/g, '[').replace(/\)/g, ']')})
             *Colore*: ${dataToUpload.colore}
             *Pagina*: ${dataToUpload.pagina}
             *Layout*: ${dataToUpload.layout}
