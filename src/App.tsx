@@ -77,6 +77,8 @@ const App = () => {
   // console.log(numeroCopie);
   //
 
+  //Prevent scrolling when modal is open
+
   useEffect(() => {
     if (formSubmitted || formSubmitting || formError) {
       document.body.style.overflow = "hidden";
@@ -84,6 +86,9 @@ const App = () => {
       document.body.style.overflow = "auto"; 
     }
   }, [formSubmitted, formSubmitting, formError]);
+
+
+  //Form Data Handling
 
   const setDataHandler = useCallback((data: any) => {
     setData({
@@ -169,6 +174,8 @@ const App = () => {
   const setCopiesHandler = useCallback((value: number) => {
     setNumeroCopie(value);
   }, []);
+
+  //Calculate total order
 
   useEffect(() => {
     const calcoloPreventivo = () => {
@@ -328,6 +335,8 @@ const App = () => {
       });
     });
   };
+
+  //Final modal handling
 
   const closeFinalModalHandler = () => {
     setFormSubmitted(false);
