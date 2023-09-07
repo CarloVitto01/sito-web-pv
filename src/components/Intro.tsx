@@ -1,6 +1,8 @@
 import classes from "./Intro.module.css";
+import React from "react";
 
 const Intro = () => {
+
   return (
     <div className={classes["container"]}>
       <h1 className={classes["title"]}>STAMPA IL TUO DOCUMENTO</h1>
@@ -16,4 +18,4 @@ const Intro = () => {
   );
 };
 
-export default Intro;
+export default React.memo(Intro);

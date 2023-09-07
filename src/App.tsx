@@ -9,7 +9,7 @@ import IntervalloPagine from "./components/IntervalloPagine";
 import SingleDelimiter from "./components/SingleDelimiter";
 import NumeroCopie from "./components/NumeroCopie";
 import Modal from "./components/Modal";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { storage } from "./backend/firebase";
 import { db } from "./backend/firebase";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
@@ -236,7 +236,7 @@ const App = () => {
 
   //Send data to the Firebase server
 
-  const submitFormHandler = (event: React.FormEvent<HTMLFormElement>) => {
+  const submitFormHandler = useCallback((event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setFormSubmitting(true);
     if (!file || !data.isValid) {
@@ -350,15 +350,15 @@ const App = () => {
           });
       });
     });
-  };
+  },[daA, data, file, inchiostro, layout, numeroCopie, pagina, rilegatura]);
 
   //Final modal handling
 
-  const closeFinalModalHandler = () => {
+  const closeFinalModalHandler = useCallback(() => {
     setFormSubmitted(false);
     setFormSubmitting(false);
     setFormError(false);
-  };
+  },[]);
 
   return (
     <div className="container">
@@ -371,33 +371,33 @@ const App = () => {
       <SingleDelimiter />
       <ContainerCards
         title="Colore:"
-        components={[
+        components={useMemo(()=>[
           {
             title: "Bianco e nero",
             imageSrc: require("./assets/Bianco_e_nero.jpg"),
           },
           { title: "Colore", imageSrc: require("./assets/Colore.jpg") },
-        ]}
+        ],[])}
         defaultValue="Bianco e nero"
         onSendData={newValue}
       />
       <SingleDelimiter />
       <ContainerCards
         title="Gestione pagina:"
-        components={[
+        components={useMemo(()=>[
           {
             title: "Fronte-retro",
             imageSrc: require("./assets/Fronte_retro.png"),
           },
           { title: "Fronte", imageSrc: require("./assets/Fronte.png") },
-        ]}
+        ],[])}
         defaultValue="Fronte-retro"
         onSendData={newValue}
       />
       <SingleDelimiter />
       <ContainerCards
         title="Layout:"
-        components={[
+        components={useMemo(()=>[
           { title: "Verticale", imageSrc: require("./assets/Verticale.jpg") },
           {
             title: "Orizzontale",
@@ -411,14 +411,14 @@ const App = () => {
             title: "2 pagine in 1 verticale",
             imageSrc: require("./assets/2in1Verticale.jpg"),
           },
-        ]}
+        ],[])}
         defaultValue="Verticale"
         onSendData={newValue}
       />
       <SingleDelimiter />
       <ContainerCards
         title="Rilegatura:"
-        components={[
+        components={useMemo(()=>[
           { title: "Anelli", imageSrc: require("./assets/Anelli.jpg") },
           { title: "Fascetta", imageSrc: require("./assets/Fascetta.jpg") },
           {
@@ -426,11 +426,10 @@ const App = () => {
             imageSrc: require("./assets/Ciappatura.jpg"),
           },
           { title: "Nessuna", imageSrc: require("./assets/Nessuna.jpg") },
-        ]}
+        ],[])}
         defaultValue="Anelli"
         onSendData={newValue}
       />
-
       <SingleDelimiter />
       <IntervalloPagine
         onSendData={setRangePagesHandler}

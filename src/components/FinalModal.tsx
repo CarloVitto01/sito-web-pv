@@ -63,6 +63,7 @@ const FinalModal: React.FC<finalModalOverlayProps> = ({
   if (!backdropRoot || !overlayRoot) {
     return null;
   }
+
   return (
     <>
       {ReactDOM.createPortal(<Backdrop onConfirm={onConfirm} />, backdropRoot)}
@@ -74,4 +75,4 @@ const FinalModal: React.FC<finalModalOverlayProps> = ({
   );
 };
 
-export default FinalModal;
+export default React.memo(FinalModal);

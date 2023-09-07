@@ -113,7 +113,7 @@ const Form: React.FC<propsContainer> = ({ onSendData }) => {
     setEnteredTelephoneNumber(event.target.value);
   };
 
-  //Validate values handler 
+  //Validate values handler
 
   const validateNameHandler = (name: string) => {
     setNameIsValid(name.trim().length > 0 && containsOnlyLetters(name.trim()));
@@ -241,4 +241,4 @@ const Form: React.FC<propsContainer> = ({ onSendData }) => {
   );
 };
 
-export default Form;
+export default React.memo(Form);

@@ -1,5 +1,6 @@
 import logo from "../assets/logo.png";
 import classes from "./Header.module.css";
+import React from "react";
 
 const Header = () => {
 
@@ -12,4 +13,4 @@ const Header = () => {
   );
 };
 
-export default Header;
+export default React.memo(Header);

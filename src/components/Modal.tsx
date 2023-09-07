@@ -17,6 +17,7 @@ const Modal: React.FC<propsContainer> = ({
   const showHandler = () => {
     setIsShowing(!isShowing);
   };
+
   return (
     <Sticky
       position="bottom"

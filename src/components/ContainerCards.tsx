@@ -40,4 +40,4 @@ const ContainerCards: React.FC<propsContainer> = ({
   );
 };
 
-export default ContainerCards;
+export default React.memo(ContainerCards);

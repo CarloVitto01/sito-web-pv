@@ -1,5 +1,5 @@
 import classes from "./NumeroCopie.module.css";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 interface propsContainer {
   onSendData: (value: number) => void;
@@ -37,4 +37,4 @@ const NumeroCopie: React.FC<propsContainer> = ({ onSendData }) => {
   );
 };
 
-export default NumeroCopie;
+export default React.memo(NumeroCopie);

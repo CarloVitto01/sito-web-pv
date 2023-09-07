@@ -153,9 +153,7 @@ const IntervalloPagine: React.FC<propsContainer> = ({
                 className={classes["number"]}
               />
               {!fromIsValid && (
-                <p className={classes["invalid-input"]}>
-                Valore non valido!
-              </p>
+                <p className={classes["invalid-input"]}>Valore non valido!</p>
               )}
             </div>
             <div
@@ -175,9 +173,7 @@ const IntervalloPagine: React.FC<propsContainer> = ({
                 className={classes["number"]}
               />
               {!toIsValid && (
-                <p className={classes["invalid-input"]}>
-                  Valore non valido!
-                </p>
+                <p className={classes["invalid-input"]}>Valore non valido!</p>
               )}
             </div>
           </div>
@@ -187,4 +183,4 @@ const IntervalloPagine: React.FC<propsContainer> = ({
   );
 };
 
-export default IntervalloPagine;
+export default React.memo(IntervalloPagine);

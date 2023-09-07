@@ -1,7 +1,7 @@
 import { useDropzone } from "react-dropzone";
 import classes from "./Input.module.css";
 import { Document, Page } from "react-pdf";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { pdfjs } from "react-pdf";
 import Loading from "./Loading";
 
@@ -144,4 +144,4 @@ const Input: React.FC<propsContainer> = ({ onSendData }) => {
   );
 };
 
-export default Input;
+export default React.memo(Input);
