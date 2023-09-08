@@ -374,9 +374,9 @@ const App = () => {
         components={useMemo(()=>[
           {
             title: "Bianco e nero",
-            imageSrc: require("./assets/Bianco_e_nero.jpg"),
+            imageSrc: require("./assets/images/Bianco_e_nero.jpg"),
           },
-          { title: "Colore", imageSrc: require("./assets/Colore.jpg") },
+          { title: "Colore", imageSrc: require("./assets/images/Colore.jpg") },
         ],[])}
         defaultValue="Bianco e nero"
         onSendData={newValue}
@@ -387,9 +387,9 @@ const App = () => {
         components={useMemo(()=>[
           {
             title: "Fronte-retro",
-            imageSrc: require("./assets/Fronte_retro.png"),
+            imageSrc: require("./assets/images/Fronte_retro.png"),
           },
-          { title: "Fronte", imageSrc: require("./assets/Fronte.png") },
+          { title: "Fronte", imageSrc: require("./assets/images/Fronte.png") },
         ],[])}
         defaultValue="Fronte-retro"
         onSendData={newValue}
@@ -398,18 +398,18 @@ const App = () => {
       <ContainerCards
         title="Layout:"
         components={useMemo(()=>[
-          { title: "Verticale", imageSrc: require("./assets/Verticale.jpg") },
+          { title: "Verticale", imageSrc: require("./assets/images/Verticale.jpg") },
           {
             title: "Orizzontale",
-            imageSrc: require("./assets/Orizzontale.jpg"),
+            imageSrc: require("./assets/images/Orizzontale.jpg"),
           },
           {
             title: "2 pagine in 1 orizzontale",
-            imageSrc: require("./assets/2in1Orizzontale.jpg"),
+            imageSrc: require("./assets/images/2in1Orizzontale.jpg"),
           },
           {
             title: "2 pagine in 1 verticale",
-            imageSrc: require("./assets/2in1Verticale.jpg"),
+            imageSrc: require("./assets/images/2in1Verticale.jpg"),
           },
         ],[])}
         defaultValue="Verticale"
@@ -419,13 +419,13 @@ const App = () => {
       <ContainerCards
         title="Rilegatura:"
         components={useMemo(()=>[
-          { title: "Anelli", imageSrc: require("./assets/Anelli.jpg") },
-          { title: "Fascetta", imageSrc: require("./assets/Fascetta.jpg") },
+          { title: "Anelli", imageSrc: require("./assets/images/Anelli.jpg") },
+          { title: "Fascetta", imageSrc: require("./assets/images/Fascetta.jpg") },
           {
             title: "Ciappatura",
-            imageSrc: require("./assets/Ciappatura.jpg"),
+            imageSrc: require("./assets/images/Ciappatura.jpg"),
           },
-          { title: "Nessuna", imageSrc: require("./assets/Nessuna.jpg") },
+          { title: "Nessuna", imageSrc: require("./assets/images/Nessuna.jpg") },
         ],[])}
         defaultValue="Anelli"
         onSendData={newValue}

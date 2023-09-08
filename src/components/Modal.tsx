@@ -27,7 +27,7 @@ const Modal: React.FC<propsContainer> = ({
       <div className={classes["container"]}>
         <header>
           <img
-            src={require("../assets/Info.jpg")}
+            src={require("../assets/images/Info.jpg")}
             alt="Info"
             className="info"
             onClick={showHandler}

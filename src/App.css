@@ -1,5 +1,5 @@
 body {
-  background-image: url("./assets/Sfondo.png");
+  background-image: url("./assets/images/Sfondo.png");
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
@@ -13,7 +13,7 @@ body {
 
 @media screen and (max-width: 500px){
   body {
-    background-image: url("./assets/Sfondo_Mobile.png");
+    background-image: url("./assets/images/Sfondo_Mobile.png");
   }
 }
 
