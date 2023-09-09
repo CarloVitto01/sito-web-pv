@@ -1,10 +1,10 @@
 import classes from "./Modal.module.css";
 import Sticky from "./Sticky";
-import { useState } from "react";
+import React, { useState } from "react";
 
 interface propsContainer {
   totalOrder: string;
-  onSubmit: (event: any) => void;
+  onSubmit: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
   disabled: boolean;
 }
 const Modal: React.FC<propsContainer> = ({

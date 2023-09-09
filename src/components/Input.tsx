@@ -4,6 +4,7 @@ import { Document, Page } from "react-pdf";
 import React, { useState, useEffect } from "react";
 import { pdfjs } from "react-pdf";
 import Loading from "./Loading";
+import { FileHandler } from "../types/FileHandler";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.js",
@@ -11,11 +12,11 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 ).toString();
 
 interface propsContainer {
-  onSendData: (value: any) => void;
+  onSendData: (value: FileHandler) => void;
 }
 
 const Input: React.FC<propsContainer> = ({ onSendData }) => {
-  const [file, setFile] = useState<any>();
+  const [file, setFile] = useState<File | null>(null);
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [newPage, setNewPage] = useState<number>(0);
@@ -35,7 +36,7 @@ const Input: React.FC<propsContainer> = ({ onSendData }) => {
 
   //Change page on press (not working for Android devices)
 
-  const handleKeyPress = (e: any) => {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     console.log(e.key);
     if (e.key === "Enter") {
       setPageNumber(newPage);
@@ -44,7 +45,7 @@ const Input: React.FC<propsContainer> = ({ onSendData }) => {
 
   //Document handling
 
-  const onDrop = (acceptedFiles: any) => {
+  const onDrop = (acceptedFiles: File[]) => {
     const selectedFile = acceptedFiles[0];
     setFile(selectedFile);
   };

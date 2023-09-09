@@ -1,5 +1,6 @@
 import classes from "./Form.module.css";
 import React, { useState, useEffect } from "react";
+import { FormData } from "../types/FormData";
 
 const containsOnlyLetters = (value: string) => {
   var regex = /^[a-zA-Z]+$/;
@@ -17,7 +18,7 @@ const containsOnlyNumbers = (number: string) => {
 };
 
 interface propsContainer {
-  onSendData: (value: any) => void;
+  onSendData: (value: FormData) => void;
 }
 
 const Form: React.FC<propsContainer> = ({ onSendData }) => {
@@ -31,7 +32,12 @@ const Form: React.FC<propsContainer> = ({ onSendData }) => {
     useState<string>("");
   const [telephoneNumberIsValid, setTelephoneNumberIsValid] =
     useState<boolean>();
-  const [data, setData] = useState<any>();
+  const [data, setData] = useState<FormData>({
+    name: "",
+    surname: "",
+    email: "",
+    telephoneNumber: "",
+  });
 
   //Live validation
 

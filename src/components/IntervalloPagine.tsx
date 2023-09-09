@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import classes from "./IntervalloPagine.module.css";
+import {RangePagesData} from "../types/RangePagesData"
 
 interface propsContainer {
-  onSendData: (value: any) => void;
+  onSendData: (value: RangePagesData) => void;
   maxValue: number;
 }
 const IntervalloPagine: React.FC<propsContainer> = ({
@@ -12,7 +13,7 @@ const IntervalloPagine: React.FC<propsContainer> = ({
   const [option, setOption] = useState("option1");
   const [from, setFrom] = useState<number>(1);
   const [to, setTo] = useState<number>(1);
-  const [rangePages, setRangePages] = useState<any>({
+  const [rangePages, setRangePages] = useState<RangePagesData>({
     from: 1,
     to: 1,
     all: true,
@@ -41,12 +42,12 @@ const IntervalloPagine: React.FC<propsContainer> = ({
 
   useEffect(() => {
     if (option === "option1") {
-      setRangePages((prevState: any) => ({
+      setRangePages((prevState: RangePagesData) => ({
         ...prevState,
         all: true,
       }));
     } else {
-      setRangePages((prevState: any) => ({
+      setRangePages((prevState: RangePagesData) => ({
         ...prevState,
         all: false,
       }));
@@ -62,7 +63,7 @@ const IntervalloPagine: React.FC<propsContainer> = ({
     setFrom((prevFrom) => {
       if (newFrom > to) {
         setTo(newFrom);
-        setRangePages((prevState: any) => ({
+        setRangePages((prevState: RangePagesData) => ({
           ...prevState,
           from: newFrom,
           to: newFrom,
@@ -71,7 +72,7 @@ const IntervalloPagine: React.FC<propsContainer> = ({
       }
       return newFrom;
     });
-    setRangePages((prevState: any) => ({
+    setRangePages((prevState: RangePagesData) => ({
       ...prevState,
       from: newFrom,
       all: false,
@@ -83,7 +84,7 @@ const IntervalloPagine: React.FC<propsContainer> = ({
     setTo((prevTo) => {
       if (newTo < from) {
         setFrom(newTo);
-        setRangePages((prevState: any) => ({
+        setRangePages((prevState: RangePagesData) => ({
           ...prevState,
           from: newTo,
           to: newTo,
@@ -92,7 +93,7 @@ const IntervalloPagine: React.FC<propsContainer> = ({
       }
       return newTo;
     });
-    setRangePages((prevState: any) => ({
+    setRangePages((prevState: RangePagesData) => ({
       ...prevState,
       to: newTo,
       all: false,

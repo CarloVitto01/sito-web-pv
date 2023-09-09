@@ -17,6 +17,9 @@ import { v4 } from "uuid";
 import { collection, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import FinalModal from "./components/FinalModal";
 import { TOKEN, CHAT_ID } from "./backend/telegram";
+import { FormData } from "./types/FormData";
+import { FileHandler } from "./types/FileHandler";
+import {RangePagesData} from "./types/RangePagesData"
 
 //Constants
 
@@ -54,8 +57,13 @@ const rilegaturaEnum = {
 };
 
 const App = () => {
-  const [data, setData] = useState<any>({});
-  const [file, setFile] = useState<any>();
+  const [data, setData] = useState<FormData>({
+    name: "",
+    surname: "",
+    email: "",
+    telephoneNumber: ""
+  });
+  const [file, setFile] = useState<File | null>(null);
   const [numeroPaginePDF, setNumeroPaginePDF] = useState<number>(0);
   const [inchiostro, setInchiostro] = useState<number>(
     inchiostroEnum.BIANCOENERO
@@ -66,7 +74,7 @@ const App = () => {
   const [intervalloPagine, setIntervalloPagine] = useState<number>(1);
   const [daA, setDaA] = useState<string>("Tutte");
   const [intervalloPagineIsValid, setIntervalloPagineIsValid] =
-    useState<boolean>(true);
+    useState<boolean | undefined>(true);
   const [numeroCopie, setNumeroCopie] = useState<number>(1);
   const [preventivo, setPreventivo] = useState<string>("0.00");
   const [formSubmitted, setFormSubmitted] = useState<boolean>(false);
@@ -95,7 +103,7 @@ const App = () => {
 
   //Form Data Handling
 
-  const setDataHandler = useCallback((data: any) => {
+  const setDataHandler = useCallback((data: FormData) => {
     setData({
       name: data.name,
       surname: data.surname,
@@ -146,13 +154,13 @@ const App = () => {
     }
   }, []);
 
-  const setPDFHandler = useCallback((value: any) => {
+  const setPDFHandler = useCallback((value: FileHandler) => {
     setNumeroPaginePDF(value.numPages);
     setFile(value.file);
   }, []);
 
   const setRangePagesHandler = useCallback(
-    (value: any) => {
+    (value: RangePagesData) => {
       if (value.all) {
         if (numeroPaginePDF) {
           setIntervalloPagine(numeroPaginePDF);
@@ -236,7 +244,7 @@ const App = () => {
 
   //Send data to the Firebase server
 
-  const submitFormHandler = useCallback((event: React.FormEvent<HTMLFormElement>) => {
+  const submitFormHandler = useCallback((event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     event.preventDefault();
     setFormSubmitting(true);
     if (!file || !data.isValid) {

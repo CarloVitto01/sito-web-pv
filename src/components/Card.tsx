@@ -8,7 +8,7 @@ interface CardProps {
   onClick: () => void;
 }
 
-const Card: React.FC<CardProps> = ({imageSrc, title, isSelected, onClick}: any) => {
+const Card: React.FC<CardProps> = ({imageSrc, title, isSelected, onClick}) => {
 
   return (
     <div className={classes["rectangle"]} tabIndex={1}>

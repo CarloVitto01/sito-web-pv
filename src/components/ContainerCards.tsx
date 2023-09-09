@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import Card from "./Card";
 import classes from "./ContainerCards.module.css";
+import {Card as CardType} from "../types/Card"
 
 interface propsContainer {
   title: string;
-  components: any[];
+  components: CardType[];
   defaultValue: string;
   onSendData: (value: string) => void;
 }
