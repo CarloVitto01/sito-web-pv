@@ -43,7 +43,7 @@
     .rectangle {
         margin: 0%;
         width: 25vw;
-        height: 25vh;
+        height: auto;
         padding: 0%;
     }
 
@@ -57,12 +57,13 @@
     }
 
     .box-img {
-        width: auto;
+        width: 25vw;
+        height: 25vw;
     }
 
     .img {
-        max-width: 15vw;
-        height: 15vw;
+        max-width: 22vw;
+        height: 22vw;
         padding: 1.5vw;
     }
 

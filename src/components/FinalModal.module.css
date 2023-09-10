@@ -11,26 +11,28 @@
 .container {
     position: fixed;
     top: 30vh;
-    left: 30vw;
+    left: 29vw;
     z-index: 999;
-    border: 2px solid rgb(199, 171, 43);
+    border: 5px solid rgb(199, 171, 43);
     border-radius: 15px;
     background-color: white;
-    height: 30vh;
+    height: auto;
     overflow: hidden;
     width: 40vw;
 }
 
 .container header {
-    background-color: rgb(199, 171, 43);
+    background-color: white;
     padding: 0.6vw;
 }
 
 .container header h1{
     margin: 0;
-    font-size: 2vw;
+    font-size: 2.3vw;
     text-align: center;
-    color: white;
+    color: rgb(199, 171, 43);
+    font-weight: normal;
+    margin-top: 4vh;
 }
 
 .content {
@@ -40,10 +42,10 @@
 }
 
 .content p {
-    margin-top: 7vh;
+    margin-top: 3vh;
     text-align: center;
     font-size: 1.4vw;
-    margin-bottom: 5vh;
+    margin-bottom: 4vh;
     margin-left: 0.5vw;
     margin-right: 0.5vw;
 }
@@ -63,6 +65,7 @@
     margin-right: 5vw;
     padding: 0.3vw;
     cursor: pointer;
+    margin-bottom: 2vh;
 }
 
 .spinner-container {
@@ -98,24 +101,27 @@
   @media screen and (max-width: 500px) {
 
     .container {
-        left: 20vw;
-        height: 25vh;
-        width: 60vw;
+        left: 12vw;
+        height: auto;
+        width: 75vw;
+        border: 3px solid rgb(199, 171, 43);
     }
     
     .container header h1{
-        font-size: 100%;
+        font-size: 8vw;
+        margin-top: 1vh;
     }
     
     .content p {
-        margin-top: 6vh;
-        font-size: 90%;
-        margin-bottom: 4vh;
+        margin-top: 2vh;
+        font-size: 4vw;
+        margin-bottom: 2vh;
     }
     
     .container button {
         font-size: 95%;
         padding: 0.8vw;
+        margin-bottom: 2vh;
     }
     
     .spinner-container {

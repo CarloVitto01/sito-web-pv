@@ -164,7 +164,7 @@ const Form: React.FC<propsContainer> = ({ onSendData }) => {
                 onBlur={validateNameHandler.bind(null, enteredName)}
               />
               {nameIsValid === false && (
-                <p style={{ color: "red" }}>Il nome inserito non è valido!</p>
+                <p style={{ color: "red", margin: 0 }}>Il nome inserito non è valido!</p>
               )}
             </div>
           </div>
@@ -186,7 +186,7 @@ const Form: React.FC<propsContainer> = ({ onSendData }) => {
                 onBlur={validateSurnameHandler.bind(null, enteredSurname)}
               />
               {surnameIsValid === false && (
-                <p style={{ color: "red" }}>
+                <p style={{ color: "red", margin: 0 }}>
                   Il cognome inserito non è valido!
                 </p>
               )}
@@ -212,7 +212,7 @@ const Form: React.FC<propsContainer> = ({ onSendData }) => {
                 onBlur={validateEmailHandler.bind(null, enteredEmail)}
               />
               {emailIsValid === false && (
-                <p style={{ color: "red" }}>L'email inserita non è valida!</p>
+                <p style={{ color: "red", margin: 0 }}>L'email inserita non è valida!</p>
               )}
             </div>
           </div>
@@ -237,7 +237,7 @@ const Form: React.FC<propsContainer> = ({ onSendData }) => {
                 )}
               />
               {telephoneNumberIsValid === false && (
-                <p style={{ color: "red" }}>Il numero inserito non è valido!</p>
+                <p style={{ color: "red", margin: 0 }}>Il numero inserito non è valido!</p>
               )}
             </div>
           </div>

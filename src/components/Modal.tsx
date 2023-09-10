@@ -49,7 +49,8 @@ const Modal: React.FC<propsContainer> = ({
             <p>
               Clicca su conferma per accettare il tuo ordine. Verrai contattato
               da un nostro operatore il prima possibile per stabilire le opzioni
-              di pagamento.
+              di pagamento. In caso di spedizione il costo potrebbe subire
+              variazioni.
             </p>
           )}
         </div>

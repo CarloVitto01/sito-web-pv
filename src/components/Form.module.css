@@ -19,7 +19,7 @@
 }
 
 .credential {
-  padding: 0 0 3% 0;
+  padding: 1vh 0 1vh 0;
   display: flex;
   flex-direction: row;
 }

@@ -29,12 +29,12 @@ const FinalModalOverlay: React.FC<finalModalOverlayProps> = ({
         ) : loading === "submitting" ? (
           <h1>Caricamento in corso</h1>
         ) : (
-          <h1>Errore</h1>
+          <h1>Ops, errore!</h1>
         )}
       </header>
       <div className={classes["content"]}>
         {loading === "submitted" ? (
-          <p>Sarai contatto presto da un nostro operatore.</p>
+          <p>Verrai contatto da un nostro operatore.</p>
         ) : loading === "submitting" ? (
           <div className={classes["spinner-container"]}>
             <FontAwesomeIcon icon={faSpinner} className={classes["spinner"]} />

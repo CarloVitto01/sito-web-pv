@@ -1,7 +1,4 @@
-
-
-export type Card  = {
-    
-    title: string;
-    imageSrc: string;
-}
+export type Card = {
+  title: string;
+  imageSrc: string;
+};

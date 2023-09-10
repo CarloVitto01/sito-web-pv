@@ -1,4 +1,3 @@
-
 import classes from "./Card.module.css";
 
 interface CardProps {
@@ -8,18 +7,33 @@ interface CardProps {
   onClick: () => void;
 }
 
-const Card: React.FC<CardProps> = ({imageSrc, title, isSelected, onClick}) => {
-
+const Card: React.FC<CardProps> = ({
+  imageSrc,
+  title,
+  isSelected,
+  onClick,
+}) => {
   return (
     <div className={classes["rectangle"]} tabIndex={1}>
-      <div className={`${classes["box-img"]} ${isSelected ? classes["selected"] : ""}`} onClick={onClick}>
-          <img src={imageSrc} alt={title} className={classes["img"]}/>
+      <div
+        className={`${classes["box-img"]} ${
+          isSelected ? classes["selected"] : ""
+        }`}
+        onClick={onClick}
+      >
+        <img src={imageSrc} alt={title} className={classes["img"]} />
       </div>
       <div className={classes["box-title"]}>
-        <p className={`${classes["title"]} ${isSelected ? classes["selected"] : ""}`}>{title}</p>
+        <p
+          className={`${classes["title"]} ${
+            isSelected ? classes["selected"] : ""
+          }`}
+        >
+          {title}
+        </p>
       </div>
     </div>
   );
-}
+};
 
 export default Card;

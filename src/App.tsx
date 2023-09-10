@@ -19,7 +19,7 @@ import FinalModal from "./components/FinalModal";
 import { TOKEN, CHAT_ID } from "./backend/telegram";
 import { FormData } from "./types/FormData";
 import { FileHandler } from "./types/FileHandler";
-import {RangePagesData} from "./types/RangePagesData"
+import { RangePagesData } from "./types/RangePagesData";
 
 //Constants
 
@@ -61,7 +61,7 @@ const App = () => {
     name: "",
     surname: "",
     email: "",
-    telephoneNumber: ""
+    telephoneNumber: "",
   });
   const [file, setFile] = useState<File | null>(null);
   const [numeroPaginePDF, setNumeroPaginePDF] = useState<number>(0);
@@ -73,8 +73,9 @@ const App = () => {
   const [rilegatura, setRilegatura] = useState<number>(rilegaturaEnum.ANELLI);
   const [intervalloPagine, setIntervalloPagine] = useState<number>(1);
   const [daA, setDaA] = useState<string>("Tutte");
-  const [intervalloPagineIsValid, setIntervalloPagineIsValid] =
-    useState<boolean | undefined>(true);
+  const [intervalloPagineIsValid, setIntervalloPagineIsValid] = useState<
+    boolean | undefined
+  >(true);
   const [numeroCopie, setNumeroCopie] = useState<number>(1);
   const [preventivo, setPreventivo] = useState<string>("0.00");
   const [formSubmitted, setFormSubmitted] = useState<boolean>(false);
@@ -244,70 +245,71 @@ const App = () => {
 
   //Send data to the Firebase server
 
-  const submitFormHandler = useCallback((event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-    event.preventDefault();
-    setFormSubmitting(true);
-    if (!file || !data.isValid) {
-      return;
-    }
-    const id = v4();
-    const path = `PDF/${
-      data.surname +
-      data.name +
-      "|" +
-      file.name
-        .trim()
-        .replace(".pdf", "")
-        .replace(/\s/g, "")
-        .replace(/\(/g, "[")
-        .replace(/\)/g, "]") +
-      "|" +
-      id
-    }.pdf`;
-    const fileRef = ref(storage, path);
-    uploadBytes(fileRef, file).then((snapshot) => {
-      getDownloadURL(snapshot.ref).then((url) => {
-        const dataToUpload = {
-          id: id,
-          path: path,
-          nome: data.name,
-          cognome: data.surname,
-          email: data.email,
-          telefono: data.telephoneNumber,
-          file: url,
-          colore:
-            inchiostro === inchiostroEnum.BIANCOENERO
-              ? "Bianco e nero"
-              : "Colore",
-          pagina: pagina === 0 ? "Fronte-retro" : "Fronte",
-          layout:
-            layout === 0
-              ? "Verticale"
-              : layout === 1
-              ? "Orizzontale"
-              : layout === 2
-              ? "2 pagine in 1 orizzontale"
-              : "2 pagine in 1 verticale",
-          rilegatura:
-            rilegatura === 0
-              ? "Anelli"
-              : rilegatura === 1
-              ? "Fascetta"
-              : rilegatura === 2
-              ? "Ciappatura"
-              : "Nessuna",
-          pagine: daA,
-          copie: numeroCopie,
-          timestamp: serverTimestamp(),
-        };
-        const collectionRef = collection(db, "StampePDF");
-        const PDFref = doc(collectionRef, id);
-        setDoc(PDFref, dataToUpload)
-          .then(() => {
-            setFormSubmitting(false);
-            setFormSubmitted(true);
-            //Send message to telegram channel
-            const messageText = `
+  const submitFormHandler = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+      event.preventDefault();
+      setFormSubmitting(true);
+      if (!file || !data.isValid) {
+        return;
+      }
+      const id = v4();
+      const path = `PDF/${
+        data.surname +
+        data.name +
+        "|" +
+        file.name
+          .trim()
+          .replace(".pdf", "")
+          .replace(/\s/g, "")
+          .replace(/\(/g, "[")
+          .replace(/\)/g, "]") +
+        "|" +
+        id
+      }.pdf`;
+      const fileRef = ref(storage, path);
+      uploadBytes(fileRef, file).then((snapshot) => {
+        getDownloadURL(snapshot.ref).then((url) => {
+          const dataToUpload = {
+            id: id,
+            path: path,
+            nome: data.name,
+            cognome: data.surname,
+            email: data.email,
+            telefono: data.telephoneNumber,
+            file: url,
+            colore:
+              inchiostro === inchiostroEnum.BIANCOENERO
+                ? "Bianco e nero"
+                : "Colore",
+            pagina: pagina === 0 ? "Fronte-retro" : "Fronte",
+            layout:
+              layout === 0
+                ? "Verticale"
+                : layout === 1
+                ? "Orizzontale"
+                : layout === 2
+                ? "2 pagine in 1 orizzontale"
+                : "2 pagine in 1 verticale",
+            rilegatura:
+              rilegatura === 0
+                ? "Anelli"
+                : rilegatura === 1
+                ? "Fascetta"
+                : rilegatura === 2
+                ? "Ciappatura"
+                : "Nessuna",
+            pagine: daA,
+            copie: numeroCopie,
+            timestamp: serverTimestamp(),
+          };
+          const collectionRef = collection(db, "StampePDF");
+          const PDFref = doc(collectionRef, id);
+          setDoc(PDFref, dataToUpload)
+            .then(() => {
+              setFormSubmitting(false);
+              setFormSubmitted(true);
+              //Send message to telegram channel
+              const messageText = `
             *NUOVO ORDINE*
             
             *Nome*: ${dataToUpload.nome}
@@ -325,40 +327,42 @@ const App = () => {
             *Copie*: ${dataToUpload.copie}
             
             `;
-            const apiUrl = `https://api.telegram.org/bot${TOKEN}/sendMessage`;
-            const data = {
-              chat_id: CHAT_ID,
-              text: messageText,
-              parse_mode: "Markdown",
-            };
-            const requestOptions = {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(data),
-            };
-            fetch(apiUrl, requestOptions)
-              .then((response) => {
-                if (response.ok) {
-                  console.log("Messaggio inviato con successo");
-                } else {
-                  console.log(
-                    "Errore durante l'invio del messaggio:",
-                    response.statusText
-                  );
-                }
-              })
-              .catch((error) => {
-                console.error("Errore durante l'invio del messaggio:", error);
-              });
-          })
-          .catch((error) => {
-            console.log(error);
-            setFormError(true);
-            setFormSubmitting(false);
-          });
+              const apiUrl = `https://api.telegram.org/bot${TOKEN}/sendMessage`;
+              const data = {
+                chat_id: CHAT_ID,
+                text: messageText,
+                parse_mode: "Markdown",
+              };
+              const requestOptions = {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+              };
+              fetch(apiUrl, requestOptions)
+                .then((response) => {
+                  if (response.ok) {
+                    console.log("Messaggio inviato con successo");
+                  } else {
+                    console.log(
+                      "Errore durante l'invio del messaggio:",
+                      response.statusText
+                    );
+                  }
+                })
+                .catch((error) => {
+                  console.error("Errore durante l'invio del messaggio:", error);
+                });
+            })
+            .catch((error) => {
+              console.log(error);
+              setFormError(true);
+              setFormSubmitting(false);
+            });
+        });
       });
-    });
-  },[daA, data, file, inchiostro, layout, numeroCopie, pagina, rilegatura]);
+    },
+    [daA, data, file, inchiostro, layout, numeroCopie, pagina, rilegatura]
+  );
 
   //Final modal handling
 
@@ -366,7 +370,7 @@ const App = () => {
     setFormSubmitted(false);
     setFormSubmitting(false);
     setFormError(false);
-  },[]);
+  }, []);
 
   return (
     <div className="container">
@@ -379,62 +383,92 @@ const App = () => {
       <SingleDelimiter />
       <ContainerCards
         title="Colore:"
-        components={useMemo(()=>[
-          {
-            title: "Bianco e nero",
-            imageSrc: require("./assets/images/Bianco_e_nero.jpg"),
-          },
-          { title: "Colore", imageSrc: require("./assets/images/Colore.jpg") },
-        ],[])}
+        components={useMemo(
+          () => [
+            {
+              title: "Bianco e nero",
+              imageSrc: require("./assets/images/Bianco_e_nero.jpg"),
+            },
+            {
+              title: "Colore",
+              imageSrc: require("./assets/images/Colore.jpg"),
+            },
+          ],
+          []
+        )}
         defaultValue="Bianco e nero"
         onSendData={newValue}
       />
       <SingleDelimiter />
       <ContainerCards
         title="Gestione pagina:"
-        components={useMemo(()=>[
-          {
-            title: "Fronte-retro",
-            imageSrc: require("./assets/images/Fronte_retro.png"),
-          },
-          { title: "Fronte", imageSrc: require("./assets/images/Fronte.png") },
-        ],[])}
+        components={useMemo(
+          () => [
+            {
+              title: "Fronte-retro",
+              imageSrc: require("./assets/images/Fronte_retro.png"),
+            },
+            {
+              title: "Fronte",
+              imageSrc: require("./assets/images/Fronte.png"),
+            },
+          ],
+          []
+        )}
         defaultValue="Fronte-retro"
         onSendData={newValue}
       />
       <SingleDelimiter />
       <ContainerCards
         title="Layout:"
-        components={useMemo(()=>[
-          { title: "Verticale", imageSrc: require("./assets/images/Verticale.jpg") },
-          {
-            title: "Orizzontale",
-            imageSrc: require("./assets/images/Orizzontale.jpg"),
-          },
-          {
-            title: "2 pagine in 1 orizzontale",
-            imageSrc: require("./assets/images/2in1Orizzontale.jpg"),
-          },
-          {
-            title: "2 pagine in 1 verticale",
-            imageSrc: require("./assets/images/2in1Verticale.jpg"),
-          },
-        ],[])}
+        components={useMemo(
+          () => [
+            {
+              title: "Verticale",
+              imageSrc: require("./assets/images/Verticale.jpg"),
+            },
+            {
+              title: "Orizzontale",
+              imageSrc: require("./assets/images/Orizzontale.jpg"),
+            },
+            {
+              title: "2 pagine in 1 orizzontale",
+              imageSrc: require("./assets/images/2in1Orizzontale.jpg"),
+            },
+            {
+              title: "2 pagine in 1 verticale",
+              imageSrc: require("./assets/images/2in1Verticale.jpg"),
+            },
+          ],
+          []
+        )}
         defaultValue="Verticale"
         onSendData={newValue}
       />
       <SingleDelimiter />
       <ContainerCards
         title="Rilegatura:"
-        components={useMemo(()=>[
-          { title: "Anelli", imageSrc: require("./assets/images/Anelli.jpg") },
-          { title: "Fascetta", imageSrc: require("./assets/images/Fascetta.jpg") },
-          {
-            title: "Ciappatura",
-            imageSrc: require("./assets/images/Ciappatura.jpg"),
-          },
-          { title: "Nessuna", imageSrc: require("./assets/images/Nessuna.jpg") },
-        ],[])}
+        components={useMemo(
+          () => [
+            {
+              title: "Anelli",
+              imageSrc: require("./assets/images/Anelli.jpg"),
+            },
+            {
+              title: "Fascetta",
+              imageSrc: require("./assets/images/Fascetta.jpg"),
+            },
+            {
+              title: "Ciappatura",
+              imageSrc: require("./assets/images/Ciappatura.jpg"),
+            },
+            {
+              title: "Nessuna",
+              imageSrc: require("./assets/images/Nessuna.jpg"),
+            },
+          ],
+          []
+        )}
         defaultValue="Anelli"
         onSendData={newValue}
       />

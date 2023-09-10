@@ -1,50 +1,48 @@
 .container-cards {
-    display: flex;
-    justify-content: center;
-    flex-direction: column;
-  }
-  
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.title {
+  text-align: center;
+  font-size: 3vw;
+  font-weight: normal;
+  color: rgb(199, 171, 43);
+}
+
+.container {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 6vw;
+}
+
+.container-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media screen and (max-width: 500px) {
   .title {
-    text-align: center;
-    font-size: 3vw;
-    font-weight: normal;
-    color: rgb(199, 171, 43);
+    font-size: 170%;
   }
-  
+
   .container {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    justify-items: center;
     align-items: flex-start;
-    gap: 6vw;
+    gap: 0vw;
   }
-  
+
   .container-item {
+    min-width: 10vw;
+    min-height: 10vh;
     display: flex;
     align-items: center;
     justify-content: center;
   }
-  
-  @media screen and (max-width: 500px) {
-    .title {
-      font-size: 170%;
-    }
-    
-    .container {
-      display: grid;
-      grid-template-columns: 1fr 1fr; 
-      grid-column-gap: 2px;
-      grid-row-gap: 2px;
-      justify-items: center;
-      align-items: flex-start;
-    }
-  
-    .container-item {
-        min-width: 150px;
-        min-height: 150px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-  }
-  
+}

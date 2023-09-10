@@ -65,7 +65,6 @@
   background-color: white;
   justify-content: center;
   width: 40vw;
-  height: 15vh;
   margin-bottom: 2vh;
   box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.4);
   transition: width 0.3s cubic-bezier(0.075, 0.82, 0.165, 1);
@@ -226,7 +225,7 @@
     margin-right: 0;
   }
 
-  .stuck .order-container{
+  .stuck .order-container {
     margin-right: 2.5vw;
   }
 }

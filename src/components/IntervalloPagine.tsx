@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import classes from "./IntervalloPagine.module.css";
-import {RangePagesData} from "../types/RangePagesData"
+import { RangePagesData } from "../types/RangePagesData";
 
 interface propsContainer {
   onSendData: (value: RangePagesData) => void;

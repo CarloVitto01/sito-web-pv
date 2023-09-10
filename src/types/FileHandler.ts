@@ -1,6 +1,4 @@
-
-
 export type FileHandler = {
-    numPages: number;
-    file: File | null;
-}
+  numPages: number;
+  file: File | null;
+};

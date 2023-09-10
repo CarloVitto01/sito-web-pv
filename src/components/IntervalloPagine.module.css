@@ -55,7 +55,6 @@
   position: absolute;
   color: red;
   left: 63vw;
-
 }
 
 .number {
@@ -99,15 +98,21 @@
     font-size: 3.8vw;
   }
   .inputRowDivS {
-    width: 32vw;
+    width: 20vw;
   }
+
+  .inputRowDivS input {
+    margin-right: 2vw;
+    width: 12vw;
+  }
+  
 
   .number {
-    width: 12vw;
     font-size: 5vw;
+    margin: 0;
   }
 
-  .invalid-input{
+  .invalid-input {
     left: 70vw;
   }
 }
