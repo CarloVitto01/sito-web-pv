@@ -10,12 +10,12 @@
 .stuck .container {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
   border: 3px solid rgb(199, 171, 43);
   border-radius: 10px;
   background-color: white;
   justify-content: center;
-  width: 18vw;
+  width: 16.3vw;
   margin-bottom: 2vh;
   box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.4);
 }
@@ -32,6 +32,7 @@
   display: flex;
   text-align: center;
   flex-direction: column;
+  margin-right: 0;
 }
 
 .stuck .inner-container {
@@ -39,7 +40,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  margin-bottom: 1.3vw;
+  margin-bottom: 0;
 }
 
 .stuck .button-container {
@@ -187,6 +188,7 @@
     height: auto;
     margin-bottom: 2vh;
     align-items: center;
+    margin-bottom: 2vh;
   }
 
   .container img {
@@ -208,7 +210,11 @@
   .button-container button {
     font-size: 5vw;
   }
+
   .inner-container {
+    margin-bottom: 2vh;
+  }
+  .stuck .inner-container {
     margin-bottom: 2vh;
   }
 
@@ -218,5 +224,9 @@
 
   .unstuck {
     margin-right: 0;
+  }
+
+  .stuck .order-container{
+    margin-right: 2.5vw;
   }
 }
