@@ -198,24 +198,27 @@ const App = () => {
   useEffect(() => {
     const calcoloPreventivo = () => {
       let totale = 0;
-      let fogli = intervalloPagine;
+      let pagine = intervalloPagine;
+      let fogli;
+      let inchiostroTotale;
       let prezzoInchiostro =
         inchiostro === inchiostroEnum.BIANCOENERO ? biancoNero : colore;
       if (pagina === paginaEnum.FRONTE_RETRO) {
-        fogli = intervalloPagine;
-        totale += foglio + 2 * prezzoInchiostro;
+        fogli = pagine / 2;
+        inchiostroTotale = 2*prezzoInchiostro;
       } else {
-        totale += foglio + prezzoInchiostro;
+        fogli = pagine;
+        inchiostroTotale = prezzoInchiostro;
       }
-
       if (
         layout === layoutEnum.DUEPAGORIZZ ||
         layout === layoutEnum.DUEPAGVERT
       ) {
-        totale = 0.5 * totale;
+        fogli = fogli / 2;
       }
 
-      totale = totale * fogli * numeroCopie;
+      totale += fogli * (foglio + inchiostroTotale);
+      totale = totale * numeroCopie;
 
       if (rilegatura === rilegaturaEnum.ANELLI) {
         totale += anelli * numeroCopie;
@@ -300,6 +303,7 @@ const App = () => {
                 : "Nessuna",
             pagine: daA,
             copie: numeroCopie,
+            prezzo: preventivo,
             timestamp: serverTimestamp(),
           };
           const collectionRef = collection(db, "StampePDF");
@@ -325,6 +329,7 @@ const App = () => {
             *Rilegatura*: ${dataToUpload.rilegatura}
             *Pagine*: ${dataToUpload.pagine}
             *Copie*: ${dataToUpload.copie}
+            *Prezzo*: ${preventivo}€
             
             `;
               const apiUrl = `https://api.telegram.org/bot${TOKEN}/sendMessage`;
@@ -361,7 +366,17 @@ const App = () => {
         });
       });
     },
-    [daA, data, file, inchiostro, layout, numeroCopie, pagina, rilegatura]
+    [
+      daA,
+      data,
+      file,
+      inchiostro,
+      layout,
+      numeroCopie,
+      pagina,
+      rilegatura,
+      preventivo,
+    ]
   );
 
   //Final modal handling
@@ -401,25 +416,6 @@ const App = () => {
       />
       <SingleDelimiter />
       <ContainerCards
-        title="Gestione pagina:"
-        components={useMemo(
-          () => [
-            {
-              title: "Fronte-retro",
-              imageSrc: require("./assets/images/Fronte_retro.png"),
-            },
-            {
-              title: "Fronte",
-              imageSrc: require("./assets/images/Fronte.png"),
-            },
-          ],
-          []
-        )}
-        defaultValue="Fronte-retro"
-        onSendData={newValue}
-      />
-      <SingleDelimiter />
-      <ContainerCards
         title="Layout:"
         components={useMemo(
           () => [
@@ -443,6 +439,26 @@ const App = () => {
           []
         )}
         defaultValue="Verticale"
+        onSendData={newValue}
+      />
+
+      <SingleDelimiter />
+      <ContainerCards
+        title="Gestione pagina:"
+        components={useMemo(
+          () => [
+            {
+              title: "Fronte-retro",
+              imageSrc: require("./assets/images/Fronte_retro.png"),
+            },
+            {
+              title: "Fronte",
+              imageSrc: require("./assets/images/Fronte.png"),
+            },
+          ],
+          []
+        )}
+        defaultValue="Fronte-retro"
         onSendData={newValue}
       />
       <SingleDelimiter />
