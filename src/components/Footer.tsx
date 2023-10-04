@@ -35,20 +35,7 @@ const Footer = () => {
             alt="Logo3"
             className={classes["footer-logo"]}
           />
-          <p className={classes["footer-text"]}>CARLO: +39 389 285 7449</p>
-        </div>
-        <div className={classes["section"]}>
-          <img
-            src={Logo_Telegram}
-            alt="Logo4"
-            className={classes["footer-logo"]}
-          />
-          <img
-            src={Logo_Whatsapp}
-            alt="Logo4"
-            className={classes["footer-logo"]}
-          />
-          <p className={classes["footer-text"]}>ANDREA: +39 328 800 6210</p>
+          <p className={classes["footer-text"]}>CELLULARE: +39 379 178 0539</p>
         </div>
       </div>
     </div>
