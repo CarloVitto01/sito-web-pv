@@ -39,6 +39,16 @@
     text-align: center;
 }
 
+.disabled {
+    opacity: 0.5; /* Rendi il card più trasparente */
+    pointer-events: none; /* Impedisci l'interazione */
+}
+
+.disabled-message {
+    color: red; /* Colore del messaggio */
+    font-size: 12px; /* Dimensione del testo */
+    margin-top: 5px; /* Spazio sopra il messaggio */
+}
 @media screen and (max-width: 500px) {
     .rectangle {
         margin: 0%;

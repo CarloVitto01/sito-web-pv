@@ -206,7 +206,7 @@ const App = () => {
         inchiostro === inchiostroEnum.BIANCOENERO ? biancoNero : colore;
       if (pagina === paginaEnum.FRONTE_RETRO) {
         fogli = pagine / 2;
-        inchiostroTotale = 2*prezzoInchiostro;
+        inchiostroTotale = 2 * prezzoInchiostro;
       } else {
         fogli = pagine;
         inchiostroTotale = prezzoInchiostro;
@@ -257,8 +257,7 @@ const App = () => {
         return;
       }
       const id = v4();
-      const path = `PDF/${
-        data.surname +
+      const path = `PDF/${data.surname +
         data.name +
         "|" +
         file.name
@@ -269,7 +268,7 @@ const App = () => {
           .replace(/\)/g, "]") +
         "|" +
         id
-      }.pdf`;
+        }.pdf`;
       const fileRef = ref(storage, path);
       uploadBytes(fileRef, file).then((snapshot) => {
         getDownloadURL(snapshot.ref).then((url) => {
@@ -290,18 +289,18 @@ const App = () => {
               layout === 0
                 ? "Verticale"
                 : layout === 1
-                ? "Orizzontale"
-                : layout === 2
-                ? "2 pagine in 1 orizzontale"
-                : "2 pagine in 1 verticale",
+                  ? "Orizzontale"
+                  : layout === 2
+                    ? "2 pagine in 1 orizzontale"
+                    : "2 pagine in 1 verticale",
             rilegatura:
               rilegatura === 0
                 ? "Anelli"
                 : rilegatura === 1
-                ? "Fascetta"
-                : rilegatura === 2
-                ? "Ciappatura"
-                : "Nessuna",
+                  ? "Fascetta"
+                  : rilegatura === 2
+                    ? "Ciappatura"
+                    : "Nessuna",
             pagine: daA,
             copie: numeroCopie,
             prezzo: preventivo,
@@ -322,8 +321,8 @@ const App = () => {
             *Email*: ${dataToUpload.email}
             *Telefono*: ${dataToUpload.telefono}
             *File*: [Link al file](${dataToUpload.file
-              .replace(/\(/g, "[")
-              .replace(/\)/g, "]")})
+                  .replace(/\(/g, "[")
+                  .replace(/\)/g, "]")})
             *Colore*: ${dataToUpload.colore}
             *Pagina*: ${dataToUpload.pagina}
             *Layout*: ${dataToUpload.layout}
@@ -404,10 +403,14 @@ const App = () => {
             {
               title: "Bianco e nero",
               imageSrc: require("./assets/images/Bianco_e_nero.jpg"),
+              disabled: false,
+              errorMessage: "",
             },
             {
               title: "Colore",
               imageSrc: require("./assets/images/Colore.jpg"),
+              disabled: false,
+              errorMessage: "",
             },
           ],
           []
@@ -423,18 +426,26 @@ const App = () => {
             {
               title: "Verticale",
               imageSrc: require("./assets/images/Verticale.jpg"),
+              disabled: false,
+              errorMessage: "",
             },
             {
               title: "Orizzontale",
               imageSrc: require("./assets/images/Orizzontale.jpg"),
+              disabled: false,
+              errorMessage: "",
             },
             {
               title: "2 pagine in 1 orizzontale",
               imageSrc: require("./assets/images/2in1Orizzontale.jpg"),
+              disabled: false,
+              errorMessage: "",
             },
             {
               title: "2 pagine in 1 verticale",
               imageSrc: require("./assets/images/2in1Verticale.jpg"),
+              disabled: false,
+              errorMessage: "",
             },
           ],
           []
@@ -451,10 +462,14 @@ const App = () => {
             {
               title: "Fronte-retro",
               imageSrc: require("./assets/images/Fronte_retro.png"),
+              disabled: false,
+              errorMessage: "",
             },
             {
               title: "Fronte",
               imageSrc: require("./assets/images/Fronte.png"),
+              disabled: false,
+              errorMessage: "",
             },
           ],
           []
@@ -470,24 +485,32 @@ const App = () => {
             {
               title: "Anelli",
               imageSrc: require("./assets/images/Anelli.jpg"),
+              disabled: false, // Aggiungi la proprietà disabled
+              errorMessage: "",
             },
             {
               title: "Fascetta",
               imageSrc: require("./assets/images/Fascetta.jpg"),
+              disabled: numeroPaginePDF > 80 && intervalloPagine > 80, // Aggiungi la proprietà disabled
+              errorMessage: "Limite di 80 pagine",
             },
             {
               title: "Ciappatura",
               imageSrc: require("./assets/images/Ciappatura.jpg"),
+              disabled: numeroPaginePDF > 40 && intervalloPagine > 40, // Mantieni la logica di disabilitazione
+              errorMessage: "Limite di 40 pagine"
             },
             {
               title: "Nessuna",
               imageSrc: require("./assets/images/Nessuna.jpg"),
+              disabled: false, // Aggiungi la proprietà disabled
+              errorMessage: "",
             },
           ],
-          []
+          [numeroPaginePDF, intervalloPagine] // Aggiungi numeroPaginePDF come dipendenza
         )}
         defaultValue="Anelli"
-        onSendData={newValue}
+        onSendData={newValue} // Assicurati che newValue sia una funzione valida
       />
       <SingleDelimiter />
       <IntervalloPagine

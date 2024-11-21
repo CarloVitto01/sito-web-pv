@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Card from "./Card";
 import classes from "./ContainerCards.module.css";
-import {Card as CardType} from "../types/Card"
+import { Card as CardType } from "../types/Card";
 
 interface propsContainer {
   title: string;
@@ -34,6 +34,8 @@ const ContainerCards: React.FC<propsContainer> = ({
             imageSrc={component.imageSrc}
             isSelected={selectedCard === component.title}
             onClick={handleCardClick.bind(null, component.title)}
+            disabled={component.disabled} // Passa la proprietà disabled
+            errorMessage={component.errorMessage}
           />
         ))}
       </div>
