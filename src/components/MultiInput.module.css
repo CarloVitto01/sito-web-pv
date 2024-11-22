@@ -1,125 +1,48 @@
-/* MultiInput.module.css */
-.container {
+/* Input.module.css */
+.containerMultiInput {
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
-    border: 2px solid rgb(199, 171, 43);
+    padding: 20px;
+}
+
+.dropzone {
+    border: 2px dashed rgb(199, 171, 43);
     border-radius: 10px;
     padding: 20px;
-    background-color: white;
-    outline: none;
+    text-align: center;
     cursor: pointer;
-    transition: border 0.3s, background-color 0.3s;
-    margin-left: 20%;
-    margin-right: 20%;
+    margin-bottom: 20px;
 }
 
-.text {
+.textMultiInput {
     font-size: 155%;
     color: rgb(199, 171, 43);
-    text-align: center;
 }
 
-.pdfPage {
+.containerPDFMultiInput {
     display: flex;
-    justify-content: center;
-    align-items: center;
-    margin: 0 auto; 
-    border: 2px solid rgb(199, 171, 43);
-    border-radius: 10px;
-    padding: 10px;
+    flex-direction: column; /* Disporre i PDF uno sotto l'altro */
+    align-items: flex-start; /* Allinea a sinistra */
+    gap: 10px; /* Spazio tra i PDF */
 }
 
-.pages-container {
+.pdfContainer {
     display: flex;
-    justify-content: space-between;
+    align-items: center; /* Allinea verticalmente l'immagine e il nome */
 }
 
-.select-page {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: row;
+.pdfIcon {
+    width: 4em; /* /* Mantiene le proporzioni */
+    margin-right: 10px; /* Spazio tra l'icona e il nome del file */
 }
 
-.pagesText {
-    text-align: center;
+.pdfName {
+    font-size: 16px; /* Dimensione del testo per il nome del file */
 }
 
-.buttonsContainer {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.buttonsContainer button {
-    cursor: pointer;
-    border: none;
-    background-color: rgb(199, 171, 43);
-    font-size: 30px;
-    color: white;
-    border: 2px solid white;
-    margin: 0 5px; /* Aggiunto margine per separare i pulsanti */
-}
-
-.buttonsContainer button:disabled {
-    background-color: gray;
-    color: white;
-}
-
-.numberInput {
-    display: flex;
-    width: 20%;
-    margin-left: 5%;
-}
-
-@media screen and (max-width: 500px) {
-    .text {
-        font-size: 105%;
-    }
-
-    .pages-container {
-        display: flex;
-        justify-content: space-between;
-        flex-direction: column;
-    }
-
-    .select-page {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        flex-direction: row;
-    }
-
-    .pagesText {
-        text-align: center;
-        font-size: 80%;
-    }
-
-    .buttonsContainer {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-
-    .buttonsContainer button {
-        cursor: pointer;
-        border: none;
-        background-color: rgb(199, 171, 43);
-        font-size: 30px;
-        color: white;
-        border: 2px solid white;
-    }
-
-    .buttonsContainer button:disabled {
-        background-color: gray;
-        color: white;
-    }
-
-    .numberInput {
-        display: flex;
-        width: 20%;
-        margin-left: 5%;
-    }
+.totalPages {
+    margin-top: 20px; /* Spazio sopra il totale delle pagine */
+    font-size: 18px; /* Dimensione del testo per il totale */
+    color: rgb(199, 171, 43); /* Colore del testo per il totale */
 }

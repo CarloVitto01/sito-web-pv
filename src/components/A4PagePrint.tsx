@@ -386,6 +386,7 @@ const A4PagePrint = () => {
         setFormSubmitted(false);
         setFormSubmitting(false);
         setFormError(false);
+        window.location.reload(); // Ricarica la pagina
       }, []);
 
   return (

@@ -21,10 +21,11 @@ import NumeroCopie from "./NumeroCopie";
 import MultiInput from "./MultiInput";
 
 // Constants
-
-const foglio: number = 0.16;
+const grammaturaNormale: number = 0.12;
+const grammaturaCartoncino: number = 0.17;
 const biancoNero: number = 0.03;
 const colore: number = 0.13;
+
 
 const inchiostroEnum = {
     BIANCOENERO: 0,
@@ -47,6 +48,11 @@ const layoutEnum = {
     AUTO: 2,
 };
 
+const grammaturaEnum = {
+    NORMALE: 0,
+    CARTONCINO: 1
+}
+
 const A3PagePrint = () => {
     const [data, setData] = useState<FormData>({
         name: "",
@@ -57,6 +63,7 @@ const A3PagePrint = () => {
     const [file, setFile] = useState<File[]>([]);
     const [numeroPaginePDF, setNumeroPaginePDF] = useState<number>(0);
     const [inchiostro, setInchiostro] = useState<number>(inchiostroEnum.COLORE);
+    const [grammatura, setGrammatura] = useState<number>(grammaturaEnum.NORMALE);
     const [pagina, setPagina] = useState<number>(paginaEnum.FRONTE);
     const [layout, setLayout] = useState<number>(layoutEnum.AUTO);
     const [numeroCopie, setNumeroCopie] = useState<number>(1);
@@ -109,6 +116,12 @@ const A3PagePrint = () => {
             case "Auto":
                 setLayout(layoutEnum.AUTO);
                 break;
+            case "Normale":
+                setGrammatura(grammaturaEnum.NORMALE);
+                break;
+            case "Cartoncino":
+                setGrammatura(grammaturaEnum.CARTONCINO);
+                break;
             case "Si":
                 setPlastificazione(plastificazioneEnum.SI);
                 break;
@@ -118,78 +131,75 @@ const A3PagePrint = () => {
         }
     }, []);
 
-    const setPDFHandler = useCallback((files: FileHandler[]) => {
-        let totalNumPages = 0; // Inizializza un contatore per le pagine totali
-        const uploadedFiles: File[] = []; // Array per tenere traccia dei file caricati
-      
-        files.forEach(fileHandler => {
-          if (fileHandler.file) { // Assicurati che fileHandler.file non sia null
-            totalNumPages += fileHandler.numPages; // Somma le pagine
-            uploadedFiles.push(fileHandler.file); // Aggiungi il file all'array
-          }
-        });
-      
-        setFile(uploadedFiles); // Imposta l'array di file
-        setNumeroPaginePDF(totalNumPages); // Imposta il numero totale di pagine
-      }, []);
-      
-    
+    const setPDFHandler = useCallback((files: FileHandler[], totalPages: number) => {
+        // Filtra i file per rimuovere eventuali null
+        const validFiles = files.map(fileHandler => fileHandler.file).filter((file): file is File => file !== null);
+
+        setFile(validFiles); // Imposta i file validi
+        setNumeroPaginePDF(totalPages); // Imposta il numero totale di pagine
+        console.log("Totale numero di pagine:", totalPages);
+    }, []);
+
+
 
     // Calculate total order
     useEffect(() => {
         const calcoloPreventivo = () => {
-          let totale = 0;
-          let pagine = numeroPaginePDF;
-          console.log("Numero Pagine:", pagine);
-          let fogli;
-          let inchiostroTotale;
-          let prezzoInchiostro =
-              inchiostro === inchiostroEnum.COLORE ? colore : biancoNero;
-      
-          console.log("Numero Pagine:", pagine);
-          console.log("Inchiostro Prezzo:", prezzoInchiostro);
-      
-          if (pagina === paginaEnum.FRONTE_RETRO) {
-              fogli = Math.ceil(pagine / 2);  // Assicurati di arrotondare correttamente
-              inchiostroTotale = 2 * prezzoInchiostro;
-          } else {
-              fogli = pagine;
-              inchiostroTotale = prezzoInchiostro;
-          }
-      
-          console.log("Numero Pagine:", pagine);
-      
-          totale += fogli * (foglio + inchiostroTotale);
-          totale *= numeroCopie;
-      
-          console.log("Numero fogli:", fogli);
-      
-          if (plastificazione === plastificazioneEnum.SI) {
-              totale += 0.30 * pagine;
-          }
-          if (numeroCopie === 0) {
-              totale = 0;
-          }
-      
-          console.log("Totale:", totale);
-      
-          return totale.toFixed(2);
+            let totale = 0;
+            let pagine = numeroPaginePDF;
+            console.log("Numero Pagine:", pagine);
+            let fogli;
+            let foglio = grammatura === grammaturaEnum.CARTONCINO ? grammaturaCartoncino : grammaturaNormale;
+            let inchiostroTotale;
+            let prezzoInchiostro =
+                inchiostro === inchiostroEnum.COLORE ? colore : biancoNero;
+
+            console.log("Numero Pagine:", pagine);
+            console.log("Inchiostro Prezzo:", prezzoInchiostro);
+
+            if (pagina === paginaEnum.FRONTE_RETRO) {
+                fogli = Math.ceil(pagine / 2);
+                inchiostroTotale = 2 * prezzoInchiostro;
+            } else {
+                fogli = pagine;
+                inchiostroTotale = prezzoInchiostro;
+            }
+
+            console.log("Numero Pagine:", pagine);
+
+            totale += fogli * (foglio + inchiostroTotale);
+            console.log(foglio)
+            totale *= numeroCopie;
+
+            console.log("Numero fogli:", fogli);
+
+            if (plastificazione === plastificazioneEnum.SI) {
+                totale += 0.30 * pagine;
+            }
+            if (numeroCopie === 0) {
+                totale = 0;
+            }
+
+            console.log("Totale:", totale);
+
+            return totale.toFixed(2);
         };
-      
+
         if (numeroPaginePDF > 0) {
-          let total = calcoloPreventivo();
-          setPreventivo(total);
+            let total = calcoloPreventivo();
+            setPreventivo(total);
         }
-      }, [
+    }, [
         inchiostro,
         pagina,
         layout,
         numeroPaginePDF,
         numeroCopie,
-        plastificazione
-      ]);
-      
-    
+        plastificazione,
+        grammatura,
+    ]);
+
+
     // Send data to the Firebase server
     const submitFormHandler = useCallback(async (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
         event.preventDefault();
@@ -198,25 +208,25 @@ const A3PagePrint = () => {
             setFormSubmitting(false); // Assicurati di impostare formSubmitting su false se non ci sono file
             return;
         }
-    
+
         const id = v4();
         const paths: string[] = []; // Array per memorizzare i percorsi dei file
         const urls: string[] = []; // Array per memorizzare gli URL dei file
-    
+
         // Carica i file uno per uno
         for (const singleFile of file) {
             const path = `PDF/${data.surname + data.name + "|" + singleFile.name.trim().replace(".pdf", "").replace(/\s/g, "").replace(/\(/g, "[").replace(/\)/g, "]") + "|" + id}.pdf`;
             paths.push(path); // Aggiungi il percorso all'array
-    
+
             const fileRef = ref(storage, path);
             const snapshot = await uploadBytes(fileRef, singleFile);
             const url = await getDownloadURL(snapshot.ref);
             urls.push(url); // Aggiungi l'URL all'array
         }
-    
+
         // Crea il messaggio con i link dei file
         const fileLinks = urls.map((url, index) => `- [File ${index + 1}](${url.replace(/\(/g, "[").replace(/\)/g, "]")})`).join("\n");
-    
+
         const dataToUpload = {
             id: id,
             paths: paths,
@@ -225,6 +235,7 @@ const A3PagePrint = () => {
             email: data.email,
             telefono: data.telephoneNumber,
             files: urls,
+            grammatura: grammatura === grammaturaEnum.CARTONCINO ? "Cartoncino" : "Normale",
             colore: inchiostro === inchiostroEnum.COLORE ? "Colore" : "Bianco e nero",
             pagina: pagina === 1 ? "Fronte" : "Fronte-retro",
             layout: layout === 0 ? "Orizzontale" : layout === 1 ? "Verticale" : "Auto",
@@ -234,7 +245,7 @@ const A3PagePrint = () => {
             prezzo: preventivo,
             timestamp: serverTimestamp(),
         };
-    
+
         const collectionRef = collection(db, "StampePDF");
         const PDFref = doc(collectionRef, id);
         setDoc(PDFref, dataToUpload)
@@ -250,6 +261,7 @@ const A3PagePrint = () => {
                 *Telefono*: ${dataToUpload.telefono}
                 *Link ai file:*
                 ${fileLinks}
+                *Grammatura*: ${dataToUpload.grammatura}
                 *Colore*: ${dataToUpload.colore}
                 *Pagina*: ${dataToUpload.pagina}
                 *Layout*: ${dataToUpload.layout}
@@ -268,7 +280,7 @@ const A3PagePrint = () => {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(data),
                 };
-                fetch(apiUrl , requestOptions)
+                fetch(apiUrl, requestOptions)
                     .then((response) => {
                         if (response.ok) {
                             console.log("Messaggio inviato con successo");
@@ -285,15 +297,16 @@ const A3PagePrint = () => {
                 setFormError(true);
                 setFormSubmitting(false);
             });
-    }, [data.email, data.isValid, data.name, data.surname, data.telephoneNumber, file, inchiostro, layout, numeroCopie, numeroPaginePDF, pagina, plastificazione, preventivo]);    // Final modal handling
+    }, [data.email, data.isValid, data.name, data.surname, data.telephoneNumber, file, grammatura, inchiostro, layout, numeroCopie, numeroPaginePDF, pagina, plastificazione, preventivo]);    // Final modal handling
     const closeFinalModalHandler = useCallback(() => {
         setFormSubmitted(false);
         setFormSubmitting(false);
         setFormError(false);
+        window.location.reload(); // Ricarica la pagina
     }, []);
     const setCopiesHandler = useCallback((value: number) => {
         setNumeroCopie(value);
-      }, []);
+    }, []);
 
     return (
         <div className="container">
@@ -303,6 +316,29 @@ const A3PagePrint = () => {
             <Form onSendData={setDataHandler} />
             <SingleDelimiter />
             <MultiInput onSendData={setPDFHandler} />
+            <SingleDelimiter />
+            <ContainerCards
+                title="Grammatura:"
+                components={useMemo(
+                    () => [
+                        {
+                            title: "Normale",
+                            imageSrc: require("../assets/images/Colore.jpg"),
+                            disabled: false,
+                            errorMessage: ""
+                        },
+                        {
+                            title: "Cartoncino",
+                            imageSrc: require("../assets/images/Bianco_e_nero.jpg"),
+                            disabled: false,
+                            errorMessage: ""
+                        },
+                    ],
+                    []
+                )}
+                defaultValue="Normale"
+                onSendData={newValue}
+            />
             <SingleDelimiter />
             <ContainerCards
                 title="Colore:"
