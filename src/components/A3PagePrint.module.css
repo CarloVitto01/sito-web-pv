@@ -1,0 +1,12 @@
+.back-button-A3 {
+    background-color: transparent;
+    display: flex;
+    z-index: 2;
+    position: fixed;
+    color: rgb(223, 182, 0);
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 30px;
+    top: 14px;
+}

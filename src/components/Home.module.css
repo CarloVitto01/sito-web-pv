@@ -1,22 +1,136 @@
-/* src/components/Home.css */
-.home-container {
-    text-align: center;
-    padding: 20px;
-    background-color: #f9f9f9;
-    min-height: 100vh; /* Full viewport height */
-  }
+.home-page{
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
   
-  .start-button {
-    padding: 10px 20px;
-    font-size: 16px;
-    background-color: #007bff; /* Bootstrap primary color */
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
+}
+
+.home-container{
+  margin-top: 25px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  align-items: center;
+}
+
+
+.description-home{
+  margin-top: 5%;
+}
+
+.menu-button-home {
+  position: fixed;
+  background-color: transparent;
+  display: flex;
+  top: 14px;
+  z-index: 2;
+  color: rgb(223, 182, 0);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 30px;
+}
+
+.side-menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  /* Cambiato da right a left */
+  width: 250px;
+  height: 100%;
+  background-color: #ffffffca;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  transition: transform 0.3s ease;
+  transform: translateX(0);
+}
+
+.link-menu{
+  text-decoration: none;
+  color: black;
+}
+
+.side-menu ul {
+  list-style: none;
+  padding: 20px;
+}
+
+.side-menu li {
+  margin: 1em;
+  border-bottom: 1px solid black;
+}
+
+.side-menu li:hover{
+  border-bottom: 1px solid rgb(223, 182, 0);
+  color: rgb(223, 182, 0);
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  /* Posizionato a destra per chiudere il menu */
+}
+
+.side-menu.hidden {
+  transform: translateX(100%);
+}
+
+.slide-carosell{
+  width: 90%;
+}
+
+.slide img {
+  width: 100%;
+  /* Larghezza al 100% del contenitore */
+  height: 300px;
+  /* Altezza fissa */
+  object-fit: cover;
+  /* Mantiene le proporzioni e riempie il contenitore */
+}
+
+/* Media query per schermi più piccoli di 768px (tablet e smartphone) */
+@media (max-width: 768px) {
+  .home-container {
+    margin-top: 5%; /* Riduci il margine superiore */
   }
+
   
-  .start-button:hover {
-    background-color: #0056b3; /* Darker shade on hover */
+
+  .side-menu {
+    width: 50%; /* Riduci la larghezza del menu laterale */
   }
+
+  .side-menu li {
+    margin: 0.5em; /* Riduci il margine tra gli elementi del menu */
+  }
+
+  .slide img {
+    height: 200px; /* Riduci l'altezza delle immagini nello slider */
+  }
+}
+
+/* Media query per schermi più piccoli di 480px (smartphone) */
+@media (max-width: 480px) {
+  .home-container {
+    margin-top: 12%; /* Ulteriore riduzione del margine superiore */
+  }
+
+
+  .side-menu {
+    width: 50%; /* Rendi il menu laterale a tutta larghezza */
+  }
+
+  .slide img {
+    height: 150px; /* Ulteriore riduzione dell'altezza delle immagini nello slider */
+  }
+
+  .description-home {
+    font-size: 14px; /* Riduci la dimensione del font per la descrizione */
+  }
+}

@@ -21,6 +21,9 @@ import { TOKEN, CHAT_ID } from "../backend/telegram";
 import { FormData } from "../types/FormData";
 import { FileHandler } from "../types/FileHandler";
 import { RangePagesData } from "../types/RangePagesData";
+import { Link } from "react-router-dom";
+import classes from "./A4PagePrint.module.css";
+import { FaArrowLeftLong } from "react-icons/fa6";
 
 //Constants
 
@@ -59,262 +62,262 @@ const rilegaturaEnum = {
 };
 
 const A4PagePrint = () => {
-    const [data, setData] = useState<FormData>({
-        name: "",
-        surname: "",
-        email: "",
-        telephoneNumber: "",
-      });
-      const [file, setFile] = useState<File | null>(null);
-      const [numeroPaginePDF, setNumeroPaginePDF] = useState<number>(0);
-      const [inchiostro, setInchiostro] = useState<number>(
-        inchiostroEnum.BIANCOENERO
-      );
-      const [pagina, setPagina] = useState<number>(paginaEnum.FRONTE_RETRO);
-      const [layout, setLayout] = useState<number>(layoutEnum.VERTICALE);
-      const [rilegatura, setRilegatura] = useState<number>(rilegaturaEnum.ANELLI);
-      const [intervalloPagine, setIntervalloPagine] = useState<number>(1);
-      const [daA, setDaA] = useState<string>("Tutte");
-      const [intervalloPagineIsValid, setIntervalloPagineIsValid] = useState<
-        boolean | undefined
-      >(true);
-      const [numeroCopie, setNumeroCopie] = useState<number>(1);
-      const [preventivo, setPreventivo] = useState<string>("0.00");
-      const [formSubmitted, setFormSubmitted] = useState<boolean>(false);
-      const [formSubmitting, setFormSubmitting] = useState<boolean>(false);
-      const [formError, setFormError] = useState<boolean>(false);
-    
-      //Debug
-      // console.log(numeroPaginePDF);
-      // console.log(inchiostro);
-      // console.log(pagina);
-      // console.log(layout);
-      // console.log(rilegatura);
-      // console.log(intervalloPagine);
-      // console.log(numeroCopie);
-      //
-    
-      //Prevent scrolling when modal is open
-    
-      useEffect(() => {
-        if (formSubmitted || formSubmitting || formError) {
-          document.body.style.overflow = "hidden";
+  const [data, setData] = useState<FormData>({
+    name: "",
+    surname: "",
+    email: "",
+    telephoneNumber: "",
+  });
+  const [file, setFile] = useState<File | null>(null);
+  const [numeroPaginePDF, setNumeroPaginePDF] = useState<number>(0);
+  const [inchiostro, setInchiostro] = useState<number>(
+    inchiostroEnum.BIANCOENERO
+  );
+  const [pagina, setPagina] = useState<number>(paginaEnum.FRONTE_RETRO);
+  const [layout, setLayout] = useState<number>(layoutEnum.VERTICALE);
+  const [rilegatura, setRilegatura] = useState<number>(rilegaturaEnum.ANELLI);
+  const [intervalloPagine, setIntervalloPagine] = useState<number>(1);
+  const [daA, setDaA] = useState<string>("Tutte");
+  const [intervalloPagineIsValid, setIntervalloPagineIsValid] = useState<
+    boolean | undefined
+  >(true);
+  const [numeroCopie, setNumeroCopie] = useState<number>(1);
+  const [preventivo, setPreventivo] = useState<string>("0.00");
+  const [formSubmitted, setFormSubmitted] = useState<boolean>(false);
+  const [formSubmitting, setFormSubmitting] = useState<boolean>(false);
+  const [formError, setFormError] = useState<boolean>(false);
+
+  //Debug
+  // console.log(numeroPaginePDF);
+  // console.log(inchiostro);
+  // console.log(pagina);
+  // console.log(layout);
+  // console.log(rilegatura);
+  // console.log(intervalloPagine);
+  // console.log(numeroCopie);
+  //
+
+  //Prevent scrolling when modal is open
+
+  useEffect(() => {
+    if (formSubmitted || formSubmitting || formError) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+  }, [formSubmitted, formSubmitting, formError]);
+
+  //Form Data Handling
+
+  const setDataHandler = useCallback((data: FormData) => {
+    setData({
+      name: data.name,
+      surname: data.surname,
+      email: data.email,
+      telephoneNumber: data.telephoneNumber,
+      isValid: data.isValid,
+    });
+  }, []);
+
+  const newValue = useCallback((value: string) => {
+    switch (value) {
+      case "Bianco e nero":
+        setInchiostro(inchiostroEnum.BIANCOENERO);
+        break;
+      case "Colore":
+        setInchiostro(inchiostroEnum.COLORE);
+        break;
+      case "Fronte-retro":
+        setPagina(paginaEnum.FRONTE_RETRO);
+        break;
+      case "Fronte":
+        setPagina(paginaEnum.FRONTE);
+        break;
+      case "Verticale":
+        setLayout(layoutEnum.VERTICALE);
+        break;
+      case "Orizzontale":
+        setLayout(layoutEnum.ORIZZONTALE);
+        break;
+      case "2 pagine in 1 orizzontale":
+        setLayout(layoutEnum.DUEPAGORIZZ);
+        break;
+      case "2 pagine in 1 verticale":
+        setLayout(layoutEnum.DUEPAGVERT);
+        break;
+      case "Anelli":
+        setRilegatura(rilegaturaEnum.ANELLI);
+        break;
+      case "Fascetta":
+        setRilegatura(rilegaturaEnum.FASCETTA);
+        break;
+      case "Ciappatura":
+        setRilegatura(rilegaturaEnum.CIAPPATURA);
+        break;
+      case "Nessuna":
+        setRilegatura(rilegaturaEnum.NESSUNA);
+        break;
+    }
+  }, []);
+
+  const setPDFHandler = useCallback((value: FileHandler) => {
+    setNumeroPaginePDF(value.numPages);
+    setFile(value.file);
+  }, []);
+
+  const setRangePagesHandler = useCallback(
+    (value: RangePagesData) => {
+      if (value.all) {
+        if (numeroPaginePDF) {
+          setIntervalloPagine(numeroPaginePDF);
         } else {
-          document.body.style.overflow = "auto";
+          setIntervalloPagine(1);
         }
-      }, [formSubmitted, formSubmitting, formError]);
-    
-      //Form Data Handling
-    
-      const setDataHandler = useCallback((data: FormData) => {
-        setData({
-          name: data.name,
-          surname: data.surname,
-          email: data.email,
-          telephoneNumber: data.telephoneNumber,
-          isValid: data.isValid,
-        });
-      }, []);
-    
-      const newValue = useCallback((value: string) => {
-        switch (value) {
-          case "Bianco e nero":
-            setInchiostro(inchiostroEnum.BIANCOENERO);
-            break;
-          case "Colore":
-            setInchiostro(inchiostroEnum.COLORE);
-            break;
-          case "Fronte-retro":
-            setPagina(paginaEnum.FRONTE_RETRO);
-            break;
-          case "Fronte":
-            setPagina(paginaEnum.FRONTE);
-            break;
-          case "Verticale":
-            setLayout(layoutEnum.VERTICALE);
-            break;
-          case "Orizzontale":
-            setLayout(layoutEnum.ORIZZONTALE);
-            break;
-          case "2 pagine in 1 orizzontale":
-            setLayout(layoutEnum.DUEPAGORIZZ);
-            break;
-          case "2 pagine in 1 verticale":
-            setLayout(layoutEnum.DUEPAGVERT);
-            break;
-          case "Anelli":
-            setRilegatura(rilegaturaEnum.ANELLI);
-            break;
-          case "Fascetta":
-            setRilegatura(rilegaturaEnum.FASCETTA);
-            break;
-          case "Ciappatura":
-            setRilegatura(rilegaturaEnum.CIAPPATURA);
-            break;
-          case "Nessuna":
-            setRilegatura(rilegaturaEnum.NESSUNA);
-            break;
+      } else {
+        setIntervalloPagineIsValid(value.isValid);
+        if (!value.isValid) {
+          return;
         }
-      }, []);
-    
-      const setPDFHandler = useCallback((value: FileHandler) => {
-        setNumeroPaginePDF(value.numPages);
-        setFile(value.file);
-      }, []);
-    
-      const setRangePagesHandler = useCallback(
-        (value: RangePagesData) => {
-          if (value.all) {
-            if (numeroPaginePDF) {
-              setIntervalloPagine(numeroPaginePDF);
-            } else {
-              setIntervalloPagine(1);
-            }
-          } else {
-            setIntervalloPagineIsValid(value.isValid);
-            if (!value.isValid) {
-              return;
-            }
-            let from = value.from;
-            let to = value.to;
-            setDaA("" + from + "-" + to);
-            if (isNaN(from) || isNaN(to)) {
-              return;
-            }
-            let range = to - from + 1;
-            if (from === 0 && to === 0) {
-              range = 0;
-            }
-            setIntervalloPagine(range);
-          }
-        },
-        [numeroPaginePDF]
-      );
-    
-      const setCopiesHandler = useCallback((value: number) => {
-        setNumeroCopie(value);
-      }, []);
-    
-      //Calculate total order
-    
-      useEffect(() => {
-        const calcoloPreventivo = () => {
-          let totale = 0;
-          let pagine = intervalloPagine;
-          let fogli;
-          let inchiostroTotale;
-          let prezzoInchiostro =
-            inchiostro === inchiostroEnum.BIANCOENERO ? biancoNero : colore;
-          if (pagina === paginaEnum.FRONTE_RETRO) {
-            fogli = pagine / 2;
-            inchiostroTotale = 2 * prezzoInchiostro;
-          } else {
-            fogli = pagine;
-            inchiostroTotale = prezzoInchiostro;
-          }
-          if (
-            layout === layoutEnum.DUEPAGORIZZ ||
-            layout === layoutEnum.DUEPAGVERT
-          ) {
-            fogli = fogli / 2;
-          }
-    
-          totale += fogli * (foglio + inchiostroTotale);
-          totale = totale * numeroCopie;
-    
-          if (rilegatura === rilegaturaEnum.ANELLI) {
-            totale += anelli * numeroCopie;
-          } else if (rilegatura === rilegaturaEnum.FASCETTA) {
-            totale += fascetta * numeroCopie;
-          } else if (rilegatura === rilegaturaEnum.CIAPPATURA) {
-            totale += ciappatura * numeroCopie;
-          }
-          if (numeroCopie === 0) {
-            totale = 0;
-          }
-          return totale.toFixed(2);
-        };
-        if (numeroPaginePDF > 0) {
-          let total = calcoloPreventivo();
-          setPreventivo(total);
+        let from = value.from;
+        let to = value.to;
+        setDaA("" + from + "-" + to);
+        if (isNaN(from) || isNaN(to)) {
+          return;
         }
-      }, [
-        inchiostro,
-        pagina,
-        layout,
-        rilegatura,
-        intervalloPagine,
-        numeroPaginePDF,
-        numeroCopie,
-      ]);
-    
-      //Send data to the Firebase server
-    
-      const submitFormHandler = useCallback(
-        (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-          event.preventDefault();
-          setFormSubmitting(true);
-          if (!file || !data.isValid) {
-            return;
-          }
-          const id = v4();
-          const path = `PDF/${data.surname +
-            data.name +
-            "|" +
-            file.name
-              .trim()
-              .replace(".pdf", "")
-              .replace(/\s/g, "")
-              .replace(/\(/g, "[")
-              .replace(/\)/g, "]") +
-            "|" +
-            id
-            }.pdf`;
-          const fileRef = ref(storage, path);
-          uploadBytes(fileRef, file).then((snapshot) => {
-            getDownloadURL(snapshot.ref).then((url) => {
-              const dataToUpload = {
-                id: id,
-                path: path,
-                nome: data.name,
-                cognome: data.surname,
-                email: data.email,
-                telefono: data.telephoneNumber,
-                file: url,
-                colore:
-                  inchiostro === inchiostroEnum.BIANCOENERO
-                    ? "Bianco e nero"
-                    : "Colore",
-                pagina: pagina === 0 ? "Fronte-retro" : "Fronte",
-                layout:
-                  layout === 0
-                    ? "Verticale"
-                    : layout === 1
-                      ? "Orizzontale"
-                      : layout === 2
-                        ? "2 pagine in 1 orizzontale"
-                        : "2 pagine in 1 verticale",
-                rilegatura:
-                  rilegatura === 0
-                    ? "Anelli"
-                    : rilegatura === 1
-                      ? "Fascetta"
-                      : rilegatura === 2
-                        ? "Ciappatura"
-                        : "Nessuna",
-                pagine: daA,
-                copie: numeroCopie,
-                prezzo: preventivo,
-                timestamp: serverTimestamp(),
-              };
-              const collectionRef = collection(db, "StampePDF");
-              const PDFref = doc(collectionRef, id);
-              setDoc(PDFref, dataToUpload)
-                .then(() => {
-                  setFormSubmitting(false);
-                  setFormSubmitted(true);
-                  //Send message to telegram channel
-                  const messageText = `
+        let range = to - from + 1;
+        if (from === 0 && to === 0) {
+          range = 0;
+        }
+        setIntervalloPagine(range);
+      }
+    },
+    [numeroPaginePDF]
+  );
+
+  const setCopiesHandler = useCallback((value: number) => {
+    setNumeroCopie(value);
+  }, []);
+
+  //Calculate total order
+
+  useEffect(() => {
+    const calcoloPreventivo = () => {
+      let totale = 0;
+      let pagine = intervalloPagine;
+      let fogli;
+      let inchiostroTotale;
+      let prezzoInchiostro =
+        inchiostro === inchiostroEnum.BIANCOENERO ? biancoNero : colore;
+      if (pagina === paginaEnum.FRONTE_RETRO) {
+        fogli = pagine / 2;
+        inchiostroTotale = 2 * prezzoInchiostro;
+      } else {
+        fogli = pagine;
+        inchiostroTotale = prezzoInchiostro;
+      }
+      if (
+        layout === layoutEnum.DUEPAGORIZZ ||
+        layout === layoutEnum.DUEPAGVERT
+      ) {
+        fogli = fogli / 2;
+      }
+
+      totale += fogli * (foglio + inchiostroTotale);
+      totale = totale * numeroCopie;
+
+      if (rilegatura === rilegaturaEnum.ANELLI) {
+        totale += anelli * numeroCopie;
+      } else if (rilegatura === rilegaturaEnum.FASCETTA) {
+        totale += fascetta * numeroCopie;
+      } else if (rilegatura === rilegaturaEnum.CIAPPATURA) {
+        totale += ciappatura * numeroCopie;
+      }
+      if (numeroCopie === 0) {
+        totale = 0;
+      }
+      return totale.toFixed(2);
+    };
+    if (numeroPaginePDF > 0) {
+      let total = calcoloPreventivo();
+      setPreventivo(total);
+    }
+  }, [
+    inchiostro,
+    pagina,
+    layout,
+    rilegatura,
+    intervalloPagine,
+    numeroPaginePDF,
+    numeroCopie,
+  ]);
+
+  //Send data to the Firebase server
+
+  const submitFormHandler = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+      event.preventDefault();
+      setFormSubmitting(true);
+      if (!file || !data.isValid) {
+        return;
+      }
+      const id = v4();
+      const path = `PDF/${data.surname +
+        data.name +
+        "|" +
+        file.name
+          .trim()
+          .replace(".pdf", "")
+          .replace(/\s/g, "")
+          .replace(/\(/g, "[")
+          .replace(/\)/g, "]") +
+        "|" +
+        id
+        }.pdf`;
+      const fileRef = ref(storage, path);
+      uploadBytes(fileRef, file).then((snapshot) => {
+        getDownloadURL(snapshot.ref).then((url) => {
+          const dataToUpload = {
+            id: id,
+            path: path,
+            nome: data.name,
+            cognome: data.surname,
+            email: data.email,
+            telefono: data.telephoneNumber,
+            file: url,
+            colore:
+              inchiostro === inchiostroEnum.BIANCOENERO
+                ? "Bianco e nero"
+                : "Colore",
+            pagina: pagina === 0 ? "Fronte-retro" : "Fronte",
+            layout:
+              layout === 0
+                ? "Verticale"
+                : layout === 1
+                  ? "Orizzontale"
+                  : layout === 2
+                    ? "2 pagine in 1 orizzontale"
+                    : "2 pagine in 1 verticale",
+            rilegatura:
+              rilegatura === 0
+                ? "Anelli"
+                : rilegatura === 1
+                  ? "Fascetta"
+                  : rilegatura === 2
+                    ? "Ciappatura"
+                    : "Nessuna",
+            pagine: daA,
+            copie: numeroCopie,
+            prezzo: preventivo,
+            timestamp: serverTimestamp(),
+          };
+          const collectionRef = collection(db, "StampePDF");
+          const PDFref = doc(collectionRef, id);
+          setDoc(PDFref, dataToUpload)
+            .then(() => {
+              setFormSubmitting(false);
+              setFormSubmitted(true);
+              //Send message to telegram channel
+              const messageText = `
                 *NUOVO ORDINE A4*
                 
                 *Nome*: ${dataToUpload.nome}
@@ -322,8 +325,8 @@ const A4PagePrint = () => {
                 *Email*: ${dataToUpload.email}
                 *Telefono*: ${dataToUpload.telefono}
                 *File*: [Link al file](${dataToUpload.file
-                      .replace(/\(/g, "[")
-                      .replace(/\)/g, "]")})
+                  .replace(/\(/g, "[")
+                  .replace(/\)/g, "]")})
                 *Colore*: ${dataToUpload.colore}
                 *Pagina*: ${dataToUpload.pagina}
                 *Layout*: ${dataToUpload.layout}
@@ -333,64 +336,71 @@ const A4PagePrint = () => {
                 *Prezzo*: ${preventivo}€
                 
                 `;
-                  const apiUrl = `https://api.telegram.org/bot${TOKEN}/sendMessage`;
-                  const data = {
-                    chat_id: CHAT_ID,
-                    text: messageText,
-                    parse_mode: "Markdown",
-                  };
-                  const requestOptions = {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(data),
-                  };
-                  fetch(apiUrl, requestOptions)
-                    .then((response) => {
-                      if (response.ok) {
-                        console.log("Messaggio inviato con successo");
-                      } else {
-                        console.log(
-                          "Errore durante l'invio del messaggio:",
-                          response.statusText
-                        );
-                      }
-                    })
-                    .catch((error) => {
-                      console.error("Errore durante l'invio del messaggio:", error);
-                    });
+              const apiUrl = `https://api.telegram.org/bot${TOKEN}/sendMessage`;
+              const data = {
+                chat_id: CHAT_ID,
+                text: messageText,
+                parse_mode: "Markdown",
+              };
+              const requestOptions = {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+              };
+              fetch(apiUrl, requestOptions)
+                .then((response) => {
+                  if (response.ok) {
+                    console.log("Messaggio inviato con successo");
+                  } else {
+                    console.log(
+                      "Errore durante l'invio del messaggio:",
+                      response.statusText
+                    );
+                  }
                 })
                 .catch((error) => {
-                  console.log(error);
-                  setFormError(true);
-                  setFormSubmitting(false);
+                  console.error("Errore durante l'invio del messaggio:", error);
                 });
+            })
+            .catch((error) => {
+              console.log(error);
+              setFormError(true);
+              setFormSubmitting(false);
             });
-          });
-        },
-        [
-          daA,
-          data,
-          file,
-          inchiostro,
-          layout,
-          numeroCopie,
-          pagina,
-          rilegatura,
-          preventivo,
-        ]
-      );
-    
-      //Final modal handling
-    
-      const closeFinalModalHandler = useCallback(() => {
-        setFormSubmitted(false);
-        setFormSubmitting(false);
-        setFormError(false);
-        window.location.reload(); // Ricarica la pagina
-      }, []);
+        });
+      });
+    },
+    [
+      daA,
+      data,
+      file,
+      inchiostro,
+      layout,
+      numeroCopie,
+      pagina,
+      rilegatura,
+      preventivo,
+    ]
+  );
+
+  //Final modal handling
+
+  const closeFinalModalHandler = useCallback(() => {
+    setFormSubmitted(false);
+    setFormSubmitting(false);
+    setFormError(false);
+    window.location.reload(); // Ricarica la pagina
+  }, []);
 
   return (
     <div className="container">
+      <div style={{ margin: "20px", backgroundColor: "none" }}>
+        <Link to="/">
+          <button className={classes["back-button-A4"]}>
+            <FaArrowLeftLong />
+          </button>
+        </Link>
+      </div>
       <Header />
       <Intro />
       <SingleDelimiter />

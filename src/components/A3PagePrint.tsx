@@ -19,6 +19,9 @@ import { FileHandler } from "../types/FileHandler";
 import Form from "./Form";
 import NumeroCopie from "./NumeroCopie";
 import MultiInput from "./MultiInput";
+import { Link } from "react-router-dom";
+import classes from "./A3PagePrint.module.css";
+import { FaArrowLeftLong } from "react-icons/fa6";
 
 // Constants
 const grammaturaNormale: number = 0.12;
@@ -310,6 +313,13 @@ const A3PagePrint = () => {
 
     return (
         <div className="container">
+            <div style={{ margin: "20px", backgroundColor: "none" }}>
+                <Link to="/">
+                    <button className={classes["back-button-A3"]}>
+                        <FaArrowLeftLong />
+                    </button>
+                </Link>
+            </div>
             <Header />
             <Intro />
             <SingleDelimiter />
