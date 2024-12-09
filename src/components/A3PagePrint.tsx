@@ -62,6 +62,8 @@ const A3PagePrint = () => {
         surname: "",
         email: "",
         telephoneNumber: "",
+        corsoLaurea: "",
+        annoAccademico: ""
     });
     const [file, setFile] = useState<File[]>([]);
     const [numeroPaginePDF, setNumeroPaginePDF] = useState<number>(0);
@@ -92,6 +94,8 @@ const A3PagePrint = () => {
             surname: data.surname,
             email: data.email,
             telephoneNumber: data.telephoneNumber,
+            corsoLaurea: data.corsoLaurea,
+            annoAccademico: data.annoAccademico,
             isValid: data.isValid,
         });
     }, []);
@@ -237,6 +241,8 @@ const A3PagePrint = () => {
             cognome: data.surname,
             email: data.email,
             telefono: data.telephoneNumber,
+            corsoLaurea: data.corsoLaurea,
+            annoAccademico: data.annoAccademico,
             files: urls,
             grammatura: grammatura === grammaturaEnum.CARTONCINO ? "Cartoncino" : "Normale",
             colore: inchiostro === inchiostroEnum.COLORE ? "Colore" : "Bianco e nero",
@@ -258,19 +264,23 @@ const A3PagePrint = () => {
                 // Invia il messaggio a Telegram
                 const messageText = `
                 *NUOVO ORDINE A3*
-                *Nome*: ${dataToUpload.nome}
-                *Cognome*: ${dataToUpload.cognome}
-                *Email*: ${dataToUpload.email}
-                *Telefono*: ${dataToUpload.telefono}
-                *Link ai file:*
+
+                📝 *Dettagli Ordine:*
+              - *Nome*: ${dataToUpload.nome}
+              - *Cognome*: ${dataToUpload.cognome}
+              - *Email*: ${dataToUpload.email}
+              - *Telefono*: ${dataToUpload.telefono}
+              - *Corso Laurea*: ${dataToUpload.corsoLaurea}
+              - *Anno Accademico*: ${dataToUpload.annoAccademico}
+                 📁 *Link ai file:* 📄
                 ${fileLinks}
                 *Grammatura*: ${dataToUpload.grammatura}
-                *Colore*: ${dataToUpload.colore}
-                *Pagina*: ${dataToUpload.pagina}
-                *Layout*: ${dataToUpload.layout}
+                🎨 *Colore*: ${dataToUpload.colore}
+                📄 *Pagina*: ${dataToUpload.pagina}
+                📐 *Layout*: ${dataToUpload.layout}
                 *Plastificazione*: ${dataToUpload.plastificazione}
-                *Copie*: ${dataToUpload.copie}
-                *Prezzo*: ${preventivo}€
+                🔢 *Copie*: ${dataToUpload.copie}
+                💰💰 *Prezzo*: ${preventivo}€ 💰💰
                 `;
                 const apiUrl = `https://api.telegram.org/bot${TOKEN}/sendMessage`;
                 const data = {
@@ -300,7 +310,7 @@ const A3PagePrint = () => {
                 setFormError(true);
                 setFormSubmitting(false);
             });
-    }, [data.email, data.isValid, data.name, data.surname, data.telephoneNumber, file, grammatura, inchiostro, layout, numeroCopie, numeroPaginePDF, pagina, plastificazione, preventivo]);    // Final modal handling
+    }, [data.annoAccademico, data.corsoLaurea, data.email, data.isValid, data.name, data.surname, data.telephoneNumber, file, grammatura, inchiostro, layout, numeroCopie, numeroPaginePDF, pagina, plastificazione, preventivo]);    // Final modal handling
     const closeFinalModalHandler = useCallback(() => {
         setFormSubmitted(false);
         setFormSubmitting(false);

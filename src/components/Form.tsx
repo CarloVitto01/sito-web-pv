@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { FormData } from "../types/FormData";
 
 const containsOnlyLetters = (value: string) => {
-  var regex = /^[a-zA-Z]+$/;
+  var regex = /^[a-zA-Z\s]+$/; // Permette anche gli spazi
   return regex.test(value);
 };
 
@@ -13,7 +13,7 @@ const validateEmail = (email: string) => {
 };
 
 const containsOnlyNumbers = (number: string) => {
-  var regex = /^[0-9]+$/;
+  var regex = /^[0-9\s]+$/; // Permette anche gli spazi
   return regex.test(number);
 };
 
@@ -32,11 +32,17 @@ const Form: React.FC<propsContainer> = ({ onSendData }) => {
     useState<string>("");
   const [telephoneNumberIsValid, setTelephoneNumberIsValid] =
     useState<boolean>();
+  const [enteredCorsoLaurea, setEnteredCorsoLaurea] = useState<string>("");
+  const [corsoLaureaIsValid, setCorsoLaureaIsValid] = useState<boolean>();
+  const [enteredAnnoAccademico, setEnteredAnnoAccademico] = useState<string>("");
+  const [annoAccademicoIsValid, setAnnoAccademicoIsValid] = useState<boolean>();
   const [data, setData] = useState<FormData>({
     name: "",
     surname: "",
     email: "",
     telephoneNumber: "",
+    corsoLaurea: "",
+    annoAccademico: ""
   });
 
   //Live validation
@@ -65,6 +71,18 @@ const Form: React.FC<propsContainer> = ({ onSendData }) => {
     }
   }, [enteredTelephoneNumber]);
 
+  useEffect(() => {
+    if (enteredCorsoLaurea) {
+      validateCorsoLaureaHandler(enteredCorsoLaurea);
+    }
+  }, [enteredCorsoLaurea]);
+
+  useEffect(() => {
+    if (enteredAnnoAccademico) {
+      validateAnnoAccademicoNumber(enteredAnnoAccademico);
+    }
+  }, [enteredAnnoAccademico]);
+
   //Set Data
 
   useEffect(() => {
@@ -73,12 +91,16 @@ const Form: React.FC<propsContainer> = ({ onSendData }) => {
       surname: enteredSurname,
       email: enteredEmail,
       telephoneNumber: enteredTelephoneNumber,
+      corsoLaurea: enteredCorsoLaurea,
+      annoAccademico: enteredAnnoAccademico
     });
   }, [
     enteredName,
     enteredSurname,
     enteredEmail,
     enteredTelephoneNumber,
+    enteredCorsoLaurea,
+    enteredAnnoAccademico,
     setData,
   ]);
 
@@ -88,7 +110,7 @@ const Form: React.FC<propsContainer> = ({ onSendData }) => {
     onSendData({
       ...data,
       isValid:
-        nameIsValid && surnameIsValid && emailIsValid && telephoneNumberIsValid,
+        nameIsValid && surnameIsValid && emailIsValid && telephoneNumberIsValid && corsoLaureaIsValid && annoAccademicoIsValid,
     });
   }, [
     data,
@@ -97,6 +119,8 @@ const Form: React.FC<propsContainer> = ({ onSendData }) => {
     surnameIsValid,
     emailIsValid,
     telephoneNumberIsValid,
+    corsoLaureaIsValid,
+    annoAccademicoIsValid
   ]);
 
   //Change values handler
@@ -119,6 +143,16 @@ const Form: React.FC<propsContainer> = ({ onSendData }) => {
     setEnteredTelephoneNumber(event.target.value);
   };
 
+  const corsoLaureaChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setEnteredCorsoLaurea(event.target.value);
+  };
+  
+  const annoAccademicoChangeHandler = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setEnteredAnnoAccademico(event.target.value);
+  };
+
   //Validate values handler
 
   const validateNameHandler = (name: string) => {
@@ -136,9 +170,21 @@ const Form: React.FC<propsContainer> = ({ onSendData }) => {
   };
 
   const validateTelephoneNumber = (telephoneNumber: string) => {
+    const sanitizedNumber = telephoneNumber.replace(/\s+/g, ''); // Rimuovi gli spazi per la validazione
     setTelephoneNumberIsValid(
-      telephoneNumber.trim().length === 10 &&
-        containsOnlyNumbers(telephoneNumber)
+      sanitizedNumber.length === 10 &&
+      containsOnlyNumbers(sanitizedNumber)
+    );
+  };
+
+  const validateCorsoLaureaHandler = (corsoLaurea: string) => {
+    setCorsoLaureaIsValid(corsoLaurea.trim().length > 0 && containsOnlyLetters(corsoLaurea.trim()));
+  };
+
+  const validateAnnoAccademicoNumber = (annoAccademicoNumber: string) => {
+    setAnnoAccademicoIsValid(
+      annoAccademicoNumber.trim().length === 4 &&
+      containsOnlyNumbers(annoAccademicoNumber)
     );
   };
 
@@ -146,11 +192,7 @@ const Form: React.FC<propsContainer> = ({ onSendData }) => {
     <form className={classes["form"]}>
       <div className={classes["container-form"]}>
         <div className={classes["credentials"]}>
-          <div
-            className={`${classes["credential"]} ${
-              nameIsValid === false ? classes.invalid : ""
-            }`}
-          >
+          <div className={`${classes["credential"]} ${nameIsValid === false ? classes.invalid : ""}`}>
             <label htmlFor="name" className={classes["voice"]}>
               Nome:
             </label>
@@ -168,11 +210,7 @@ const Form: React.FC<propsContainer> = ({ onSendData }) => {
               )}
             </div>
           </div>
-          <div
-            className={`${classes["credential"]} ${
-              surnameIsValid === false ? classes.invalid : ""
-            }`}
-          >
+          <div className={`${classes["credential"]} ${surnameIsValid === false ? classes.invalid : ""}`}>
             <label htmlFor="surname" className={classes["voice"]}>
               Cognome:
             </label>
@@ -194,11 +232,7 @@ const Form: React.FC<propsContainer> = ({ onSendData }) => {
           </div>
         </div>
         <div className={classes["credentials"]}>
-          <div
-            className={`${classes["credential"]} ${
-              emailIsValid === false ? classes.invalid : ""
-            }`}
-          >
+          <div className={`${classes["credential"]} ${emailIsValid === false ? classes.invalid : ""}`}>
             <label htmlFor="email" className={classes["voice"]}>
               Email:
             </label>
@@ -216,11 +250,7 @@ const Form: React.FC<propsContainer> = ({ onSendData }) => {
               )}
             </div>
           </div>
-          <div
-            className={`${classes["credential"]} ${
-              telephoneNumberIsValid === false ? classes.invalid : ""
-            }`}
-          >
+          <div className={`${classes["credential"]} ${telephoneNumberIsValid === false ? classes.invalid : ""}`}>
             <label htmlFor="telephoneNumber" className={classes["voice"]}>
               Telefono:
             </label>
@@ -238,6 +268,47 @@ const Form: React.FC<propsContainer> = ({ onSendData }) => {
               />
               {telephoneNumberIsValid === false && (
                 <p style={{ color: "red", margin: 0 }}>Il numero inserito non è valido!</p>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className={classes["credentials"]}>
+          <div className={`${classes["credential"]} ${corsoLaureaIsValid === false ? classes.invalid : ""}`}>
+            <label htmlFor="corsoLaurea" className={classes["voice"]}>
+              Corso:
+            </label>
+            <div style={{ flexDirection: "column" }}>
+              <input
+                type="text"
+                id="corsoLaurea"
+                name="corsoLaurea"
+                value={enteredCorsoLaurea}
+                onChange={corsoLaureaChangeHandler}
+                onBlur={validateCorsoLaureaHandler.bind(null, enteredCorsoLaurea)}
+              />
+              {corsoLaureaIsValid === false && (
+                <p style={{ color: "red", margin: 0 }}>Il corso di Laurea inserito non è valido!</p>
+              )}
+            </div>
+          </div>
+          <div className={`${classes["credential"]} ${telephoneNumberIsValid === false ? classes.invalid : ""}`}>
+            <label htmlFor="annoAccademico" className={classes["voice"]}>
+              Anno:
+            </label>
+            <div style={{ flexDirection: "column" }}>
+              <input
+                type="text"
+                id="annoAccademico"
+                name="annoAccademico"
+                value={enteredAnnoAccademico}
+                onChange={annoAccademicoChangeHandler}
+                onBlur={validateAnnoAccademicoNumber.bind(
+                  null,
+                  enteredAnnoAccademico
+                )}
+              />
+              {annoAccademicoIsValid === false && (
+                <p style={{ color: "red", margin: 0 }}>L'anno accademico inserito non è valido!</p>
               )}
             </div>
           </div>

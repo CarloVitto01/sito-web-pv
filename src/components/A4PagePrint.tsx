@@ -4,7 +4,6 @@ import Footer from "../components/Footer";
 import Header from "../components/Header";
 import Intro from "../components/Intro";
 import Form from "../components/Form";
-import Input from "../components/Input";
 import ContainerCards from "../components/ContainerCards";
 import IntervalloPagine from "../components/IntervalloPagine";
 import SingleDelimiter from "../components/SingleDelimiter";
@@ -24,6 +23,7 @@ import { RangePagesData } from "../types/RangePagesData";
 import { Link } from "react-router-dom";
 import classes from "./A4PagePrint.module.css";
 import { FaArrowLeftLong } from "react-icons/fa6";
+import MultiInput from "./MultiInput";
 
 //Constants
 
@@ -61,14 +61,21 @@ const rilegaturaEnum = {
   NESSUNA: 3,
 };
 
+const rilegaturaUnicaEnum = {
+  SI: 0,
+  NO: 1
+}
+
 const A4PagePrint = () => {
   const [data, setData] = useState<FormData>({
     name: "",
     surname: "",
     email: "",
     telephoneNumber: "",
+    corsoLaurea: "",
+    annoAccademico: ""
   });
-  const [file, setFile] = useState<File | null>(null);
+  const [file, setFile] = useState<File[]>([]);
   const [numeroPaginePDF, setNumeroPaginePDF] = useState<number>(0);
   const [inchiostro, setInchiostro] = useState<number>(
     inchiostroEnum.BIANCOENERO
@@ -76,6 +83,7 @@ const A4PagePrint = () => {
   const [pagina, setPagina] = useState<number>(paginaEnum.FRONTE_RETRO);
   const [layout, setLayout] = useState<number>(layoutEnum.VERTICALE);
   const [rilegatura, setRilegatura] = useState<number>(rilegaturaEnum.ANELLI);
+  const [rilegaturaUnica, setRilegaturaUnica] = useState<number>(rilegaturaUnicaEnum.NO);
   const [intervalloPagine, setIntervalloPagine] = useState<number>(1);
   const [daA, setDaA] = useState<string>("Tutte");
   const [intervalloPagineIsValid, setIntervalloPagineIsValid] = useState<
@@ -86,6 +94,8 @@ const A4PagePrint = () => {
   const [formSubmitted, setFormSubmitted] = useState<boolean>(false);
   const [formSubmitting, setFormSubmitting] = useState<boolean>(false);
   const [formError, setFormError] = useState<boolean>(false);
+  const [numeroPDF, setNumeroPDF] = useState<number>(0); // Stato per il conteggio dei PDF
+console.log(numeroPDF, "numero pdf")
 
   //Debug
   // console.log(numeroPaginePDF);
@@ -115,6 +125,8 @@ const A4PagePrint = () => {
       surname: data.surname,
       email: data.email,
       telephoneNumber: data.telephoneNumber,
+      corsoLaurea: data.corsoLaurea,
+      annoAccademico: data.annoAccademico,
       isValid: data.isValid,
     });
   }, []);
@@ -157,12 +169,22 @@ const A4PagePrint = () => {
       case "Nessuna":
         setRilegatura(rilegaturaEnum.NESSUNA);
         break;
+      case "Unica rilegatura":
+        setRilegaturaUnica(rilegaturaEnum.CIAPPATURA);
+        break;
+      case "No rilegatura unica":
+        setRilegatura(rilegaturaEnum.NESSUNA);
+        break;
     }
   }, []);
 
-  const setPDFHandler = useCallback((value: FileHandler) => {
-    setNumeroPaginePDF(value.numPages);
-    setFile(value.file);
+  const setPDFHandler = useCallback((files: FileHandler[], totalPages: number) => {
+    const validFiles = files.map(fileHandler => fileHandler.file).filter((file): file is File => file !== null);
+    
+    setFile(validFiles); // Imposta i file validi
+    setNumeroPDF(validFiles.length); // Aggiorna il conteggio dei PDF
+    setNumeroPaginePDF(totalPages); // Imposta il numero totale di pagine
+    console.log("Totale numero di pagine:", totalPages);
   }, []);
 
   const setRangePagesHandler = useCallback(
@@ -225,12 +247,24 @@ const A4PagePrint = () => {
       totale += fogli * (foglio + inchiostroTotale);
       totale = totale * numeroCopie;
 
-      if (rilegatura === rilegaturaEnum.ANELLI) {
+      if (numeroPDF === 1 && rilegatura === rilegaturaEnum.ANELLI) {
         totale += anelli * numeroCopie;
-      } else if (rilegatura === rilegaturaEnum.FASCETTA) {
+      } else if (numeroPDF > 1 && rilegatura === rilegaturaEnum.ANELLI && rilegaturaUnica === rilegaturaUnicaEnum.SI) {
+        totale += anelli * numeroCopie;
+      } else if (numeroPDF > 1 && rilegatura === rilegaturaEnum.ANELLI && rilegaturaUnica === rilegaturaUnicaEnum.NO) {
+        totale += anelli * numeroPDF * numeroCopie;
+      } else if (numeroPDF === 1 && rilegatura === rilegaturaEnum.FASCETTA) {
         totale += fascetta * numeroCopie;
-      } else if (rilegatura === rilegaturaEnum.CIAPPATURA) {
+      } else if (numeroPDF > 1 && rilegatura === rilegaturaEnum.FASCETTA && rilegaturaUnica === rilegaturaUnicaEnum.SI) {
+        totale += fascetta * numeroCopie;
+      } else if (numeroPDF > 1 && rilegatura === rilegaturaEnum.FASCETTA && rilegaturaUnica === rilegaturaUnicaEnum.NO) {
+        totale += fascetta * numeroPDF * numeroCopie;
+      } else if (numeroPDF === 1 && rilegatura === rilegaturaEnum.CIAPPATURA) {
         totale += ciappatura * numeroCopie;
+      } else if (numeroPDF > 1 && rilegatura === rilegaturaEnum.CIAPPATURA && rilegaturaUnica === rilegaturaUnicaEnum.SI) {
+        totale += ciappatura * numeroCopie;
+      } else if (numeroPDF > 1 && rilegatura === rilegaturaEnum.CIAPPATURA && rilegaturaUnica === rilegaturaUnicaEnum.NO) {
+        totale += ciappatura * numeroPDF * numeroCopie;
       }
       if (numeroCopie === 0) {
         totale = 0;
@@ -241,49 +275,46 @@ const A4PagePrint = () => {
       let total = calcoloPreventivo();
       setPreventivo(total);
     }
-  }, [
-    inchiostro,
-    pagina,
-    layout,
-    rilegatura,
-    intervalloPagine,
-    numeroPaginePDF,
-    numeroCopie,
-  ]);
+  }, [inchiostro, pagina, layout, rilegatura, intervalloPagine, numeroPaginePDF, numeroCopie, numeroPDF, rilegaturaUnica]);
 
   //Send data to the Firebase server
 
-  const submitFormHandler = useCallback(
-    (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-      event.preventDefault();
-      setFormSubmitting(true);
-      if (!file || !data.isValid) {
+  const submitFormHandler = useCallback(async (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    event.preventDefault();
+    setFormSubmitting(true);
+    if (file.length === 0 || !data.isValid) { // Controlla se ci sono file
+        setFormSubmitting(false); // Assicurati di impostare formSubmitting su false se non ci sono file
         return;
-      }
-      const id = v4();
-      const path = `PDF/${data.surname +
-        data.name +
-        "|" +
-        file.name
-          .trim()
-          .replace(".pdf", "")
-          .replace(/\s/g, "")
-          .replace(/\(/g, "[")
-          .replace(/\)/g, "]") +
-        "|" +
-        id
-        }.pdf`;
-      const fileRef = ref(storage, path);
-      uploadBytes(fileRef, file).then((snapshot) => {
-        getDownloadURL(snapshot.ref).then((url) => {
+    }
+
+    const id = v4();
+    const paths: string[] = []; // Array per memorizzare i percorsi dei file
+    const urls: string[] = []; // Array per memorizzare gli URL dei file
+
+    // Carica i file uno per uno
+    for (const singleFile of file) {
+        const path = `PDF/${data.surname + data.name + "|" + singleFile.name.trim().replace(".pdf", "").replace(/\s/g, "").replace(/\(/g, "[").replace(/\)/g, "]") + "|" + id}.pdf`;
+        paths.push(path); // Aggiungi il percorso all'array
+
+        const fileRef = ref(storage, path);
+        const snapshot = await uploadBytes(fileRef, singleFile);
+        const url = await getDownloadURL(snapshot.ref);
+        urls.push(url); // Aggiungi l'URL all'array
+    }
+
+    // Crea il messaggio con i link dei file
+    const fileLinks = urls.map((url, index) => `- [File ${index + 1}](${url.replace(/\(/g, "[").replace(/\)/g, "]")})`).join("\n");
+
           const dataToUpload = {
             id: id,
-            path: path,
+            path: paths,
             nome: data.name,
             cognome: data.surname,
             email: data.email,
             telefono: data.telephoneNumber,
-            file: url,
+            corsoLaurea: data.corsoLaurea,
+            annoAccademico: data.annoAccademico,
+            file: urls,
             colore:
               inchiostro === inchiostroEnum.BIANCOENERO
                 ? "Bianco e nero"
@@ -306,6 +337,8 @@ const A4PagePrint = () => {
                     ? "Ciappatura"
                     : "Nessuna",
             pagine: daA,
+            rilegaturaUnica: rilegaturaUnica === rilegaturaUnicaEnum.SI ? "SI" : "NO",
+            numeroPDF: numeroPDF,
             copie: numeroCopie,
             prezzo: preventivo,
             timestamp: serverTimestamp(),
@@ -319,21 +352,24 @@ const A4PagePrint = () => {
               //Send message to telegram channel
               const messageText = `
                 *NUOVO ORDINE A4*
-                
+
+                📝 *Dettagli Ordine:*
                 *Nome*: ${dataToUpload.nome}
                 *Cognome*: ${dataToUpload.cognome}
                 *Email*: ${dataToUpload.email}
                 *Telefono*: ${dataToUpload.telefono}
-                *File*: [Link al file](${dataToUpload.file
-                  .replace(/\(/g, "[")
-                  .replace(/\)/g, "]")})
-                *Colore*: ${dataToUpload.colore}
-                *Pagina*: ${dataToUpload.pagina}
-                *Layout*: ${dataToUpload.layout}
-                *Rilegatura*: ${dataToUpload.rilegatura}
+                *Corso Laurea*: ${dataToUpload.corsoLaurea}
+                *Anno Accademico*: ${dataToUpload.annoAccademico}
+                 📁 *Link ai file:* 📄
+                ${fileLinks}
+                🎨 *Colore*: ${dataToUpload.colore}
+                📄 *Pagina*: ${dataToUpload.pagina}
+                📐 *Layout*: ${dataToUpload.layout}
+                📒 *Rilegatura*: ${dataToUpload.rilegatura}
+                📒 *Rilegatura unica*: ${dataToUpload.rilegaturaUnica}
                 *Pagine*: ${dataToUpload.pagine}
-                *Copie*: ${dataToUpload.copie}
-                *Prezzo*: ${preventivo}€
+                🔢 *Copie*: ${dataToUpload.copie}
+                💰💰 *Prezzo*: ${preventivo}€ 💰💰
                 
                 `;
               const apiUrl = `https://api.telegram.org/bot${TOKEN}/sendMessage`;
@@ -366,25 +402,9 @@ const A4PagePrint = () => {
               console.log(error);
               setFormError(true);
               setFormSubmitting(false);
-            });
-        });
-      });
-    },
-    [
-      daA,
-      data,
-      file,
-      inchiostro,
-      layout,
-      numeroCopie,
-      pagina,
-      rilegatura,
-      preventivo,
-    ]
-  );
-
-  //Final modal handling
-
+          });
+  }, [daA, data.annoAccademico, data.corsoLaurea, data.email, data.isValid, data.name, data.surname, data.telephoneNumber, file, inchiostro, layout, numeroCopie, numeroPDF, pagina, preventivo, rilegatura, rilegaturaUnica]);    // Final modal handling
+  
   const closeFinalModalHandler = useCallback(() => {
     setFormSubmitted(false);
     setFormSubmitting(false);
@@ -406,7 +426,7 @@ const A4PagePrint = () => {
       <SingleDelimiter />
       <Form onSendData={setDataHandler} />
       <SingleDelimiter />
-      <Input onSendData={setPDFHandler} />
+      <MultiInput onSendData={setPDFHandler} />
       <SingleDelimiter />
       <ContainerCards
         title="Colore:"
@@ -491,6 +511,29 @@ const A4PagePrint = () => {
       />
       <SingleDelimiter />
       <ContainerCards
+        title="Rilegatura unica:"
+        components={useMemo(
+          () => [
+            {
+              title: "No",
+              imageSrc: require("../assets/images/Fronte_retro.png"),
+              disabled: numeroPDF === 1,
+              errorMessage: "Disponibile Soltanto per 2 o più PDF",
+            },
+            {
+              title: "Si",
+              imageSrc: require("../assets/images/Fronte.png"),
+              disabled: numeroPDF === 1,
+              errorMessage: "Disponibile Soltanto per 2 o più PDF",
+            },
+          ],
+          [numeroPDF]
+        )}
+        defaultValue="No"
+        onSendData={newValue}
+      />
+      <SingleDelimiter />
+      <ContainerCards
         title="Rilegatura:"
         components={useMemo(
           () => [
@@ -528,6 +571,8 @@ const A4PagePrint = () => {
       <IntervalloPagine
         onSendData={setRangePagesHandler}
         maxValue={numeroPaginePDF}
+        disable={numeroPDF >= 2}
+        errorMessage="Disponibile soltanto per un singolo PDF"
       />
       <SingleDelimiter />
       <NumeroCopie onSendData={setCopiesHandler} />

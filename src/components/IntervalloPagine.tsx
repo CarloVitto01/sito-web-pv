@@ -5,10 +5,15 @@ import { RangePagesData } from "../types/RangePagesData";
 interface propsContainer {
   onSendData: (value: RangePagesData) => void;
   maxValue: number;
+  disable: boolean;
+  errorMessage: string; // Aggiunto per il messaggio di errore
 }
+
 const IntervalloPagine: React.FC<propsContainer> = ({
   onSendData,
   maxValue,
+  disable, // Aggiunto per la disattivazione
+  errorMessage // Messaggio di errore da mostrare
 }) => {
   const [option, setOption] = useState("option1");
   const [from, setFrom] = useState<number>(1);
@@ -103,7 +108,12 @@ const IntervalloPagine: React.FC<propsContainer> = ({
   return (
     <div className={classes["page-range"]}>
       <p className={classes["title"]}>Intervallo pagine:</p>
-      <div>
+
+      {disable && (
+        <p className={classes["error-message"]}>{errorMessage}</p>
+      )}
+
+      <div className={disable ? classes["disabled"] : ""}>
         <div className={classes["options"]}>
           <input
             type="radio"
@@ -111,6 +121,7 @@ const IntervalloPagine: React.FC<propsContainer> = ({
             id="option1"
             checked={option === "option1"}
             onChange={handleOptionChange}
+            disabled={disable}
           />
           <label htmlFor="option1">
             <div className={classes["container-text"]}>
@@ -119,6 +130,7 @@ const IntervalloPagine: React.FC<propsContainer> = ({
             </div>
           </label>
         </div>
+
         <div className={classes["options"]}>
           <input
             type="radio"
@@ -126,6 +138,7 @@ const IntervalloPagine: React.FC<propsContainer> = ({
             id="option2"
             checked={option === "option2"}
             onChange={handleOptionChange}
+            disabled={disable}
           />
           <label htmlFor="option2">
             <div className={classes["container-text"]}>
@@ -134,13 +147,10 @@ const IntervalloPagine: React.FC<propsContainer> = ({
             </div>
           </label>
         </div>
+
         {option === "option2" && (
           <div>
-            <div
-              className={`${classes["inputRowDivS"]} ${
-                fromIsValid === false ? classes.invalid : ""
-              }`}
-            >
+            <div className={`${classes["inputRowDivS"]} ${fromIsValid === false ? classes.invalid : ""}`}>
               <p className={classes["text-page"]}>Da:</p>
               <input
                 type="number"
@@ -152,16 +162,14 @@ const IntervalloPagine: React.FC<propsContainer> = ({
                 max={maxValue >= 1 ? maxValue : 1}
                 onChange={handleFromChange}
                 className={classes["number"]}
+                disabled={disable}
               />
               {!fromIsValid && (
                 <p className={classes["invalid-input"]}>Valore non valido!</p>
               )}
             </div>
-            <div
-              className={`${classes["inputRowDivS"]} ${
-                toIsValid === false ? classes.invalid : ""
-              }`}
-            >
+
+            <div className={`${classes["inputRowDivS"]} ${toIsValid === false ? classes.invalid : ""}`}>
               <p className={classes["text-page"]}>A:</p>
               <input
                 type="number"
@@ -172,6 +180,7 @@ const IntervalloPagine: React.FC<propsContainer> = ({
                 max={maxValue >= 1 ? maxValue : 1}
                 onChange={handleToChange}
                 className={classes["number"]}
+                disabled={disable}
               />
               {!toIsValid && (
                 <p className={classes["invalid-input"]}>Valore non valido!</p>

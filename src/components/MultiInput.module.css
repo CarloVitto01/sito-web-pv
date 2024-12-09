@@ -1,4 +1,6 @@
-/* Input.module.css */
+/* MultiInput.module.css */
+
+/* Stili generali */
 .containerMultiInput {
     display: flex;
     flex-direction: column;
@@ -30,19 +32,202 @@
 .pdfContainer {
     display: flex;
     align-items: center; /* Allinea verticalmente l'immagine e il nome */
+    justify-content: space-between; /* Spazio tra il nome e il pulsante di anteprima */
+    width: 100%; /* Occupa tutta la larghezza disponibile */
+    padding: 10px;
+    border: 1px solid #ccc; /* Aggiunto bordo per separare i file */
+    border-radius: 5px; /* Angoli arrotondati */
+    background-color: #f9f9f9; /* Colore di sfondo per i file */
 }
 
 .pdfIcon {
-    width: 4em; /* /* Mantiene le proporzioni */
+    width: 4em; /* Mantiene le proporzioni */
     margin-right: 10px; /* Spazio tra l'icona e il nome del file */
 }
 
 .pdfName {
     font-size: 16px; /* Dimensione del testo per il nome del file */
+    flex-grow: 1; /* Permette al nome di occupare lo spazio disponibile */
 }
 
-.totalPages {
-    margin-top: 20px; /* Spazio sopra il totale delle pagine */
-    font-size: 18px; /* Dimensione del testo per il totale */
-    color: rgb(199, 171, 43); /* Colore del testo per il totale */
+.previewButton {
+    background-color: rgb(199, 171, 43); /* Colore di sfondo per il pulsante di anteprima */
+    color: white; /* Colore del testo */
+    border: none; /* Rimuove il bordo */
+    border-radius: 5px; /* Angoli arrotondati */
+    padding: 5px 10px; /* Padding per il pulsante */
+    cursor: pointer; /* Cambia il cursore al passaggio del mouse */
+}
+
+.previewButton:hover {
+    background-color: rgb(170, 140, 36); /* Colore di sfondo al passaggio del mouse */
+}
+
+.popup {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.popupContent {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    position: relative;
+    max-width: 600px; /* Larghezza massima del popup */
+    max-height: 90%; /* Altezza massima del popup */
+    overflow: auto; /* Aggiunge lo scroll se necessario */
+    border: 2px solid rgb(199, 171, 43); /* Bordo colorato attorno al popup */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5); /* Ombra intorno al popup */
+}
+
+.button-container {
+    perspective: 1000px; /* Imposta la prospettiva per il contenitore */
+    position: relative; /* Necessario per il posizionamento del pulsante */
+}
+
+.artButton, .closeButton {
+    margin: 5px;
+    cursor: pointer;
+    width: 100px; /* Larghezza del pulsante */
+    height: 50px; /* Altezza del pulsante */
+    background-color: rgb(199, 171, 43);
+    border: none; /* Rimuove il bordo predefinito */
+    border-radius: 5px; /* Angoli arrotondati */
+    color: white; /* Colore del testo */
+    display: flex; /* Per centrare il testo */
+    align-items: center; /* Allinea verticalmente */
+    justify-content: center; /* Allinea orizzontalmente */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3); /* Ombra per effetto 3D */
+    transition: transform 0.1s ease, box-shadow 0.1s ease; /* Transizione per l'effetto di abbassamento */
+}
+
+.artButton:active, .closeButton:active {
+    transform: translateY(4px) scaleY(0.9); /* Abbassa e schiaccia il pulsante */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Riduce l'ombreggiatura quando cliccato */
+}
+
+.closeButton:hover, .artButton:hover {
+    background-color: rgb(170, 140, 36); /* Colore di sfondo al passaggio del mouse */
+}
+
+.pagination {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+/* --- MEDIA QUERY --- */
+@media screen and (max-width: 768px) {
+    .containerMultiInput {
+        padding: 10px;
+    }
+
+    .dropzone {
+        padding: 15px;
+        font-size: 90%; /* Rende il testo più piccolo */
+    }
+
+    .textMultiInput {
+        font-size: 130%; /* Riduce la dimensione del testo */
+    }
+
+    .containerPDFMultiInput {
+        gap: 8px; /* Riduce lo spazio tra i file PDF */
+    }
+
+    .pdfContainer {
+        flex-direction: column; /* Dispone il contenuto in colonna */
+        align-items: center;
+        width: 100%;
+    }
+
+    .pdfIcon {
+        width: 3em; /* Riduce l'icona PDF */
+        margin-bottom: 10px; /* Aggiunge spazio tra l'icona e il nome del file */
+    }
+
+    .pdfName {
+        font-size: 14px; /* Riduce la dimensione del testo */
+    }
+
+    .previewButton {
+        padding: 10px 20px;
+        width: 100%; /* Fa sì che il pulsante occupi tutta la larghezza */
+    }
+
+    .popupContent {
+        width: 80%; /* Occupa quasi tutto lo schermo */
+        max-width: 90%; 
+    }
+
+    .artButton, .closeButton {
+        width: 80px; /* Riduce la dimensione del pulsante */
+        height: 40px; 
+    }
+
+    .pagination {
+        flex-direction: row; /* Dispone i pulsanti in colonna */
+        align-items: center;
+    }
+
+    .pagination button {
+        width: 100%; 
+        margin-bottom: 10px; 
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .containerMultiInput {
+        padding: 5px;
+    }
+
+    .dropzone {
+        font-size: 80%; 
+    }
+
+    .textMultiInput {
+        font-size: 110%; 
+    }
+
+    .pdfContainer {
+        flex-direction: column; /* Dispone il contenuto in colonna */
+        align-items: center;
+        width: 100%;
+    }
+
+    .pdfName {
+        font-size: 12px; 
+    }
+
+    .popupContent {
+        width: 80%;
+        height: 80%; 
+    }
+
+    .artButton, .closeButton {
+        width: 60px; 
+        height: 30px; 
+    }
+
+    .pagination {
+        flex-direction: row; 
+        align-items: center;
+    }
+
+    .pagination button {
+        width: 100%; 
+    }
 }
