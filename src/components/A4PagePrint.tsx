@@ -169,11 +169,11 @@ console.log(numeroPDF, "numero pdf")
       case "Nessuna":
         setRilegatura(rilegaturaEnum.NESSUNA);
         break;
-      case "Unica rilegatura":
-        setRilegaturaUnica(rilegaturaEnum.CIAPPATURA);
+      case "Si":
+        setRilegaturaUnica(rilegaturaUnicaEnum.SI);
         break;
-      case "No rilegatura unica":
-        setRilegatura(rilegaturaEnum.NESSUNA);
+      case "No":
+        setRilegaturaUnica(rilegaturaUnicaEnum.NO);
         break;
     }
   }, []);
@@ -251,8 +251,10 @@ console.log(numeroPDF, "numero pdf")
         totale += anelli * numeroCopie;
       } else if (numeroPDF > 1 && rilegatura === rilegaturaEnum.ANELLI && rilegaturaUnica === rilegaturaUnicaEnum.SI) {
         totale += anelli * numeroCopie;
+        totale = totale + rilegatura * 1;
+        console.log(totale , "totale")
       } else if (numeroPDF > 1 && rilegatura === rilegaturaEnum.ANELLI && rilegaturaUnica === rilegaturaUnicaEnum.NO) {
-        totale += anelli * numeroPDF * numeroCopie;
+        totale += (anelli * numeroPDF) * numeroCopie;
       } else if (numeroPDF === 1 && rilegatura === rilegaturaEnum.FASCETTA) {
         totale += fascetta * numeroCopie;
       } else if (numeroPDF > 1 && rilegatura === rilegaturaEnum.FASCETTA && rilegaturaUnica === rilegaturaUnicaEnum.SI) {
@@ -515,13 +517,13 @@ console.log(numeroPDF, "numero pdf")
         components={useMemo(
           () => [
             {
-              title: "No",
+              title: "Si",
               imageSrc: require("../assets/images/Fronte_retro.png"),
               disabled: numeroPDF === 1,
               errorMessage: "Disponibile Soltanto per 2 o più PDF",
             },
             {
-              title: "Si",
+              title: "No",
               imageSrc: require("../assets/images/Fronte.png"),
               disabled: numeroPDF === 1,
               errorMessage: "Disponibile Soltanto per 2 o più PDF",

@@ -11,7 +11,6 @@ import { AiOutlineClose } from "react-icons/ai";
 import { MdDelete, MdOutlinePreview } from "react-icons/md";
 import { pdfjs } from "react-pdf";
 
-
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
 interface PropsContainer {
@@ -105,19 +104,21 @@ const MultiInput: React.FC<PropsContainer> = ({ onSendData }) => {
                         <div className={classes["button-container"]}>
                             <div className={classes["artButton"]} onClick={() => openPopup(file, index)}>
                                 <MdOutlinePreview />
-
                             </div>
                         </div>
                         <div className={classes["button-container"]}>
                             <div className={classes["artButton"]} onClick={() => removeFile(index)}>
-                                <MdDelete  />
-
+                                <MdDelete />
                             </div>
                         </div>
 
                         <Document file={file} onLoadSuccess={(data) => onDocumentLoadSuccess(index, data)} />
                     </div>
                 ))}
+            </div>
+            <div className={classes["totalPages"]}>
+                <p><strong>Totale Pagine: {totalNumPages}</strong></p>
+                <p><strong>Totale PDF: {files.length}</strong></p>
             </div>
             {isOpen && currentFile && currentFileIndex !== null && (
                 <div className={classes["popup"]}>
@@ -130,7 +131,8 @@ const MultiInput: React.FC<PropsContainer> = ({ onSendData }) => {
                             })}
                             loading={<Loading />}
                         >
-                            <Page pageNumber={pageNumber}
+                            <Page
+                                pageNumber={pageNumber}
                                 height={width <= 500 ? 100 : 600}
                                 width={width <= 500 ? 300 : 400}
                                 renderAnnotationLayer={false}
@@ -139,7 +141,7 @@ const MultiInput: React.FC<PropsContainer> = ({ onSendData }) => {
                                 loading={<Loading />}
                                 error={
                                     <p style={{ whiteSpace: "nowrap" }}>
-                                        Pagina non disponible
+                                        Pagina non disponibile
                                     </p>
                                 }
                                 canvasBackground="white"
@@ -153,9 +155,9 @@ const MultiInput: React.FC<PropsContainer> = ({ onSendData }) => {
                                     style={{ opacity: pageNumber <= 1 ? 0.5 : 1, pointerEvents: pageNumber <= 1 ? 'none' : 'auto' }}
                                 >
                                     <GrCaretPrevious />
-
                                 </div>
-                            </div>                            <span>Pagina {pageNumber} di {numPages[currentFileIndex]}</span>
+                            </div>
+                            <span>Pagina {pageNumber} di {numPages[currentFileIndex]}</span>
                             <div className={classes["button-container"]}>
                                 <div
                                     className={classes["artButton"]}
@@ -163,12 +165,10 @@ const MultiInput: React.FC<PropsContainer> = ({ onSendData }) => {
                                     style={{ opacity: pageNumber >= numPages[currentFileIndex] ? 0.5 : 1, pointerEvents: pageNumber >= numPages[currentFileIndex] ? 'none' : 'auto' }}
                                 >
                                     <GrCaretNext />
-
                                 </div>
-                            </div>                            <div className={classes["button-container"]}>
-                                <div className={classes["artButton"]} onClick={closePopup}><AiOutlineClose />
-
-                                </div>
+                            </div>
+                            <div className={classes["button-container"]}>
+                                <div className={classes["artButton"]} onClick={closePopup}><AiOutlineClose /></div>
                             </div>
                         </div>
                     </div>
