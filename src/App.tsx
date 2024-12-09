@@ -23,7 +23,6 @@ import { RangePagesData } from "./types/RangePagesData";
 
 //Constants
 
-
 const foglio = 0.03;
 const biancoNero: number = 0.015;
 const colore: number = 0.075;
