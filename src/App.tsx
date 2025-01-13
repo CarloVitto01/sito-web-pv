@@ -391,7 +391,7 @@ const App = () => {
     <div className="container">
       <Header />
       <Intro />
-      <Notice />
+      {/*<Notice />*/}
       <SingleDelimiter />
       <Form onSendData={setDataHandler} />
       <SingleDelimiter />
