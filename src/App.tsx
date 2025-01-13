@@ -20,7 +20,7 @@ import { TOKEN, CHAT_ID } from "./backend/telegram";
 import { FormData } from "./types/FormData";
 import { FileHandler } from "./types/FileHandler";
 import { RangePagesData } from "./types/RangePagesData";
-import Notice from "./components/Notice";
+//import Notice from "./components/Notice";
 
 //Constants
 
