@@ -1,85 +1,47 @@
-.home-page{
-  display: flex;
-  justify-content: center;
-  flex-direction: column;
-  
-}
-
-.home-container{
-  margin-top: 25px;
+.home-container {
+  margin-top: 5vh;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  text-align: center;
   align-items: center;
-}
-
-
-.description-home{
-  margin-top: 5%;
-}
-
-.menu-button-home {
-  position: fixed;
-  background-color: transparent;
-  display: flex;
-  top: 14px;
-  z-index: 2;
-  color: rgb(223, 182, 0);
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 30px;
-}
-
-.side-menu {
-  position: fixed;
-  top: 0;
-  left: 0;
-  /* Cambiato da right a left */
-  width: 250px;
-  height: 100%;
-  background-color: #ffffffca;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
-  z-index: 1000;
-  transition: transform 0.3s ease;
-  transform: translateX(0);
-}
-
-.link-menu{
-  text-decoration: none;
-  color: black;
-}
-
-.side-menu ul {
-  list-style: none;
+  text-align: center;
   padding: 20px;
 }
 
-.side-menu li {
-  margin: 1em;
-  border-bottom: 1px solid black;
+.home-header {
+  margin-bottom: 30px;
 }
 
-.side-menu li:hover{
-  border-bottom: 1px solid rgb(223, 182, 0);
-  color: rgb(223, 182, 0);
+.slider-container {
+  width: 90%;
+  max-width: 800px;
+  margin-bottom: 40px;
 }
 
-.close-button {
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  /* Posizionato a destra per chiudere il menu */
+.cta-section {
+  margin-top: 20px;
 }
 
-.side-menu.hidden {
-  transform: translateX(100%);
+.cta-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
 }
+
+.cta-button {
+  text-decoration: none;
+  padding: 10px 20px;
+  background-color: #dfb600;
+  color: white;
+  border-radius: 5px;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+.cta-button:hover {
+  background-color: #c5a300;
+}
+
+
 
 .slide-carosell{
   width: 90%;

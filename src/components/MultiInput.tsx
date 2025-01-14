@@ -74,8 +74,18 @@ const MultiInput: React.FC<PropsContainer> = ({ onSendData }) => {
     };
 
     const removeFile = (index: number) => {
-        setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
-        setNumPages((prevNumPages) => prevNumPages.filter((_, i) => i !== index));
+        setFiles((prevFiles) => {
+            const updatedFiles = prevFiles.filter((_, i) => i !== index);
+            // Ricalcola il numero totale di pagine
+            const updatedNumPages = numPages.filter((_, i) => i !== index);
+            setNumPages(updatedNumPages);
+            // Ricalcola il totale delle pagine
+            const newTotalNumPages = updatedNumPages.reduce((acc, num) => acc + num, 0);
+            setTotalNumPages(newTotalNumPages);
+            // Invia i dati aggiornati
+            onSendData(updatedFiles.map((file, i) => ({ numPages: updatedNumPages[i] || 0, file })), newTotalNumPages);
+            return updatedFiles;
+        });
     };
 
     const changePage = (offset: number) => {

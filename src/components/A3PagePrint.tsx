@@ -19,9 +19,6 @@ import { FileHandler } from "../types/FileHandler";
 import Form from "./Form";
 import NumeroCopie from "./NumeroCopie";
 import MultiInput from "./MultiInput";
-import { Link } from "react-router-dom";
-import classes from "./A3PagePrint.module.css";
-import { FaArrowLeftLong } from "react-icons/fa6";
 
 // Constants
 const grammaturaNormale: number = 0.12;
@@ -77,6 +74,7 @@ const A3PagePrint = () => {
     const [formSubmitted, setFormSubmitted] = useState<boolean>(false);
     const [formSubmitting, setFormSubmitting] = useState<boolean>(false);
     const [formError, setFormError] = useState<boolean>(false);
+    const [numeroPDF, setNumeroPDF] = useState<number>(0); // Stato per il conteggio dei PDF
 
     // Prevent scrolling when modal is open
     useEffect(() => {
@@ -143,6 +141,7 @@ const A3PagePrint = () => {
         const validFiles = files.map(fileHandler => fileHandler.file).filter((file): file is File => file !== null);
 
         setFile(validFiles); // Imposta i file validi
+        setNumeroPDF(validFiles.length); // Aggiorna il conteggio dei PDF
         setNumeroPaginePDF(totalPages); // Imposta il numero totale di pagine
         console.log("Totale numero di pagine:", totalPages);
     }, []);
@@ -196,15 +195,10 @@ const A3PagePrint = () => {
             let total = calcoloPreventivo();
             setPreventivo(total);
         }
-    }, [
-        inchiostro,
-        pagina,
-        layout,
-        numeroPaginePDF,
-        numeroCopie,
-        plastificazione,
-        grammatura,
-    ]);
+        if (numeroPDF === 0) {
+          setPreventivo("0.00")
+        }
+    }, [inchiostro, pagina, layout, numeroPaginePDF, numeroCopie, plastificazione, grammatura, numeroPDF]);
 
 
     // Send data to the Firebase server
@@ -249,6 +243,7 @@ const A3PagePrint = () => {
             pagina: pagina === 1 ? "Fronte" : "Fronte-retro",
             layout: layout === 0 ? "Orizzontale" : layout === 1 ? "Verticale" : "Auto",
             plastificazione: plastificazione === plastificazioneEnum.SI ? "Si" : "No",
+            numeroPDF: numeroPDF,
             pagine: numeroPaginePDF,
             copie: numeroCopie,
             prezzo: preventivo,
@@ -310,7 +305,7 @@ const A3PagePrint = () => {
                 setFormError(true);
                 setFormSubmitting(false);
             });
-    }, [data.annoAccademico, data.corsoLaurea, data.email, data.isValid, data.name, data.surname, data.telephoneNumber, file, grammatura, inchiostro, layout, numeroCopie, numeroPaginePDF, pagina, plastificazione, preventivo]);    // Final modal handling
+    }, [data.annoAccademico, data.corsoLaurea, data.email, data.isValid, data.name, data.surname, data.telephoneNumber, file, grammatura, inchiostro, layout, numeroCopie, numeroPDF, numeroPaginePDF, pagina, plastificazione, preventivo]);    // Final modal handling
     const closeFinalModalHandler = useCallback(() => {
         setFormSubmitted(false);
         setFormSubmitting(false);
@@ -323,15 +318,11 @@ const A3PagePrint = () => {
 
     return (
         <div className="container">
-            <div style={{ margin: "20px", backgroundColor: "none" }}>
-                <Link to="/">
-                    <button className={classes["back-button-A3"]}>
-                        <FaArrowLeftLong />
-                    </button>
-                </Link>
-            </div>
             <Header />
-            <Intro />
+            <Intro 
+                title={"STAMPA I TUOI DOCUMENTI A3"} 
+                text={"In questa pagina potrai ordinare la stampa del tuo documento, inserisci le caratteristiche disponibili nelle varie sezioni per poter avere dei documenti cartacei di qualità."} 
+            />
             <SingleDelimiter />
             <Form onSendData={setDataHandler} />
             <SingleDelimiter />

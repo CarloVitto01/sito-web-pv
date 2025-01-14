@@ -20,9 +20,6 @@ import { TOKEN, CHAT_ID } from "../backend/telegram";
 import { FormData } from "../types/FormData";
 import { FileHandler } from "../types/FileHandler";
 import { RangePagesData } from "../types/RangePagesData";
-import { Link } from "react-router-dom";
-import classes from "./A4PagePrint.module.css";
-import { FaArrowLeftLong } from "react-icons/fa6";
 import MultiInput from "./MultiInput";
 
 //Constants
@@ -277,6 +274,9 @@ console.log(numeroPDF, "numero pdf")
       let total = calcoloPreventivo();
       setPreventivo(total);
     }
+    if (numeroPDF === 0) {
+      setPreventivo("0.00")
+    }
   }, [inchiostro, pagina, layout, rilegatura, intervalloPagine, numeroPaginePDF, numeroCopie, numeroPDF, rilegaturaUnica]);
 
   //Send data to the Firebase server
@@ -416,15 +416,11 @@ console.log(numeroPDF, "numero pdf")
 
   return (
     <div className="container">
-      <div style={{ margin: "20px", backgroundColor: "none" }}>
-        <Link to="/">
-          <button className={classes["back-button-A4"]}>
-            <FaArrowLeftLong />
-          </button>
-        </Link>
-      </div>
       <Header />
-      <Intro />
+      <Intro 
+        title={"STAMPA I TUOI DOCUMENTI A4"} 
+        text={"In questa pagina potrai ordinare la stampa del tuo documento, inserisci le caratteristiche disponibili nelle varie sezioni per poter avere dei documenti cartacei di qualità."} 
+      />
       <SingleDelimiter />
       <Form onSendData={setDataHandler} />
       <SingleDelimiter />
@@ -580,10 +576,10 @@ console.log(numeroPDF, "numero pdf")
       <NumeroCopie onSendData={setCopiesHandler} />
       <SingleDelimiter />
       <Modal
-        totalOrder={preventivo}
-        onSubmit={submitFormHandler}
-        disabled={!data.isValid || !file || !intervalloPagineIsValid}
-      />
+  totalOrder={preventivo}
+  onSubmit={submitFormHandler}
+  disabled={!data.isValid || file.length === 0 || !intervalloPagineIsValid}
+/>
       <Footer />
       {(formSubmitted || formSubmitting) && (
         <FinalModal

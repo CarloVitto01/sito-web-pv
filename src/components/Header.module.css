@@ -1,8 +1,8 @@
 .header {
-  background-color: white;
-  display: flex;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr; /* Tre colonne di uguale larghezza */
   align-items: center;
+  background-color: white;
   border-bottom: 3px solid rgb(199, 171, 43);
   position: fixed;
   top: 0;
@@ -14,9 +14,85 @@
   box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.4);
 }
 
+.menu-section {
+  display: flex;
+  justify-content: flex-start; /* Pulsante menu allineato a sinistra */
+  padding-left: 20px;
+}
+
+.logo-section {
+  display: flex;
+  justify-content: center; /* Logo centrato */
+}
+
+.placeholder-section {
+  display: flex;
+  justify-content: flex-end; /* Placeholder a destra */
+  padding-right: 20px;
+}
+
 .Logo {
   max-width: 200px;
   width: 100%;
-  margin: 7%;
-  margin-left: 0%;
+  margin: 8px;
+}
+
+.menu-button-home {
+  background-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  color: rgb(223, 182, 0);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 30px;
+}
+
+.side-menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 250px;
+  height: 100%;
+  background-color: #ffffffca;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  transition: transform 0.3s ease;
+  transform: translateX(0);
+}
+
+.link-menu {
+  text-decoration: none;
+  color: black;
+}
+
+.side-menu ul {
+  list-style: none;
+  padding: 20px;
+}
+
+.side-menu li {
+  margin: 1em;
+  border-bottom: 1px solid black;
+}
+
+.side-menu li:hover {
+  border-bottom: 1px solid rgb(223, 182, 0);
+  color: rgb(223, 182, 0);
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+.side-menu.hidden {
+  transform: translateX(100%);
 }
