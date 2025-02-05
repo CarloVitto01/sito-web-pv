@@ -463,8 +463,8 @@ const App = () => {
             {
               title: "Fronte-retro",
               imageSrc: require("./assets/images/Fronte_retro.png"),
-              disabled: false,
-              errorMessage: "",
+              disabled: numeroPaginePDF === 1 && intervalloPagine === 1,
+              errorMessage: "Solo con 2 o più pagine ",
             },
             {
               title: "Fronte",
@@ -473,7 +473,7 @@ const App = () => {
               errorMessage: "",
             },
           ],
-          []
+          [intervalloPagine, numeroPaginePDF]
         )}
         defaultValue="Fronte-retro"
         onSendData={newValue}
