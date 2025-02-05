@@ -26,7 +26,7 @@ import { RangePagesData } from "./types/RangePagesData";
 
 const foglio = 0.03;
 const biancoNero: number = 0.015;
-const colore: number = 0.075;
+const colore: number = 0.055;
 const anelli = 1.5;
 const fascetta = 1;
 const ciappatura = 0.1;
