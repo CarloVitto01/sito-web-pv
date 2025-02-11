@@ -30,6 +30,7 @@ const colore: number = 0.055;
 const anelli = 1.5;
 const fascetta = 1;
 const ciappatura = 0.1;
+const spirale = 2;
 
 //Enum
 
@@ -55,6 +56,7 @@ const rilegaturaEnum = {
   FASCETTA: 1,
   CIAPPATURA: 2,
   NESSUNA: 3,
+  SPIRALE: 4,
 };
 
 const App = () => {
@@ -144,6 +146,9 @@ const App = () => {
       case "Anelli":
         setRilegatura(rilegaturaEnum.ANELLI);
         break;
+      case "Spirale":
+        setRilegatura(rilegaturaEnum.SPIRALE);
+        break;
       case "Fascetta":
         setRilegatura(rilegaturaEnum.FASCETTA);
         break;
@@ -225,6 +230,8 @@ const App = () => {
         totale += anelli * numeroCopie;
       } else if (rilegatura === rilegaturaEnum.FASCETTA) {
         totale += fascetta * numeroCopie;
+      } else if (rilegatura === rilegaturaEnum.SPIRALE) {
+        totale += spirale * numeroCopie;
       } else if (rilegatura === rilegaturaEnum.CIAPPATURA) {
         totale += ciappatura * numeroCopie;
       }
@@ -297,10 +304,12 @@ const App = () => {
               rilegatura === 0
                 ? "Anelli"
                 : rilegatura === 1
-                  ? "Fascetta"
-                  : rilegatura === 2
-                    ? "Ciappatura"
-                    : "Nessuna",
+                  ? "Spirale"
+                  : rilegatura === 4
+                    ? "Fascetta"
+                    : rilegatura === 2
+                      ? "Ciappatura"
+                      : "Nessuna",
             pagine: daA,
             copie: numeroCopie,
             prezzo: preventivo,
@@ -486,6 +495,12 @@ const App = () => {
             {
               title: "Anelli",
               imageSrc: require("./assets/images/Anelli.jpg"),
+              disabled: false, // Aggiungi la proprietà disabled
+              errorMessage: "",
+            },
+            {
+              title: "Spirale",
+              imageSrc: require("./assets/images/Spirale.jpg"),
               disabled: false, // Aggiungi la proprietà disabled
               errorMessage: "",
             },

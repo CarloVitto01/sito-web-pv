@@ -2,20 +2,24 @@
   display: flex;
   justify-content: center;
   flex-direction: column;
+  align-items: center;
+  width: 100%;
 }
 
 .title {
-  text-align: center;
+  width: 100%;
+  margin-left: 5em;
+  text-align: start;
   font-size: 3vw;
   font-weight: normal;
   color: rgb(199, 171, 43);
 }
 
 .container {
-  display: flex;
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
   justify-content: center;
-  align-items: flex-start;
+  align-items: center;
   gap: 6vw;
 }
 
