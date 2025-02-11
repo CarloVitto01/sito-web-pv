@@ -10,6 +10,13 @@ code {
     monospace;
 }
 
+.container{
+  display: flex
+  ;
+      flex-direction: column;
+      justify-content: center;
+}
+
 @font-face {
   font-family: Oswald;
   src: url(./assets/fonts/Oswald.ttf);
