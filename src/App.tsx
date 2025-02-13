@@ -303,9 +303,9 @@ const App = () => {
             rilegatura:
               rilegatura === 0
                 ? "Anelli"
-                : rilegatura === 1
+                : rilegatura === 4
                   ? "Spirale"
-                  : rilegatura === 4
+                  : rilegatura === 1
                     ? "Fascetta"
                     : rilegatura === 2
                       ? "Ciappatura"
