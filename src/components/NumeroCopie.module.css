@@ -22,11 +22,12 @@
   justify-content: flex-start;
   flex-direction: row;
   border: none;
-  border-bottom: 2px solid gray;
+  border: 2px solid gray;
+  color: white;
   padding: 0.5vw;
   background-color: transparent;
   text-align: center;
-  width: 7vw;
+  width: 4vw;
   font-size: 1.5vw;
 }
 

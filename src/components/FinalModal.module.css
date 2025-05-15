@@ -15,14 +15,15 @@
     z-index: 999;
     border: 5px solid rgb(199, 171, 43);
     border-radius: 15px;
-    background-color: white;
+    background-color: #111;
+    color: white;
     height: auto;
     overflow: hidden;
     width: 40vw;
 }
 
 .container header {
-    background-color: white;
+    background-color: #111;
     padding: 0.6vw;
 }
 

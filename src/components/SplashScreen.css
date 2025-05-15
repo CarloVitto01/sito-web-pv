@@ -1,0 +1,15 @@
+.splash-screen {
+    position: fixed;
+    inset: 0;
+    background: black;
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .splash-logo {
+    width: 120px;
+    height: auto;
+  }
+  

@@ -21,6 +21,7 @@ import { FormData } from "../types/FormData";
 import { FileHandler } from "../types/FileHandler";
 import { RangePagesData } from "../types/RangePagesData";
 import MultiInput from "./MultiInput";
+import CollapsibleSection from "../components/CollapsibleSection";
 
 //Constants
 
@@ -92,7 +93,7 @@ const A4PagePrint = () => {
   const [formSubmitting, setFormSubmitting] = useState<boolean>(false);
   const [formError, setFormError] = useState<boolean>(false);
   const [numeroPDF, setNumeroPDF] = useState<number>(0); // Stato per il conteggio dei PDF
-console.log(numeroPDF, "numero pdf")
+  console.log(numeroPDF, "numero pdf")
 
   //Debug
   // console.log(numeroPaginePDF);
@@ -177,7 +178,7 @@ console.log(numeroPDF, "numero pdf")
 
   const setPDFHandler = useCallback((files: FileHandler[], totalPages: number) => {
     const validFiles = files.map(fileHandler => fileHandler.file).filter((file): file is File => file !== null);
-    
+
     setFile(validFiles); // Imposta i file validi
     setNumeroPDF(validFiles.length); // Aggiorna il conteggio dei PDF
     setNumeroPaginePDF(totalPages); // Imposta il numero totale di pagine
@@ -249,7 +250,7 @@ console.log(numeroPDF, "numero pdf")
       } else if (numeroPDF > 1 && rilegatura === rilegaturaEnum.ANELLI && rilegaturaUnica === rilegaturaUnicaEnum.SI) {
         totale += anelli * numeroCopie;
         totale = totale + rilegatura * 1;
-        console.log(totale , "totale")
+        console.log(totale, "totale")
       } else if (numeroPDF > 1 && rilegatura === rilegaturaEnum.ANELLI && rilegaturaUnica === rilegaturaUnicaEnum.NO) {
         totale += (anelli * numeroPDF) * numeroCopie;
       } else if (numeroPDF === 1 && rilegatura === rilegaturaEnum.FASCETTA) {
@@ -285,8 +286,8 @@ console.log(numeroPDF, "numero pdf")
     event.preventDefault();
     setFormSubmitting(true);
     if (file.length === 0 || !data.isValid) { // Controlla se ci sono file
-        setFormSubmitting(false); // Assicurati di impostare formSubmitting su false se non ci sono file
-        return;
+      setFormSubmitting(false); // Assicurati di impostare formSubmitting su false se non ci sono file
+      return;
     }
 
     const id = v4();
@@ -295,64 +296,64 @@ console.log(numeroPDF, "numero pdf")
 
     // Carica i file uno per uno
     for (const singleFile of file) {
-        const path = `PDF/${data.surname + data.name + "|" + singleFile.name.trim().replace(".pdf", "").replace(/\s/g, "").replace(/\(/g, "[").replace(/\)/g, "]") + "|" + id}.pdf`;
-        paths.push(path); // Aggiungi il percorso all'array
+      const path = `PDF/${data.surname + data.name + "|" + singleFile.name.trim().replace(".pdf", "").replace(/\s/g, "").replace(/\(/g, "[").replace(/\)/g, "]") + "|" + id}.pdf`;
+      paths.push(path); // Aggiungi il percorso all'array
 
-        const fileRef = ref(storage, path);
-        const snapshot = await uploadBytes(fileRef, singleFile);
-        const url = await getDownloadURL(snapshot.ref);
-        urls.push(url); // Aggiungi l'URL all'array
+      const fileRef = ref(storage, path);
+      const snapshot = await uploadBytes(fileRef, singleFile);
+      const url = await getDownloadURL(snapshot.ref);
+      urls.push(url); // Aggiungi l'URL all'array
     }
 
     // Crea il messaggio con i link dei file
     const fileLinks = urls.map((url, index) => `- [File ${index + 1}](${url.replace(/\(/g, "[").replace(/\)/g, "]")})`).join("\n");
 
-          const dataToUpload = {
-            id: id,
-            path: paths,
-            nome: data.name,
-            cognome: data.surname,
-            email: data.email,
-            telefono: data.telephoneNumber,
-            corsoLaurea: data.corsoLaurea,
-            annoAccademico: data.annoAccademico,
-            file: urls,
-            colore:
-              inchiostro === inchiostroEnum.BIANCOENERO
-                ? "Bianco e nero"
-                : "Colore",
-            pagina: pagina === 0 ? "Fronte-retro" : "Fronte",
-            layout:
-              layout === 0
-                ? "Verticale"
-                : layout === 1
-                  ? "Orizzontale"
-                  : layout === 2
-                    ? "2 pagine in 1 orizzontale"
-                    : "2 pagine in 1 verticale",
-            rilegatura:
-              rilegatura === 0
-                ? "Anelli"
-                : rilegatura === 1
-                  ? "Fascetta"
-                  : rilegatura === 2
-                    ? "Ciappatura"
-                    : "Nessuna",
-            pagine: daA,
-            rilegaturaUnica: rilegaturaUnica === rilegaturaUnicaEnum.SI ? "SI" : "NO",
-            numeroPDF: numeroPDF,
-            copie: numeroCopie,
-            prezzo: preventivo,
-            timestamp: serverTimestamp(),
-          };
-          const collectionRef = collection(db, "StampePDF");
-          const PDFref = doc(collectionRef, id);
-          setDoc(PDFref, dataToUpload)
-            .then(() => {
-              setFormSubmitting(false);
-              setFormSubmitted(true);
-              //Send message to telegram channel
-              const messageText = `
+    const dataToUpload = {
+      id: id,
+      path: paths,
+      nome: data.name,
+      cognome: data.surname,
+      email: data.email,
+      telefono: data.telephoneNumber,
+      corsoLaurea: data.corsoLaurea,
+      annoAccademico: data.annoAccademico,
+      file: urls,
+      colore:
+        inchiostro === inchiostroEnum.BIANCOENERO
+          ? "Bianco e nero"
+          : "Colore",
+      pagina: pagina === 0 ? "Fronte-retro" : "Fronte",
+      layout:
+        layout === 0
+          ? "Verticale"
+          : layout === 1
+            ? "Orizzontale"
+            : layout === 2
+              ? "2 pagine in 1 orizzontale"
+              : "2 pagine in 1 verticale",
+      rilegatura:
+        rilegatura === 0
+          ? "Anelli"
+          : rilegatura === 1
+            ? "Fascetta"
+            : rilegatura === 2
+              ? "Ciappatura"
+              : "Nessuna",
+      pagine: daA,
+      rilegaturaUnica: rilegaturaUnica === rilegaturaUnicaEnum.SI ? "SI" : "NO",
+      numeroPDF: numeroPDF,
+      copie: numeroCopie,
+      prezzo: preventivo,
+      timestamp: serverTimestamp(),
+    };
+    const collectionRef = collection(db, "StampePDF");
+    const PDFref = doc(collectionRef, id);
+    setDoc(PDFref, dataToUpload)
+      .then(() => {
+        setFormSubmitting(false);
+        setFormSubmitted(true);
+        //Send message to telegram channel
+        const messageText = `
                 *NUOVO ORDINE A4*
 
                 📝 *Dettagli Ordine:*
@@ -374,39 +375,39 @@ console.log(numeroPDF, "numero pdf")
                 💰💰 *Prezzo*: ${preventivo}€ 💰💰
                 
                 `;
-              const apiUrl = `https://api.telegram.org/bot${TOKEN}/sendMessage`;
-              const data = {
-                chat_id: CHAT_ID,
-                text: messageText,
-                parse_mode: "Markdown",
-              };
-              const requestOptions = {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data),
-              };
-              fetch(apiUrl, requestOptions)
-                .then((response) => {
-                  if (response.ok) {
-                    console.log("Messaggio inviato con successo");
-                  } else {
-                    console.log(
-                      "Errore durante l'invio del messaggio:",
-                      response.statusText
-                    );
-                  }
-                })
-                .catch((error) => {
-                  console.error("Errore durante l'invio del messaggio:", error);
-                });
-            })
-            .catch((error) => {
-              console.log(error);
-              setFormError(true);
-              setFormSubmitting(false);
+        const apiUrl = `https://api.telegram.org/bot${TOKEN}/sendMessage`;
+        const data = {
+          chat_id: CHAT_ID,
+          text: messageText,
+          parse_mode: "Markdown",
+        };
+        const requestOptions = {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        };
+        fetch(apiUrl, requestOptions)
+          .then((response) => {
+            if (response.ok) {
+              console.log("Messaggio inviato con successo");
+            } else {
+              console.log(
+                "Errore durante l'invio del messaggio:",
+                response.statusText
+              );
+            }
+          })
+          .catch((error) => {
+            console.error("Errore durante l'invio del messaggio:", error);
           });
+      })
+      .catch((error) => {
+        console.log(error);
+        setFormError(true);
+        setFormSubmitting(false);
+      });
   }, [daA, data.annoAccademico, data.corsoLaurea, data.email, data.isValid, data.name, data.surname, data.telephoneNumber, file, inchiostro, layout, numeroCopie, numeroPDF, pagina, preventivo, rilegatura, rilegaturaUnica]);    // Final modal handling
-  
+
   const closeFinalModalHandler = useCallback(() => {
     setFormSubmitted(false);
     setFormSubmitting(false);
@@ -417,154 +418,160 @@ console.log(numeroPDF, "numero pdf")
   return (
     <div className="container">
       <Header />
-      <Intro 
-        title={"STAMPA I TUOI DOCUMENTI A4"} 
-        text={"In questa pagina potrai ordinare la stampa del tuo documento, inserisci le caratteristiche disponibili nelle varie sezioni per poter avere dei documenti cartacei di qualità."} 
+      <Intro
+        title={"STAMPA I TUOI DOCUMENTI A4"}
+        text={"In questa pagina potrai ordinare la stampa del tuo documento, inserisci le caratteristiche disponibili nelle varie sezioni per poter avere dei documenti cartacei di qualità."}
       />
       <SingleDelimiter />
       <Form onSendData={setDataHandler} />
       <SingleDelimiter />
       <MultiInput onSendData={setPDFHandler} />
       <SingleDelimiter />
-      <ContainerCards
-        title="Colore:"
-        components={useMemo(
-          () => [
-            {
-              title: "Bianco e nero",
-              imageSrc: require("../assets/images/Bianco_e_nero.jpg"),
-              disabled: false,
-              errorMessage: "",
-            },
-            {
-              title: "Colore",
-              imageSrc: require("../assets/images/Colore.jpg"),
-              disabled: false,
-              errorMessage: "",
-            },
-          ],
-          []
-        )}
-        defaultValue="Bianco e nero"
-        onSendData={newValue}
-      />
-      <SingleDelimiter />
-      <ContainerCards
-        title="Layout:"
-        components={useMemo(
-          () => [
-            {
-              title: "Verticale",
-              imageSrc: require("../assets/images/Verticale.jpg"),
-              disabled: false,
-              errorMessage: "",
-            },
-            {
-              title: "Orizzontale",
-              imageSrc: require("../assets/images/Orizzontale.jpg"),
-              disabled: false,
-              errorMessage: "",
-            },
-            {
-              title: "2 pagine in 1 orizzontale",
-              imageSrc: require("../assets/images/2in1Orizzontale.jpg"),
-              disabled: false,
-              errorMessage: "",
-            },
-            {
-              title: "2 pagine in 1 verticale",
-              imageSrc: require("../assets/images/2in1Verticale.jpg"),
-              disabled: false,
-              errorMessage: "",
-            },
-          ],
-          []
-        )}
-        defaultValue="Verticale"
-        onSendData={newValue}
-      />
+      <CollapsibleSection title="Colore:">
+        <ContainerCards
+          title="Colore:"
+          components={useMemo(
+            () => [
+              {
+                title: "Bianco e nero",
+                imageSrc: require("../assets/images/Bianco_e_nero.jpg"),
+                disabled: false,
+                errorMessage: "",
+              },
+              {
+                title: "Colore",
+                imageSrc: require("../assets/images/Colore.jpg"),
+                disabled: false,
+                errorMessage: "",
+              },
+            ],
+            []
+          )}
+          defaultValue="Bianco e nero"
+          onSendData={newValue}
+        />
+      </CollapsibleSection>
+      <CollapsibleSection title="Layout:">
 
-      <SingleDelimiter />
-      <ContainerCards
-        title="Gestione pagina:"
-        components={useMemo(
-          () => [
-            {
-              title: "Fronte-retro",
-              imageSrc: require("../assets/images/Fronte_retro.png"),
-              disabled: false,
-              errorMessage: "",
-            },
-            {
-              title: "Fronte",
-              imageSrc: require("../assets/images/Fronte.png"),
-              disabled: false,
-              errorMessage: "",
-            },
-          ],
-          []
-        )}
-        defaultValue="Fronte-retro"
-        onSendData={newValue}
-      />
-      <SingleDelimiter />
-      <ContainerCards
-        title="Rilegatura unica:"
-        components={useMemo(
-          () => [
-            {
-              title: "Si",
-              imageSrc: require("../assets/images/Fronte_retro.png"),
-              disabled: numeroPDF === 1,
-              errorMessage: "Disponibile Soltanto per 2 o più PDF",
-            },
-            {
-              title: "No",
-              imageSrc: require("../assets/images/Fronte.png"),
-              disabled: numeroPDF === 1,
-              errorMessage: "Disponibile Soltanto per 2 o più PDF",
-            },
-          ],
-          [numeroPDF]
-        )}
-        defaultValue="No"
-        onSendData={newValue}
-      />
-      <SingleDelimiter />
-      <ContainerCards
-        title="Rilegatura:"
-        components={useMemo(
-          () => [
-            {
-              title: "Anelli",
-              imageSrc: require("../assets/images/Anelli.jpg"),
-              disabled: false, // Aggiungi la proprietà disabled
-              errorMessage: "",
-            },
-            {
-              title: "Fascetta",
-              imageSrc: require("../assets/images/Fascetta.jpg"),
-              disabled: numeroPaginePDF > 80 && intervalloPagine > 80, // Aggiungi la proprietà disabled
-              errorMessage: "Limite di 80 pagine",
-            },
-            {
-              title: "Ciappatura",
-              imageSrc: require("../assets/images/Ciappatura.jpg"),
-              disabled: numeroPaginePDF > 40 && intervalloPagine > 40, // Mantieni la logica di disabilitazione
-              errorMessage: "Limite di 40 pagine"
-            },
-            {
-              title: "Nessuna",
-              imageSrc: require("../assets/images/Nessuna.jpg"),
-              disabled: false, // Aggiungi la proprietà disabled
-              errorMessage: "",
-            },
-          ],
-          [numeroPaginePDF, intervalloPagine] // Aggiungi numeroPaginePDF come dipendenza
-        )}
-        defaultValue="Anelli"
-        onSendData={newValue} // Assicurati che newValue sia una funzione valida
-      />
+        <ContainerCards
+          title="Layout:"
+          components={useMemo(
+            () => [
+              {
+                title: "Verticale",
+                imageSrc: require("../assets/images/Verticale.jpg"),
+                disabled: false,
+                errorMessage: "",
+              },
+              {
+                title: "Orizzontale",
+                imageSrc: require("../assets/images/Orizzontale.jpg"),
+                disabled: false,
+                errorMessage: "",
+              },
+              {
+                title: "2 pagine in 1 orizzontale",
+                imageSrc: require("../assets/images/2in1Orizzontale.jpg"),
+                disabled: false,
+                errorMessage: "",
+              },
+              {
+                title: "2 pagine in 1 verticale",
+                imageSrc: require("../assets/images/2in1Verticale.jpg"),
+                disabled: false,
+                errorMessage: "",
+              },
+            ],
+            []
+          )}
+          defaultValue="Verticale"
+          onSendData={newValue}
+        />
+      </CollapsibleSection>
+      <CollapsibleSection title="Gestione pagina:">
+        <ContainerCards
+          title="Gestione pagina:"
+          components={useMemo(
+            () => [
+              {
+                title: "Fronte-retro",
+                imageSrc: require("../assets/images/Fronte_retro.png"),
+                disabled: false,
+                errorMessage: "",
+              },
+              {
+                title: "Fronte",
+                imageSrc: require("../assets/images/Fronte.png"),
+                disabled: false,
+                errorMessage: "",
+              },
+            ],
+            []
+          )}
+          defaultValue="Fronte-retro"
+          onSendData={newValue}
+        />
+      </CollapsibleSection>
+      <CollapsibleSection title="Rilegatura unica:">
+        <ContainerCards
+          title="Rilegatura unica:"
+          components={useMemo(
+            () => [
+              {
+                title: "Si",
+                imageSrc: require("../assets/images/Fronte_retro.png"),
+                disabled: numeroPDF === 1,
+                errorMessage: "Disponibile Soltanto per 2 o più PDF",
+              },
+              {
+                title: "No",
+                imageSrc: require("../assets/images/Fronte.png"),
+                disabled: numeroPDF === 1,
+                errorMessage: "Disponibile Soltanto per 2 o più PDF",
+              },
+            ],
+            [numeroPDF]
+          )}
+          defaultValue="No"
+          onSendData={newValue}
+        />
+      </CollapsibleSection>
+      <CollapsibleSection title="Rilegatura:">
+        <ContainerCards
+          title="Rilegatura:"
+          components={useMemo(
+            () => [
+              {
+                title: "Anelli",
+                imageSrc: require("../assets/images/Anelli.jpg"),
+                disabled: false, // Aggiungi la proprietà disabled
+                errorMessage: "",
+              },
+              {
+                title: "Fascetta",
+                imageSrc: require("../assets/images/Fascetta.jpg"),
+                disabled: numeroPaginePDF > 80 && intervalloPagine > 80, // Aggiungi la proprietà disabled
+                errorMessage: "Limite di 80 pagine",
+              },
+              {
+                title: "Ciappatura",
+                imageSrc: require("../assets/images/Ciappatura.jpg"),
+                disabled: numeroPaginePDF > 40 && intervalloPagine > 40, // Mantieni la logica di disabilitazione
+                errorMessage: "Limite di 40 pagine"
+              },
+              {
+                title: "Nessuna",
+                imageSrc: require("../assets/images/Nessuna.jpg"),
+                disabled: false, // Aggiungi la proprietà disabled
+                errorMessage: "",
+              },
+            ],
+            [numeroPaginePDF, intervalloPagine] // Aggiungi numeroPaginePDF come dipendenza
+          )}
+          defaultValue="Anelli"
+          onSendData={newValue} // Assicurati che newValue sia una funzione valida
+        />
+      </CollapsibleSection>
       <SingleDelimiter />
       <IntervalloPagine
         onSendData={setRangePagesHandler}
@@ -576,10 +583,10 @@ console.log(numeroPDF, "numero pdf")
       <NumeroCopie onSendData={setCopiesHandler} />
       <SingleDelimiter />
       <Modal
-  totalOrder={preventivo}
-  onSubmit={submitFormHandler}
-  disabled={!data.isValid || file.length === 0 || !intervalloPagineIsValid}
-/>
+        totalOrder={preventivo}
+        onSubmit={submitFormHandler}
+        disabled={!data.isValid || file.length === 0 || !intervalloPagineIsValid}
+      />
       <Footer />
       {(formSubmitted || formSubmitting) && (
         <FinalModal

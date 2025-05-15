@@ -10,6 +10,10 @@
   margin-right: 1vw;
 }
 
+.error-message {
+  color: red;
+}
+
 .options {
   display: flex;
   justify-content: flex-start;
@@ -26,6 +30,7 @@
 .text {
   font-size: 2vw;
   margin: 0;
+  color: white;
 }
 
 .text-page {
@@ -80,7 +85,7 @@
   margin-right: 8px;
 }
 
-.options input[type="radio"]:checked + label .checkmark {
+.options input[type="radio"]:checked+label .checkmark {
   background-color: rgb(199, 171, 43);
   border-color: rgb(199, 171, 43);
 }
@@ -97,6 +102,7 @@
   .text-page {
     font-size: 3.8vw;
   }
+
   .inputRowDivS {
     width: 20vw;
   }
@@ -105,7 +111,7 @@
     margin-right: 2vw;
     width: 12vw;
   }
-  
+
 
   .number {
     font-size: 5vw;

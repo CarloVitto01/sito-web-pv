@@ -100,6 +100,9 @@ const MultiInput: React.FC<PropsContainer> = ({ onSendData }) => {
                 <input {...getInputProps()} />
                 <p className={classes["textMultiInput"]}>Inserisci i file PDF qui</p>
             </div>
+            <div className={classes["sottotitoloMultiInput"]}>
+                <p className={classes["title"]}>o trascina e lascia il file PDF qui</p>
+            </div>
             <div className={classes["containerPDFMultiInput"]}>
                 {files.map((file, index) => (
                     <div key={index} className={classes.pdfContainer}>
@@ -111,25 +114,28 @@ const MultiInput: React.FC<PropsContainer> = ({ onSendData }) => {
                             - {numPages[index] || 0}
                             {numPages[index] === 1 ? ' pagina' : ' pagine'}
                         </span>
-                        <div className={classes["button-container"]}>
-                            <div className={classes["artButton"]} onClick={() => openPopup(file, index)}>
-                                <MdOutlinePreview />
+                        <div className={classes.pdfContainerButton}>
+                            <div className={classes["button-container"]}>
+                                <div className={classes["artButton"]} onClick={() => openPopup(file, index)}>
+                                    <MdOutlinePreview />
+                                </div>
+                            </div>
+                            <div className={classes["button-container"]}>
+                                <div className={classes["artButton"]} onClick={() => removeFile(index)}>
+                                    <MdDelete />
+                                </div>
                             </div>
                         </div>
-                        <div className={classes["button-container"]}>
-                            <div className={classes["artButton"]} onClick={() => removeFile(index)}>
-                                <MdDelete />
-                            </div>
-                        </div>
+
 
                         <Document file={file} onLoadSuccess={(data) => onDocumentLoadSuccess(index, data)} />
                     </div>
                 ))}
             </div>
-            <div className={classes["totalPages"]}>
+            {/*<div className={classes["totalPages"]}>
                 <p><strong>Totale Pagine: {totalNumPages}</strong></p>
                 <p><strong>Totale PDF: {files.length}</strong></p>
-            </div>
+            </div>*/}
             {isOpen && currentFile && currentFileIndex !== null && (
                 <div className={classes["popup"]}>
                     <div className={classes["popupContent"]}>

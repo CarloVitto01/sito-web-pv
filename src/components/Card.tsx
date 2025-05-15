@@ -1,54 +1,42 @@
 import React from "react";
 import classes from "./Card.module.css";
 
-interface CardProps {
+interface ImageButtonProps {
   title: string;
   imageSrc: string;
   isSelected: boolean;
   onClick: () => void;
-  disabled?: boolean; // Aggiungi la proprietà disabled
-  errorMessage?: string; // Aggiungi la proprietà errorMessage
+  disabled?: boolean;
+  errorMessage?: string;
 }
 
-const Card: React.FC<CardProps> = ({
-  imageSrc,
+const Card: React.FC<ImageButtonProps> = ({
   title,
+  imageSrc,
   isSelected,
   onClick,
-  disabled = false, // Imposta il valore predefinito a false
-  errorMessage, // Aggiungi la proprietà errorMessage
+  disabled = false,
+  errorMessage,
 }) => {
   const handleClick = (event: React.MouseEvent) => {
-    if (disabled) {
-      event.stopPropagation(); // Impedisci l'evento di propagarsi se disabilitato
-    } else {
-      onClick(); // Esegui onClick solo se non è disabilitato
-    }
+    if (!disabled) onClick();
+    event.stopPropagation();
   };
 
   return (
-    <div className={classes["rectangle"]} tabIndex={1}>
-      <div
-        className={`${classes["box-img"]} ${
-          isSelected ? classes["selected"] : ""
-        } ${disabled ? classes["disabled"] : ""}`} // Aggiungi classe per disabilitato
+    <div className={classes.container}>
+      <button
+        className={`${classes.button} ${isSelected ? classes.selected : ""} ${
+          disabled ? classes.disabled : ""
+        }`}
         onClick={handleClick}
+        disabled={disabled}
       >
-        <img src={imageSrc} alt={title} className={classes["img"]} />
-      </div>
-      <div className={classes["box-title"]}>
-        <p
-          className={`${classes["title"]} ${
-            isSelected ? classes["selected"] : ""
-          } ${disabled ? classes["disabled"] : ""}`} // Aggiungi classe per disabilitato
-        >
-          {title}
-        </p>
-      </div>
-      {disabled && (
-        <div className={classes["disabled-message"]}>
-          {errorMessage} {/* Visualizza il messaggio di errore specifico */}
-        </div>
+        <img src={imageSrc} alt={title} className={classes.image} />
+        <span className={classes.label}>{title}</span>
+      </button>
+      {disabled && errorMessage && (
+        <div className={classes.error}>{errorMessage}</div>
       )}
     </div>
   );

@@ -1,83 +1,64 @@
-.rectangle {
+.container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 15vw;
-    padding: 1vw;
-    transition: transform 0.3s;
-}
-
-.box-img {
-    border: 3px solid rgb(199, 171, 43);
+  }
+  
+  .button {
+    border: 2px solid rgb(199, 171, 43);
     background-color: white;
-    border-radius: 15px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-top: 1vw;
-    cursor: pointer;
-    overflow: hidden;
-}
-
-.rectangle:hover {
-    transform: scale(1.15); /* Effetto hover */
-}
-
-.box-img.selected {
-    border: 6px solid rgb(199, 171, 43);
-    transition: border-width 0.1s;
-    margin-top: 0.5vw;
-}
-
-.img {
-    max-width: 12vw;
-    padding: 1.5vw;
-}
-
-.title {
-    font-size: 1.9vw;
+    border-radius: 12px;
+    padding: 1vw;
     text-align: center;
-}
-
-.disabled {
-    opacity: 0.5; /* Rendi il card più trasparente */
-    pointer-events: none; /* Impedisci l'interazione */
-}
-
-.disabled-message {
-    color: red; /* Colore del messaggio */
-    font-size: 12px; /* Dimensione del testo */
-    margin-top: 5px; /* Spazio sopra il messaggio */
-}
-@media screen and (max-width: 500px) {
-    .rectangle {
-        margin: 0%;
-        width: 25vw;
-        height: auto;
-        padding: 0%;
+    cursor: pointer;
+    transition: transform 0.3s, border 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 14vw;
+  }
+  
+  .button:hover {
+    transform: scale(1.1);
+  }
+  
+  .selected {
+    border: 4px double rgb(199, 171, 43);
+  }
+  
+  .disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+  
+  .image {
+    max-width: 10vw;
+    height: auto;
+    margin-bottom: 0.5vw;
+  }
+  
+  .label {
+    font-size: 1.2vw;
+    color: black;
+  }
+  
+  .error {
+    color: red;
+    font-size: 12px;
+    margin-top: 5px;
+  }
+  
+  @media screen and (max-width: 500px) {
+    .button {
+      width: 25vw;
     }
-
-    .rectangle .selected {
-        transform: scale(1.2);
-        transition: transform 0.3s;
+  
+    .image {
+      max-width: 20vw;
     }
-
-    .rectangle:hover {
-        transform: scale(1);
+  
+    .label {
+      font-size: 4vw;
     }
-
-    .box-img {
-        width: 25vw;
-        height: 25vw;
-    }
-
-    .img {
-        max-width: 22vw;
-        height: 22vw;
-        padding: 1.5vw;
-    }
-
-    .title {
-        font-size: 120%;
-    }
-}
+  }
+  

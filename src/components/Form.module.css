@@ -1,4 +1,5 @@
 .form {
+  background-color: #111;
   display: flex;
   justify-content: center;
   width: 100%;
@@ -6,71 +7,65 @@
 
 .container-form {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 80vw;
+  width: 100%;
+  max-width: 900px;
 }
 
 .credentials {
   display: flex;
-  flex-direction: row;
-  width: 80vw;
-  justify-content: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 20px;
 }
 
 .credential {
-  padding: 1vh 0 1vh 0;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
 }
 
 .voice {
-  font-size: 2vw;
-  color: rgb(199, 171, 43);
-  margin-right: 1vw;
+  font-size: 1.1rem;
+  color: #dfb600;
+  margin-bottom: 5px;
 }
-
 
 .credential input {
-  border: none;
-  background-color: transparent;
-  border-bottom: 0.5px solid gray;
-  font-size: 1.6vw;
-  width: 20vw;
-  margin-right: 2vw;
+  background-color: #111;
+  color: white;
+  border: 1px solid #444;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border 0.3s, background-color 0.3s;
 }
 
-.credential input:focus{
+.credential input:focus {
   outline: none;
-  border-bottom: 2px solid rgb(199, 171, 43);
+  border-color: #dfb600;
+  background-color: #1a1a1a;
 }
 
 .credential.invalid input {
-  border-bottom: 2px solid rgb(199, 43, 43);
-  background: rgb(255, 231, 231);
+  border: 1px solid #ff4f4f;
+  background-color: #2b0000;
+  color: #f8dada;
 }
 
-@media screen and (max-width: 500px) {
+.credential.invalid input:focus {
+  border-color: #ff4f4f;
+}
 
-  .credentials {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
-  
+@media screen and (max-width: 768px) {
   .credential {
-    padding: 0.6vh;
+    flex: 1 1 100%;
   }
-  
+
   .voice {
-    font-size: 2.4vh;
-    color: rgb(199, 171, 43);
-    margin-right: 1vw;
+    font-size: 1rem;
   }
 
   .credential input {
-    font-size: 4vw;
-    width: 48vw;
+    font-size: 0.95rem;
   }
-  
 }

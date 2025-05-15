@@ -19,8 +19,7 @@ const Header = () => {
         <button className={classes["menu-button-home"]} onClick={toggleMenu}>
           <FiMenu />
         </button>
-        {isMenuOpen && (
-          <nav className={classes["side-menu"]}>
+        <nav className={`${classes["side-menu"]} ${!isMenuOpen ? classes["hidden"] : ""}`}>
             <button className={classes["close-button"]} onClick={toggleMenu}>✖</button>
             <ul>
               <Link to="/" className={classes['link-menu']}><li>Home</li></Link>
@@ -28,7 +27,6 @@ const Header = () => {
               <Link to="/printA3" className={classes['link-menu']}><li>Print A3</li></Link>
             </ul>
           </nav>
-        )}
       </div>
       <div className={classes["logo-section"]}>
         <Link to="/">

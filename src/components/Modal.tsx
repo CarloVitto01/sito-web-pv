@@ -1,6 +1,8 @@
 import classes from "./Modal.module.css";
 import Sticky from "./Sticky";
 import React, { useState } from "react";
+import { CiCircleInfo } from "react-icons/ci";
+
 
 interface propsContainer {
   totalOrder: string;
@@ -26,12 +28,7 @@ const Modal: React.FC<propsContainer> = ({
     >
       <div className={classes["container"]}>
         <header>
-          <img
-            src={require("../assets/images/Info.jpg")}
-            alt="Info"
-            className="info"
-            onClick={showHandler}
-          />
+          <CiCircleInfo onClick={showHandler}/>
         </header>
         <div className={classes["inner-container"]}>
           <div className={classes["order-container"]}>

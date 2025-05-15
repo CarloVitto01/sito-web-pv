@@ -19,6 +19,7 @@ import { FileHandler } from "../types/FileHandler";
 import Form from "./Form";
 import NumeroCopie from "./NumeroCopie";
 import MultiInput from "./MultiInput";
+import CollapsibleSection from "../components/CollapsibleSection";
 
 // Constants
 const grammaturaNormale: number = 0.12;
@@ -196,7 +197,7 @@ const A3PagePrint = () => {
             setPreventivo(total);
         }
         if (numeroPDF === 0) {
-          setPreventivo("0.00")
+            setPreventivo("0.00")
         }
     }, [inchiostro, pagina, layout, numeroPaginePDF, numeroCopie, plastificazione, grammatura, numeroPDF]);
 
@@ -319,135 +320,142 @@ const A3PagePrint = () => {
     return (
         <div className="container">
             <Header />
-            <Intro 
-                title={"STAMPA I TUOI DOCUMENTI A3"} 
-                text={"In questa pagina potrai ordinare la stampa del tuo documento, inserisci le caratteristiche disponibili nelle varie sezioni per poter avere dei documenti cartacei di qualità."} 
+            <Intro
+                title={"STAMPA I TUOI DOCUMENTI A3"}
+                text={"In questa pagina potrai ordinare la stampa del tuo documento, inserisci le caratteristiche disponibili nelle varie sezioni per poter avere dei documenti cartacei di qualità."}
             />
             <SingleDelimiter />
             <Form onSendData={setDataHandler} />
             <SingleDelimiter />
             <MultiInput onSendData={setPDFHandler} />
             <SingleDelimiter />
-            <ContainerCards
-                title="Grammatura:"
-                components={useMemo(
-                    () => [
-                        {
-                            title: "Normale",
-                            imageSrc: require("../assets/images/Colore.jpg"),
-                            disabled: false,
-                            errorMessage: ""
-                        },
-                        {
-                            title: "Cartoncino",
-                            imageSrc: require("../assets/images/Bianco_e_nero.jpg"),
-                            disabled: false,
-                            errorMessage: ""
-                        },
-                    ],
-                    []
-                )}
-                defaultValue="Normale"
-                onSendData={newValue}
-            />
-            <SingleDelimiter />
-            <ContainerCards
-                title="Colore:"
-                components={useMemo(
-                    () => [
-                        {
-                            title: "Colore",
-                            imageSrc: require("../assets/images/Colore.jpg"),
-                            disabled: false,
-                            errorMessage: ""
-                        },
-                        {
-                            title: "Bianco e nero",
-                            imageSrc: require("../assets/images/Bianco_e_nero.jpg"),
-                            disabled: false,
-                            errorMessage: ""
-                        },
-                    ],
-                    []
-                )}
-                defaultValue="Colore"
-                onSendData={newValue}
-            />
-            <SingleDelimiter />
-            <ContainerCards
-                title="Gestione pagina:"
-                components={useMemo(
-                    () => [
-                        {
-                            title: "Fronte",
-                            imageSrc: require("../assets/images/Fronte.png"),
-                            disabled: false,
-                            errorMessage: ""
-                        },
-                        {
-                            title: "Fronte-retro",
-                            imageSrc: require("../assets/images/Fronte_retro.png"),
-                            disabled: false,
-                            errorMessage: ""
-                        },
-                    ],
-                    []
-                )}
-                defaultValue="Fronte"
-                onSendData={newValue}
-            />
-            <SingleDelimiter />
-            <ContainerCards
-                title="Plastificazione:"
-                components={useMemo(
-                    () => [
-                        {
-                            title: "Si",
-                            imageSrc: require("../assets/images/Anelli.jpg"),
-                            disabled: false,
-                            errorMessage: ""
-                        },
-                        {
-                            title: "No",
-                            imageSrc: require("../assets/images/Nessuna.jpg"),
-                            disabled: false,
-                            errorMessage: ""
-                        },
-                    ],
-                    []
-                )}
-                defaultValue="Si"
-                onSendData={newValue}
-            />
-            <SingleDelimiter />
-            <ContainerCards
-                title="Layout:"
-                components={useMemo(
-                    () => [
-                        {
-                            title: "Auto",
-                            imageSrc: require("../assets/images/2in1Orizzontale.jpg"),
-                            disabled: false,
-                            errorMessage: "",
-                        },
-                        {
-                            title: "Orizzontale",
-                            imageSrc: require("../assets/images/Orizzontale.jpg"),
-                            disabled: false,
-                            errorMessage: "",
-                        },
-                        {
-                            title: "Verticale",
-                            imageSrc: require("../assets/images/Verticale.jpg"),
-                            disabled: false,
-                            errorMessage: "",
-                        },
-                    ],
-                    []
-                )}
-                defaultValue="Auto"
-                onSendData={newValue}
-            />
+            <CollapsibleSection title="Grammatura:">
+                <ContainerCards
+                    title="Grammatura:"
+                    components={useMemo(
+                        () => [
+                            {
+                                title: "Normale",
+                                imageSrc: require("../assets/images/Colore.jpg"),
+                                disabled: false,
+                                errorMessage: ""
+                            },
+                            {
+                                title: "Cartoncino",
+                                imageSrc: require("../assets/images/Bianco_e_nero.jpg"),
+                                disabled: false,
+                                errorMessage: ""
+                            },
+                        ],
+                        []
+                    )}
+                    defaultValue="Normale"
+                    onSendData={newValue}
+                />
+            </CollapsibleSection>
+            <CollapsibleSection title="Colore:">
+                <ContainerCards
+                    title="Colore:"
+                    components={useMemo(
+                        () => [
+                            {
+                                title: "Colore",
+                                imageSrc: require("../assets/images/Colore.jpg"),
+                                disabled: false,
+                                errorMessage: ""
+                            },
+                            {
+                                title: "Bianco e nero",
+                                imageSrc: require("../assets/images/Bianco_e_nero.jpg"),
+                                disabled: false,
+                                errorMessage: ""
+                            },
+                        ],
+                        []
+                    )}
+                    defaultValue="Colore"
+                    onSendData={newValue}
+                />
+            </CollapsibleSection>
+            <CollapsibleSection title="Gestione pagina:">
+                <ContainerCards
+                    title="Gestione pagina:"
+                    components={useMemo(
+                        () => [
+                            {
+                                title: "Fronte",
+                                imageSrc: require("../assets/images/Fronte.png"),
+                                disabled: false,
+                                errorMessage: ""
+                            },
+                            {
+                                title: "Fronte-retro",
+                                imageSrc: require("../assets/images/Fronte_retro.png"),
+                                disabled: false,
+                                errorMessage: ""
+                            },
+                        ],
+                        []
+                    )}
+                    defaultValue="Fronte"
+                    onSendData={newValue}
+                />
+            </CollapsibleSection>
+            <CollapsibleSection title="Plastificazione:">
+                <ContainerCards
+                    title="Plastificazione:"
+                    components={useMemo(
+                        () => [
+                            {
+                                title: "Si",
+                                imageSrc: require("../assets/images/Anelli.jpg"),
+                                disabled: false,
+                                errorMessage: ""
+                            },
+                            {
+                                title: "No",
+                                imageSrc: require("../assets/images/Nessuna.jpg"),
+                                disabled: false,
+                                errorMessage: ""
+                            },
+                        ],
+                        []
+                    )}
+                    defaultValue="Si"
+                    onSendData={newValue}
+                />
+            </CollapsibleSection>
+            <CollapsibleSection title="Layout:">
+                <ContainerCards
+                    title="Layout:"
+                    components={useMemo(
+                        () => [
+                            {
+                                title: "Auto",
+                                imageSrc: require("../assets/images/2in1Orizzontale.jpg"),
+                                disabled: false,
+                                errorMessage: "",
+                            },
+                            {
+                                title: "Orizzontale",
+                                imageSrc: require("../assets/images/Orizzontale.jpg"),
+                                disabled: false,
+                                errorMessage: "",
+                            },
+                            {
+                                title: "Verticale",
+                                imageSrc: require("../assets/images/Verticale.jpg"),
+                                disabled: false,
+                                errorMessage: "",
+                            },
+                        ],
+                        []
+                    )}
+                    defaultValue="Auto"
+                    onSendData={newValue}
+                />
+            </CollapsibleSection>
+
             <SingleDelimiter />
             <NumeroCopie onSendData={setCopiesHandler} />
             <SingleDelimiter />
