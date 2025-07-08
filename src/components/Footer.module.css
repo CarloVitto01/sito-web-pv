@@ -1,13 +1,13 @@
 .footer {
-  background-color: #0a0a0a;
+  background-color: var(--color-background); /* era #0a0a0a */
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  border-top: 2px solid #DEB500;
-  border-top-left-radius: 15px;
-  border-top-right-radius: 15px;
-  box-shadow: 0 -5px 15px rgba(222, 181, 0, 0.2);
+  border-top: 2px solid var(--color-gold); /* era #DEB500 */
+  border-top-left-radius: var(--radius);
+  border-top-right-radius: var(--radius);
+  box-shadow: 0 -5px 15px rgba(199, 171, 43, 0.2); /* da rgba(222,181,0,0.2) */
   padding: 40px 20px;
 }
 
@@ -19,8 +19,8 @@
 .title-Footer h2 {
   font-size: 1.8rem;
   font-weight: 500;
-  color: #ffffff;
-  text-shadow: 0 0 5px rgba(222, 181, 0, 0.2);
+  color: var(--color-text); /* era #ffffff */
+  text-shadow: 0 0 5px rgba(199, 171, 43, 0.2); /* da rgba(222,181,0,0.2) */
 }
 
 .container-info {
@@ -42,8 +42,8 @@
 .footer-logo {
   width: 32px;
   height: auto;
-  filter: drop-shadow(0 0 5px #DEB500);
-  transition: transform 0.3s ease;
+  filter: drop-shadow(0 0 5px var(--color-gold)); /* era #DEB500 */
+  transition: transform var(--transition-fast);
 }
 
 .footer-logo:hover {
@@ -52,11 +52,10 @@
 
 .footer-text {
   font-size: 1rem;
-  color: #ccc;
+  color: var(--color-text); /* era #ccc */
   margin: 0;
   line-height: 1.2;
 }
-
 
 @media screen and (max-width: 500px) {
   .title-Footer h2 {

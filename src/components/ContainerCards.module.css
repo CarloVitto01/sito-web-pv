@@ -1,49 +1,43 @@
+@import '../styles/variables.css';
+
 .container-cards {
-  display: flex;
-  justify-content: center;
-  flex-direction: column;
-  margin: 1rem;
+  width: 100%;
+  margin: 2rem auto;
 }
 
 .title {
   text-align: center;
-  font-size: 3vw;
-  font-weight: normal;
-  color: rgb(199, 171, 43);
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--color-gold);
+  margin-bottom: 1.5rem;
+  font-family: var(--font-main);
 }
 
 .container {
   display: flex;
-  flex-direction: row;
+  flex-wrap: wrap;
   justify-content: center;
-  align-items: flex-start;
-  gap: 6vw;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: var(--radius);
+  background-color: var(--color-background);
+  box-shadow: var(--shadow-light);
 }
 
-.container-item {
+.subContainer {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
   justify-content: center;
+  gap: 1rem;
 }
 
 @media screen and (max-width: 500px) {
   .title {
-    font-size: 170%;
+    font-size: 1.3rem;
   }
 
   .container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    justify-items: center;
-    align-items: flex-start;
-    gap: 0vw;
-  }
-
-  .container-item {
-    min-width: 10vw;
-    min-height: 10vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    padding: 1rem 0.5rem;
   }
 }

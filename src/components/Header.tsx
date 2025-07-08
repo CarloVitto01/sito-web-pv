@@ -1,4 +1,4 @@
-import logo from "../assets/images/logo.png";
+import logo from "../assets/images/Firma_Bianca_oro_PV.png";
 import classes from "./Header.module.css";
 import React from "react";
 import { Link } from "react-router-dom";

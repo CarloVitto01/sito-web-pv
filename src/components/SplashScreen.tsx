@@ -11,7 +11,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onEnd }) => {
   return (
     <div className="splash-screen">
       <motion.img
-        src="/logosplashscreen.png"
+        src="/logo_b.png"
         alt="Logo"
         initial={{ scale: 1, rotate: 0, opacity: 1 }}
         animate={{ scale: 8, rotate: 360, opacity: 0 }}

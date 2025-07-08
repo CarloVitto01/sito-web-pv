@@ -1,0 +1,49 @@
+.subContainerA4 {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 100vh; /* prende tutta l'altezza della finestra */
+  gap: 2rem;
+  padding: 1rem;
+  box-sizing: border-box;
+  overflow: hidden; /* evita doppio scroll */
+}
+
+.subContainerA4Left {
+  flex: 1 1 50%;
+  max-width: 50%;
+  height: 100%;
+  overflow-y: auto; /* solo questa scrolla */
+  padding-right: 1rem;
+  box-sizing: border-box;
+}
+
+.subContainerA4Right {
+  flex: 1 1 50%;
+  max-width: 48%;
+  position: sticky;
+  top: 1rem; /* distanza dal bordo alto */
+  align-self: flex-start;
+  height: fit-content;
+  color: var(--color-text);
+  padding-left: 1rem;
+  box-sizing: border-box;
+}
+
+@media screen and (max-width: 768px) {
+  .subContainerA4 {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .subContainerA4Left,
+  .subContainerA4Right {
+    max-width: 100%;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    position: static;
+    border-left: none;
+    padding-left: 0;
+  }
+}

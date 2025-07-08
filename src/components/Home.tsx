@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import classes from './Home.module.css';
 import Header from './Header';
 import Footer from './Footer';
@@ -78,7 +78,10 @@ const Home: React.FC = () => {
         viewport={{ once: true }}
       >
         <h2>Perché Noi</h2>
-        <p><strong>Soluzioni su misura</strong>, tecnologia avanzata e una passione per l’eccellenza. <strong>Scopri</strong> cosa ci rende unici.</p>
+        <p><strong>Soluzioni su misura</strong>, tecnologia avanzata e una passione per l’eccellenza. <strong>Scopri</strong> cosa ci rende unici.
+        
+        
+        sto gran cazzo</p>
       </motion.section>
 
       <Footer />

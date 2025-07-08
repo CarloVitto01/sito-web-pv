@@ -25,19 +25,24 @@ const ContainerCards: React.FC<propsContainer> = ({
 
   return (
     <div className={classes["container-cards"]}>
-      <h1 className={classes["title"]}>{title}</h1>
       <div className={classes["container"]}>
-        {components.map((component) => (
-          <Card
-            key={component.title}
-            title={component.title}
-            imageSrc={component.imageSrc}
-            isSelected={selectedCard === component.title}
-            onClick={handleCardClick.bind(null, component.title)}
-            disabled={component.disabled} // Passa la proprietà disabled
-            errorMessage={component.errorMessage}
-          />
-        ))}
+        <div className={classes["subContainer"]}>
+          <h2 className={classes.title}>{title}</h2>
+        </div>
+        <div className={classes["subContainer"]}>
+          {components.map((component) => (
+            <Card
+              key={component.title}
+              title={component.title}
+              imageSrc={component.imageSrc}
+              isSelected={selectedCard === component.title}
+              onClick={handleCardClick.bind(null, component.title)}
+              disabled={component.disabled} // Passa la proprietà disabled
+              errorMessage={component.errorMessage}
+            />
+          ))}
+        </div>
+
       </div>
     </div>
   );

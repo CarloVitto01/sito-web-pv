@@ -1,11 +1,11 @@
 .page-container {
-  background-color: #0a0a0a;
-  color: #fff;
+  background-color: var(--color-background); /* era #0a0a0a */
+  color: var(--color-text); /* era #fff */
   font-family: 'Inter', sans-serif;
 }
 
 .hero {
-  background: radial-gradient(circle at top, #0f0f0f, #000);
+  background: radial-gradient(circle at top, var(--color-background), var(--color-background)); /* #0f0f0f -> #000 -> semplificato */
   text-align: center;
   padding: 100px 20px;
 }
@@ -15,29 +15,29 @@
   font-weight: 700;
   text-transform: uppercase;
   margin-bottom: 10px;
-  color: #fff;
+  color: var(--color-text); /* era #fff */
 }
 
 .hero p {
   font-size: 1.2rem;
-  color: #ccc;
+  color: var(--color-background); /* era #ccc */
   margin-bottom: 30px;
 }
 
 .cta-button {
   background-color: transparent;
-  border: 2px solid #dfb600;
-  color: #dfb600;
+  border: 2px solid var(--color-gold);
+  color: var(--color-gold);
   padding: 12px 24px;
   border-radius: 30px;
   font-weight: bold;
   text-decoration: none;
-  transition: all 0.3s ease;
+  transition: all var(--transition-fast) ease;
 }
 
 .cta-button:hover {
-  background-color: #dfb600;
-  color: #000;
+  background-color: var(--color-background);
+  color: var(--color-text); /* era #000 */
 }
 
 .services,
@@ -45,7 +45,7 @@
 .why-us {
   padding: 60px 20px;
   text-align: center;
-  background-color: #111;
+  background-color: var(--color-background); /* era #111 */
 }
 
 .services h2,
@@ -53,7 +53,7 @@
 .why-us h2 {
   font-size: 2rem;
   margin-bottom: 30px;
-  color: #ffffff;
+  color: var(--color-text); /* era #ffffff */
 }
 
 .service-grid,
@@ -66,20 +66,20 @@
 
 .service-grid div,
 .project-grid div {
-  background-color: #1a1a1a;
+  background-color: var(--color-background); /* era #1a1a1a */
   padding: 20px;
-  border-radius: 12px;
+  border-radius: var(--radius);
   width: 200px;
-  box-shadow: 0 0 15px rgba(223, 182, 0, 0.15);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 0 15px rgba(199, 171, 43, 0.15);
+  transition: transform var(--transition-fast) ease, box-shadow var(--transition-fast) ease;
   text-align: center;
-  color: #fff;
+  color: var(--color-text); /* era #fff */
 }
 
 .service-grid div:hover,
 .project-grid div:hover {
   transform: translateY(-10px);
-  box-shadow: 0 0 25px rgba(223, 182, 0, 0.4);
+  box-shadow: 0 0 25px rgba(199, 171, 43, 0.4);
 }
 
 .project-grid img {
@@ -94,9 +94,8 @@
   max-width: 600px;
   margin: auto;
   font-size: 1.1rem;
-  color: #ccc;
+  color: var(--color-text); /* era #ccc */
 }
-
 
 @media (max-width: 768px) {
   .service-grid,

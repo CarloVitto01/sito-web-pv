@@ -1,5 +1,6 @@
 // src/A4PagePrint.tsx
 import "../App.css";
+import classes from "../components/A4PagePrint.module.css";
 import Footer from "../components/Footer";
 import Header from "../components/Header";
 import Intro from "../components/Intro";
@@ -8,7 +9,6 @@ import ContainerCards from "../components/ContainerCards";
 import IntervalloPagine from "../components/IntervalloPagine";
 import SingleDelimiter from "../components/SingleDelimiter";
 import NumeroCopie from "../components/NumeroCopie";
-import Modal from "../components/Modal";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { storage } from "../backend/firebase";
 import { db } from "../backend/firebase";
@@ -21,7 +21,7 @@ import { FormData } from "../types/FormData";
 import { FileHandler } from "../types/FileHandler";
 import { RangePagesData } from "../types/RangePagesData";
 import MultiInput from "./MultiInput";
-import CollapsibleSection from "../components/CollapsibleSection";
+import RiepilogoOrdine from "../components/RiepilogoOrdine";
 
 //Constants
 
@@ -282,8 +282,8 @@ const A4PagePrint = () => {
 
   //Send data to the Firebase server
 
-  const submitFormHandler = useCallback(async (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-    event.preventDefault();
+  const submitFormHandler = useCallback(async (event?: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    event?.preventDefault();
     setFormSubmitting(true);
     if (file.length === 0 || !data.isValid) { // Controlla se ci sono file
       setFormSubmitting(false); // Assicurati di impostare formSubmitting su false se non ci sono file
@@ -416,7 +416,7 @@ const A4PagePrint = () => {
   }, []);
 
   return (
-    <div className="container">
+    <div className="">
       <Header />
       <Intro
         title={"STAMPA I TUOI DOCUMENTI A4"}
@@ -427,166 +427,199 @@ const A4PagePrint = () => {
       <SingleDelimiter />
       <MultiInput onSendData={setPDFHandler} />
       <SingleDelimiter />
-      <CollapsibleSection title="Colore:">
-        <ContainerCards
-          title="Colore:"
-          components={useMemo(
-            () => [
-              {
-                title: "Bianco e nero",
-                imageSrc: require("../assets/images/Bianco_e_nero.jpg"),
-                disabled: false,
-                errorMessage: "",
-              },
-              {
-                title: "Colore",
-                imageSrc: require("../assets/images/Colore.jpg"),
-                disabled: false,
-                errorMessage: "",
-              },
-            ],
-            []
-          )}
-          defaultValue="Bianco e nero"
-          onSendData={newValue}
-        />
-      </CollapsibleSection>
-      <CollapsibleSection title="Layout:">
+      <div className={classes["subContainerA4"]}>
+        <div className={classes["subContainerA4Left"]}>
+          <div className="container-containerCards">
+            <ContainerCards
+              title="Colore:"
+              components={useMemo(
+                () => [
+                  {
+                    title: "Bianco e nero",
+                    imageSrc: require("../assets/images/Bianco_e_nero.jpg"),
+                    disabled: false,
+                    errorMessage: "",
+                  },
+                  {
+                    title: "Colore",
+                    imageSrc: require("../assets/images/Colore.jpg"),
+                    disabled: false,
+                    errorMessage: "",
+                  },
+                ],
+                []
+              )}
+              defaultValue="Bianco e nero"
+              onSendData={newValue}
+            />
+            <ContainerCards
+              title="Layout:"
+              components={useMemo(
+                () => [
+                  {
+                    title: "Verticale",
+                    imageSrc: require("../assets/images/Verticale.jpg"),
+                    disabled: false,
+                    errorMessage: "",
+                  },
+                  {
+                    title: "Orizzontale",
+                    imageSrc: require("../assets/images/Orizzontale.jpg"),
+                    disabled: false,
+                    errorMessage: "",
+                  },
+                  {
+                    title: "2 pagine in 1 orizzontale",
+                    imageSrc: require("../assets/images/2in1Orizzontale.jpg"),
+                    disabled: false,
+                    errorMessage: "",
+                  },
+                  {
+                    title: "2 pagine in 1 verticale",
+                    imageSrc: require("../assets/images/2in1Verticale.jpg"),
+                    disabled: false,
+                    errorMessage: "",
+                  },
+                ],
+                []
+              )}
+              defaultValue="Verticale"
+              onSendData={newValue}
+            />
+            <ContainerCards
+              title="Gestione pagina:"
+              components={useMemo(
+                () => [
+                  {
+                    title: "Fronte-retro",
+                    imageSrc: require("../assets/images/Fronte_retro.png"),
+                    disabled: false,
+                    errorMessage: "",
+                  },
+                  {
+                    title: "Fronte",
+                    imageSrc: require("../assets/images/Fronte.png"),
+                    disabled: false,
+                    errorMessage: "",
+                  },
+                ],
+                []
+              )}
+              defaultValue="Fronte-retro"
+              onSendData={newValue}
+            />
+            <ContainerCards
+              title="Rilegatura unica:"
+              components={useMemo(
+                () => [
+                  {
+                    title: "Si",
+                    imageSrc: require("../assets/images/Fronte_retro.png"),
+                    disabled: numeroPDF === 1,
+                    errorMessage: "Disponibile Soltanto per 2 o più PDF",
+                  },
+                  {
+                    title: "No",
+                    imageSrc: require("../assets/images/Fronte.png"),
+                    disabled: numeroPDF === 1,
+                    errorMessage: "Disponibile Soltanto per 2 o più PDF",
+                  },
+                ],
+                [numeroPDF]
+              )}
+              defaultValue="No"
+              onSendData={newValue}
+            />
+            <ContainerCards
+              title="Rilegatura:"
+              components={useMemo(
+                () => [
+                  {
+                    title: "Anelli",
+                    imageSrc: require("../assets/images/Anelli.jpg"),
+                    disabled: false, // Aggiungi la proprietà disabled
+                    errorMessage: "",
+                  },
+                  {
+                    title: "Fascetta",
+                    imageSrc: require("../assets/images/Fascetta.jpg"),
+                    disabled: numeroPaginePDF > 80 && intervalloPagine > 80, // Aggiungi la proprietà disabled
+                    errorMessage: "Limite di 80 pagine",
+                  },
+                  {
+                    title: "Ciappatura",
+                    imageSrc: require("../assets/images/Ciappatura.jpg"),
+                    disabled: numeroPaginePDF > 40 && intervalloPagine > 40, // Mantieni la logica di disabilitazione
+                    errorMessage: "Limite di 40 pagine"
+                  },
+                  {
+                    title: "Nessuna",
+                    imageSrc: require("../assets/images/Nessuna.jpg"),
+                    disabled: false, // Aggiungi la proprietà disabled
+                    errorMessage: "",
+                  },
+                ],
+                [numeroPaginePDF, intervalloPagine] // Aggiungi numeroPaginePDF come dipendenza
+              )}
+              defaultValue="Anelli"
+              onSendData={newValue} // Assicurati che newValue sia una funzione valida
+            />
 
-        <ContainerCards
-          title="Layout:"
-          components={useMemo(
-            () => [
-              {
-                title: "Verticale",
-                imageSrc: require("../assets/images/Verticale.jpg"),
-                disabled: false,
-                errorMessage: "",
-              },
-              {
-                title: "Orizzontale",
-                imageSrc: require("../assets/images/Orizzontale.jpg"),
-                disabled: false,
-                errorMessage: "",
-              },
-              {
-                title: "2 pagine in 1 orizzontale",
-                imageSrc: require("../assets/images/2in1Orizzontale.jpg"),
-                disabled: false,
-                errorMessage: "",
-              },
-              {
-                title: "2 pagine in 1 verticale",
-                imageSrc: require("../assets/images/2in1Verticale.jpg"),
-                disabled: false,
-                errorMessage: "",
-              },
-            ],
-            []
-          )}
-          defaultValue="Verticale"
-          onSendData={newValue}
-        />
-      </CollapsibleSection>
-      <CollapsibleSection title="Gestione pagina:">
-        <ContainerCards
-          title="Gestione pagina:"
-          components={useMemo(
-            () => [
-              {
-                title: "Fronte-retro",
-                imageSrc: require("../assets/images/Fronte_retro.png"),
-                disabled: false,
-                errorMessage: "",
-              },
-              {
-                title: "Fronte",
-                imageSrc: require("../assets/images/Fronte.png"),
-                disabled: false,
-                errorMessage: "",
-              },
-            ],
-            []
-          )}
-          defaultValue="Fronte-retro"
-          onSendData={newValue}
-        />
-      </CollapsibleSection>
-      <CollapsibleSection title="Rilegatura unica:">
-        <ContainerCards
-          title="Rilegatura unica:"
-          components={useMemo(
-            () => [
-              {
-                title: "Si",
-                imageSrc: require("../assets/images/Fronte_retro.png"),
-                disabled: numeroPDF === 1,
-                errorMessage: "Disponibile Soltanto per 2 o più PDF",
-              },
-              {
-                title: "No",
-                imageSrc: require("../assets/images/Fronte.png"),
-                disabled: numeroPDF === 1,
-                errorMessage: "Disponibile Soltanto per 2 o più PDF",
-              },
-            ],
-            [numeroPDF]
-          )}
-          defaultValue="No"
-          onSendData={newValue}
-        />
-      </CollapsibleSection>
-      <CollapsibleSection title="Rilegatura:">
-        <ContainerCards
-          title="Rilegatura:"
-          components={useMemo(
-            () => [
-              {
-                title: "Anelli",
-                imageSrc: require("../assets/images/Anelli.jpg"),
-                disabled: false, // Aggiungi la proprietà disabled
-                errorMessage: "",
-              },
-              {
-                title: "Fascetta",
-                imageSrc: require("../assets/images/Fascetta.jpg"),
-                disabled: numeroPaginePDF > 80 && intervalloPagine > 80, // Aggiungi la proprietà disabled
-                errorMessage: "Limite di 80 pagine",
-              },
-              {
-                title: "Ciappatura",
-                imageSrc: require("../assets/images/Ciappatura.jpg"),
-                disabled: numeroPaginePDF > 40 && intervalloPagine > 40, // Mantieni la logica di disabilitazione
-                errorMessage: "Limite di 40 pagine"
-              },
-              {
-                title: "Nessuna",
-                imageSrc: require("../assets/images/Nessuna.jpg"),
-                disabled: false, // Aggiungi la proprietà disabled
-                errorMessage: "",
-              },
-            ],
-            [numeroPaginePDF, intervalloPagine] // Aggiungi numeroPaginePDF come dipendenza
-          )}
-          defaultValue="Anelli"
-          onSendData={newValue} // Assicurati che newValue sia una funzione valida
-        />
-      </CollapsibleSection>
-      <SingleDelimiter />
-      <IntervalloPagine
-        onSendData={setRangePagesHandler}
-        maxValue={numeroPaginePDF}
-        disable={numeroPDF >= 2}
-        errorMessage="Disponibile soltanto per un singolo PDF"
-      />
-      <SingleDelimiter />
-      <NumeroCopie onSendData={setCopiesHandler} />
-      <SingleDelimiter />
-      <Modal
+          </div>
+          <SingleDelimiter />
+          <IntervalloPagine
+            onSendData={setRangePagesHandler}
+            maxValue={numeroPaginePDF}
+            disable={numeroPDF >= 2}
+            errorMessage="Disponibile soltanto per un singolo PDF"
+          />
+          <SingleDelimiter />
+          <NumeroCopie onSendData={setCopiesHandler} />
+
+
+        </div>
+        <div className={classes["subContainerA4Right"]}>
+          <RiepilogoOrdine
+  numeroPDF={numeroPDF}
+  inchiostro={inchiostro === 0 ? "Bianco e nero" : "Colore"}
+  pagina={pagina === 0 ? "Fronte-retro" : "Fronte"}
+  layout={
+    layout === 0
+      ? "Verticale"
+      : layout === 1
+      ? "Orizzontale"
+      : layout === 2
+      ? "2 pagine in 1 orizzontale"
+      : "2 pagine in 1 verticale"
+  }
+  rilegatura={
+    rilegatura === 0
+      ? "Anelli"
+      : rilegatura === 1
+      ? "Fascetta"
+      : rilegatura === 2
+      ? "Ciappatura"
+      : "Nessuna"
+  }
+  rilegaturaUnica={rilegaturaUnica === 0 ? "Si" : "No"}
+  intervalloPagine={daA}
+  numeroCopie={numeroCopie}
+  prezzo={preventivo}
+  onConfirmOrder={submitFormHandler}
+  disabled={!data.isValid || file.length === 0 || !intervalloPagineIsValid || formSubmitting}
+  loading={formSubmitting}
+  
+/>
+
+
+        </div>
+      </div>
+
+      {/*<Modal
         totalOrder={preventivo}
         onSubmit={submitFormHandler}
         disabled={!data.isValid || file.length === 0 || !intervalloPagineIsValid}
-      />
+      />*/}
       <Footer />
       {(formSubmitted || formSubmitting) && (
         <FinalModal

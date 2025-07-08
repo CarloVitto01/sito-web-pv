@@ -11,9 +11,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  border: 3px solid rgb(199, 171, 43);
+  border: 3px solid var(--color-gold);
   border-radius: 10px;
-  background-color: #111;
+  background-color: var(--color-text);
   justify-content: center;
   width: 16.3vw;
   margin-bottom: 2vh;
@@ -57,13 +57,13 @@
 
 .container {
   display: flex;
-  color: white;
+  color: var(--color-background);
   flex-direction: column;
   align-items: center;
-  border: 3px solid rgb(199, 171, 43);
+  border: 3px solid var(--color-gold);
   border-radius: 10px;
   padding: 0.5vw;
-  background-color: #111;
+  background-color: var(--color-text);
   justify-content: center;
   width: 40vw;
   margin-bottom: 2vh;
@@ -92,7 +92,7 @@
 
 .text {
   font-size: 2.3vw;
-  color: rgb(199, 171, 43);
+  color: var(--color-gold);
   margin: 0;
 }
 
@@ -130,7 +130,7 @@
   border: none;
   background-color: transparent;
   font-size: 2vw;
-  color: rgb(199, 171, 43);
+  color: var(--color-gold);
   font-weight: bold;
   cursor: pointer;
 }
@@ -181,14 +181,9 @@
     margin-bottom: 2vh;
     transition: none;
     margin-left: 0;
-  }
-
-  .stuck .container {
     width: 90vw;
     height: auto;
-    margin-bottom: 2vh;
     align-items: center;
-    margin-bottom: 2vh;
   }
 
   .container img {
@@ -214,10 +209,7 @@
   .inner-container {
     margin-bottom: 2vh;
   }
-  .stuck .inner-container {
-    margin-bottom: 2vh;
-  }
-
+  
   .stuck .inner-container {
     margin-bottom: 2vh;
   }

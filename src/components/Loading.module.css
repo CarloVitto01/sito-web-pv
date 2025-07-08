@@ -9,7 +9,7 @@
 .spinner {
   animation: spin 2s linear infinite;
   font-size: 48px;
-  color: rgb(199, 171, 43);
+  color: var(--color-gold);
 }
 
 @keyframes spin {

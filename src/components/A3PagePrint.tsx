@@ -19,7 +19,9 @@ import { FileHandler } from "../types/FileHandler";
 import Form from "./Form";
 import NumeroCopie from "./NumeroCopie";
 import MultiInput from "./MultiInput";
-import CollapsibleSection from "../components/CollapsibleSection";
+import classes from "../components/A4PagePrint.module.css";
+import RiepilogoOrdineA3 from "../components/RiepilogoOrdineA3";
+
 
 // Constants
 const grammaturaNormale: number = 0.12;
@@ -75,9 +77,8 @@ const A3PagePrint = () => {
     const [formSubmitted, setFormSubmitted] = useState<boolean>(false);
     const [formSubmitting, setFormSubmitting] = useState<boolean>(false);
     const [formError, setFormError] = useState<boolean>(false);
-    const [numeroPDF, setNumeroPDF] = useState<number>(0); // Stato per il conteggio dei PDF
+    const [numeroPDF, setNumeroPDF] = useState<number>(0);
 
-    // Prevent scrolling when modal is open
     useEffect(() => {
         if (formSubmitted || formSubmitting || formError) {
             document.body.style.overflow = "hidden";
@@ -101,49 +102,25 @@ const A3PagePrint = () => {
 
     const newValue = useCallback((value: string) => {
         switch (value) {
-            case "Colore":
-                setInchiostro(inchiostroEnum.COLORE);
-                break;
-            case "Bianco e nero":
-                setInchiostro(inchiostroEnum.BIANCOENERO);
-                break;
-            case "Fronte":
-                setPagina(paginaEnum.FRONTE);
-                break;
-            case "Fronte-retro":
-                setPagina(paginaEnum.FRONTE_RETRO);
-                break;
-            case "Verticale":
-                setLayout(layoutEnum.VERTICALE);
-                break;
-            case "Orizzontale":
-                setLayout(layoutEnum.ORIZZONTALE);
-                break;
-            case "Auto":
-                setLayout(layoutEnum.AUTO);
-                break;
-            case "Normale":
-                setGrammatura(grammaturaEnum.NORMALE);
-                break;
-            case "Cartoncino":
-                setGrammatura(grammaturaEnum.CARTONCINO);
-                break;
-            case "Si":
-                setPlastificazione(plastificazioneEnum.SI);
-                break;
-            case "No":
-                setPlastificazione(plastificazioneEnum.NO);
-                break;
+            case "Colore": setInchiostro(inchiostroEnum.COLORE); break;
+            case "Bianco e nero": setInchiostro(inchiostroEnum.BIANCOENERO); break;
+            case "Fronte": setPagina(paginaEnum.FRONTE); break;
+            case "Fronte-retro": setPagina(paginaEnum.FRONTE_RETRO); break;
+            case "Verticale": setLayout(layoutEnum.VERTICALE); break;
+            case "Orizzontale": setLayout(layoutEnum.ORIZZONTALE); break;
+            case "Auto": setLayout(layoutEnum.AUTO); break;
+            case "Normale": setGrammatura(grammaturaEnum.NORMALE); break;
+            case "Cartoncino": setGrammatura(grammaturaEnum.CARTONCINO); break;
+            case "Si": setPlastificazione(plastificazioneEnum.SI); break;
+            case "No": setPlastificazione(plastificazioneEnum.NO); break;
         }
     }, []);
 
     const setPDFHandler = useCallback((files: FileHandler[], totalPages: number) => {
-        // Filtra i file per rimuovere eventuali null
         const validFiles = files.map(fileHandler => fileHandler.file).filter((file): file is File => file !== null);
-
-        setFile(validFiles); // Imposta i file validi
-        setNumeroPDF(validFiles.length); // Aggiorna il conteggio dei PDF
-        setNumeroPaginePDF(totalPages); // Imposta il numero totale di pagine
+        setFile(validFiles);
+        setNumeroPDF(validFiles.length);
+        setNumeroPaginePDF(totalPages);
         console.log("Totale numero di pagine:", totalPages);
     }, []);
 
@@ -154,15 +131,10 @@ const A3PagePrint = () => {
         const calcoloPreventivo = () => {
             let totale = 0;
             let pagine = numeroPaginePDF;
-            console.log("Numero Pagine:", pagine);
             let fogli;
             let foglio = grammatura === grammaturaEnum.CARTONCINO ? grammaturaCartoncino : grammaturaNormale;
             let inchiostroTotale;
-            let prezzoInchiostro =
-                inchiostro === inchiostroEnum.COLORE ? colore : biancoNero;
-
-            console.log("Numero Pagine:", pagine);
-            console.log("Inchiostro Prezzo:", prezzoInchiostro);
+            let prezzoInchiostro = inchiostro === inchiostroEnum.COLORE ? colore : biancoNero;
 
             if (pagina === paginaEnum.FRONTE_RETRO) {
                 fogli = Math.ceil(pagine / 2);
@@ -172,13 +144,8 @@ const A3PagePrint = () => {
                 inchiostroTotale = prezzoInchiostro;
             }
 
-            console.log("Numero Pagine:", pagine);
-
             totale += fogli * (foglio + inchiostroTotale);
-            console.log(foglio)
             totale *= numeroCopie;
-
-            console.log("Numero fogli:", fogli);
 
             if (plastificazione === plastificazioneEnum.SI) {
                 totale += 0.30 * pagine;
@@ -186,8 +153,6 @@ const A3PagePrint = () => {
             if (numeroCopie === 0) {
                 totale = 0;
             }
-
-            console.log("Totale:", totale);
 
             return totale.toFixed(2);
         };
@@ -201,10 +166,8 @@ const A3PagePrint = () => {
         }
     }, [inchiostro, pagina, layout, numeroPaginePDF, numeroCopie, plastificazione, grammatura, numeroPDF]);
 
-
-    // Send data to the Firebase server
-    const submitFormHandler = useCallback(async (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-        event.preventDefault();
+    const submitFormHandler = useCallback(async (event?: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+        event?.preventDefault();
         setFormSubmitting(true);
         if (file.length === 0 || !data.isValid) { // Controlla se ci sono file
             setFormSubmitting(false); // Assicurati di impostare formSubmitting su false se non ci sono file
@@ -306,12 +269,16 @@ const A3PagePrint = () => {
                 setFormError(true);
                 setFormSubmitting(false);
             });
-    }, [data.annoAccademico, data.corsoLaurea, data.email, data.isValid, data.name, data.surname, data.telephoneNumber, file, grammatura, inchiostro, layout, numeroCopie, numeroPDF, numeroPaginePDF, pagina, plastificazione, preventivo]);    // Final modal handling
+    }, [data.annoAccademico, data.corsoLaurea, data.email, data.isValid, data.name, data.surname, data.telephoneNumber, file, grammatura, inchiostro, layout, numeroCopie, numeroPDF, numeroPaginePDF, pagina, plastificazione, preventivo]);
+
+
+
+    // Send data to the Firebase server
     const closeFinalModalHandler = useCallback(() => {
         setFormSubmitted(false);
         setFormSubmitting(false);
         setFormError(false);
-        window.location.reload(); // Ricarica la pagina
+        window.location.reload();
     }, []);
     const setCopiesHandler = useCallback((value: number) => {
         setNumeroCopie(value);
@@ -329,151 +296,154 @@ const A3PagePrint = () => {
             <SingleDelimiter />
             <MultiInput onSendData={setPDFHandler} />
             <SingleDelimiter />
-            <CollapsibleSection title="Grammatura:">
-                <ContainerCards
-                    title="Grammatura:"
-                    components={useMemo(
-                        () => [
-                            {
-                                title: "Normale",
-                                imageSrc: require("../assets/images/Colore.jpg"),
-                                disabled: false,
-                                errorMessage: ""
-                            },
-                            {
-                                title: "Cartoncino",
-                                imageSrc: require("../assets/images/Bianco_e_nero.jpg"),
-                                disabled: false,
-                                errorMessage: ""
-                            },
-                        ],
-                        []
-                    )}
-                    defaultValue="Normale"
-                    onSendData={newValue}
-                />
-            </CollapsibleSection>
-            <CollapsibleSection title="Colore:">
-                <ContainerCards
-                    title="Colore:"
-                    components={useMemo(
-                        () => [
-                            {
-                                title: "Colore",
-                                imageSrc: require("../assets/images/Colore.jpg"),
-                                disabled: false,
-                                errorMessage: ""
-                            },
-                            {
-                                title: "Bianco e nero",
-                                imageSrc: require("../assets/images/Bianco_e_nero.jpg"),
-                                disabled: false,
-                                errorMessage: ""
-                            },
-                        ],
-                        []
-                    )}
-                    defaultValue="Colore"
-                    onSendData={newValue}
-                />
-            </CollapsibleSection>
-            <CollapsibleSection title="Gestione pagina:">
-                <ContainerCards
-                    title="Gestione pagina:"
-                    components={useMemo(
-                        () => [
-                            {
-                                title: "Fronte",
-                                imageSrc: require("../assets/images/Fronte.png"),
-                                disabled: false,
-                                errorMessage: ""
-                            },
-                            {
-                                title: "Fronte-retro",
-                                imageSrc: require("../assets/images/Fronte_retro.png"),
-                                disabled: false,
-                                errorMessage: ""
-                            },
-                        ],
-                        []
-                    )}
-                    defaultValue="Fronte"
-                    onSendData={newValue}
-                />
-            </CollapsibleSection>
-            <CollapsibleSection title="Plastificazione:">
-                <ContainerCards
-                    title="Plastificazione:"
-                    components={useMemo(
-                        () => [
-                            {
-                                title: "Si",
-                                imageSrc: require("../assets/images/Anelli.jpg"),
-                                disabled: false,
-                                errorMessage: ""
-                            },
-                            {
-                                title: "No",
-                                imageSrc: require("../assets/images/Nessuna.jpg"),
-                                disabled: false,
-                                errorMessage: ""
-                            },
-                        ],
-                        []
-                    )}
-                    defaultValue="Si"
-                    onSendData={newValue}
-                />
-            </CollapsibleSection>
-            <CollapsibleSection title="Layout:">
-                <ContainerCards
-                    title="Layout:"
-                    components={useMemo(
-                        () => [
-                            {
-                                title: "Auto",
-                                imageSrc: require("../assets/images/2in1Orizzontale.jpg"),
-                                disabled: false,
-                                errorMessage: "",
-                            },
-                            {
-                                title: "Orizzontale",
-                                imageSrc: require("../assets/images/Orizzontale.jpg"),
-                                disabled: false,
-                                errorMessage: "",
-                            },
-                            {
-                                title: "Verticale",
-                                imageSrc: require("../assets/images/Verticale.jpg"),
-                                disabled: false,
-                                errorMessage: "",
-                            },
-                        ],
-                        []
-                    )}
-                    defaultValue="Auto"
-                    onSendData={newValue}
-                />
-            </CollapsibleSection>
 
+            <div className={classes["subContainerA4"]}>
+                <div className={classes["subContainerA4Left"]}>
+                    <div className="container-containerCards"></div>
+                    <ContainerCards
+                        title="Grammatura:"
+                        components={useMemo(
+                            () => [
+                                {
+                                    title: "Normale",
+                                    imageSrc: require("../assets/images/Colore.jpg"),
+                                    disabled: false,
+                                    errorMessage: ""
+                                },
+                                {
+                                    title: "Cartoncino",
+                                    imageSrc: require("../assets/images/Bianco_e_nero.jpg"),
+                                    disabled: false,
+                                    errorMessage: ""
+                                },
+                            ],
+                            []
+                        )}
+                        defaultValue="Normale"
+                        onSendData={newValue}
+                    />
+                    <ContainerCards
+                        title="Colore:"
+                        components={useMemo(
+                            () => [
+                                {
+                                    title: "Colore",
+                                    imageSrc: require("../assets/images/Colore.jpg"),
+                                    disabled: false,
+                                    errorMessage: ""
+                                },
+                                {
+                                    title: "Bianco e nero",
+                                    imageSrc: require("../assets/images/Bianco_e_nero.jpg"),
+                                    disabled: false,
+                                    errorMessage: ""
+                                },
+                            ],
+                            []
+                        )}
+                        defaultValue="Colore"
+                        onSendData={newValue}
+                    />
+                    <ContainerCards
+                        title="Gestione pagina:"
+                        components={useMemo(
+                            () => [
+                                {
+                                    title: "Fronte",
+                                    imageSrc: require("../assets/images/Fronte.png"),
+                                    disabled: false,
+                                    errorMessage: ""
+                                },
+                                {
+                                    title: "Fronte-retro",
+                                    imageSrc: require("../assets/images/Fronte_retro.png"),
+                                    disabled: false,
+                                    errorMessage: ""
+                                },
+                            ],
+                            []
+                        )}
+                        defaultValue="Fronte"
+                        onSendData={newValue}
+                    />
+                    <ContainerCards
+                        title="Plastificazione:"
+                        components={useMemo(
+                            () => [
+                                {
+                                    title: "Si",
+                                    imageSrc: require("../assets/images/Anelli.jpg"),
+                                    disabled: false,
+                                    errorMessage: ""
+                                },
+                                {
+                                    title: "No",
+                                    imageSrc: require("../assets/images/Nessuna.jpg"),
+                                    disabled: false,
+                                    errorMessage: ""
+                                },
+                            ],
+                            []
+                        )}
+                        defaultValue="Si"
+                        onSendData={newValue}
+                    />
+                    <ContainerCards
+                        title="Layout:"
+                        components={useMemo(
+                            () => [
+                                {
+                                    title: "Auto",
+                                    imageSrc: require("../assets/images/2in1Orizzontale.jpg"),
+                                    disabled: false,
+                                    errorMessage: "",
+                                },
+                                {
+                                    title: "Orizzontale",
+                                    imageSrc: require("../assets/images/Orizzontale.jpg"),
+                                    disabled: false,
+                                    errorMessage: "",
+                                },
+                                {
+                                    title: "Verticale",
+                                    imageSrc: require("../assets/images/Verticale.jpg"),
+                                    disabled: false,
+                                    errorMessage: "",
+                                },
+                            ],
+                            []
+                        )}
+                        defaultValue="Auto"
+                        onSendData={newValue}
+                    />
+                </div>
+
+                <div className={classes["subContainerA4Right"]}>
+                    <RiepilogoOrdineA3
+                        numeroPDF={numeroPDF}
+                        numeroPagine={numeroPaginePDF}
+                        numeroCopie={numeroCopie}
+                        grammatura={grammatura === 1 ? "Cartoncino" : "Normale"}
+                        inchiostro={inchiostro === 1 ? "Colore" : "Bianco e nero"}
+                        pagina={pagina === 1 ? "Fronte" : "Fronte-retro"}
+                        layout={layout === 0 ? "Orizzontale" : layout === 1 ? "Verticale" : "Auto"}
+                        plastificazione={plastificazione === 0 ? "Si" : "No"}
+                        prezzo={preventivo}
+                        
+  onConfirmOrder={submitFormHandler}
+  disabled={!data.isValid || file.length === 0 || formSubmitting}
+  loading={formSubmitting}
+                    />
+
+                </div>
+            </div>
             <SingleDelimiter />
             <NumeroCopie onSendData={setCopiesHandler} />
             <SingleDelimiter />
-            <Modal
-                totalOrder={preventivo}
-                onSubmit={submitFormHandler}
-                disabled={!data.isValid || !file}
-            />
+            {/*<Modal totalOrder={preventivo} onSubmit={submitFormHandler} disabled={!data.isValid || !file} />
             <Footer />
-            {(formSubmitted || formSubmitting) && (
-                <FinalModal
-                    onConfirm={closeFinalModalHandler}
-                    loading={formSubmitting ? "submitting" : "submitted"}
-                />
-            )}
-            {formError && (
-                <FinalModal onConfirm={closeFinalModalHandler} loading={"error"} />
-            )}
+            {(formSubmitted || formSubmitting) && <FinalModal onConfirm={closeFinalModalHandler} loading={formSubmitting ? "submitting" : "submitted"} />}
+            {formError && <FinalModal onConfirm={closeFinalModalHandler} loading={"error"} />}*/}
         </div>
     );
 };

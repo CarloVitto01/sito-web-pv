@@ -1,0 +1,65 @@
+.riepilogo-container {
+  border: 2px solid var(--color-gold);
+  border-radius: 12px;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 90%;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  font-family: var(--font-main);
+  color: var(--color-white);
+}
+
+.riepilogo-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--color-gold);
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.riepilogo-item {
+  font-size: 1rem;
+  margin: 0.4rem 0;
+  color: var(--color-text);
+}
+
+.riepilogo-item strong {
+  color: var(--color-gold);
+}
+
+.confirm-button {
+  background-color: #4caf50; /* verde, puoi creare una variabile se vuoi */
+  color: var(--color-white);
+  border: none;
+  padding: 12px 16px;
+  margin-top: 20px;
+  font-size: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 100%;
+  transition: background-color 0.3s ease;
+}
+
+.confirm-button:hover:not(:disabled) {
+  background-color: #43a047;
+}
+
+.confirm-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+@media screen and (max-width: 500px) {
+  .riepilogo-container {
+    padding: 1rem;
+    max-width: 90%;
+  }
+
+  .riepilogo-title {
+    font-size: 1.2rem;
+  }
+
+  .riepilogo-item {
+    font-size: 0.95rem;
+  }
+}

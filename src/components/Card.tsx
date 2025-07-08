@@ -1,3 +1,4 @@
+// Card.tsx
 import React from "react";
 import classes from "./Card.module.css";
 
@@ -24,15 +25,18 @@ const Card: React.FC<ImageButtonProps> = ({
   };
 
   return (
-    <div className={classes.container}>
+    <div className={classes.cardWrapper}>
       <button
-        className={`${classes.button} ${isSelected ? classes.selected : ""} ${
-          disabled ? classes.disabled : ""
-        }`}
+        className={`${classes.pillButton} ${
+          isSelected ? classes.selected : ""
+        } ${disabled ? classes.disabled : ""}`}
         onClick={handleClick}
         disabled={disabled}
+        title={title}
       >
-        <img src={imageSrc} alt={title} className={classes.image} />
+        <div className={classes.imageWrapper}>
+          <img src={imageSrc} alt={title} className={classes.image} />
+        </div>
         <span className={classes.label}>{title}</span>
       </button>
       {disabled && errorMessage && (
