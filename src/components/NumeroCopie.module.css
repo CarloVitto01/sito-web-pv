@@ -23,7 +23,7 @@
   flex-direction: row;
   border: none;
   border: 2px solid gray; /* se vuoi, puoi creare una variabile tipo --color-border-gray */
-  color: var(--color-white);
+  color: var(--color-text);
   padding: 0.5vw;
   background-color: transparent;
   text-align: center;

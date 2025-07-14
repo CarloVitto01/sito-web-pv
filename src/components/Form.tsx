@@ -103,142 +103,93 @@ const Form: React.FC<propsContainer> = ({ onSendData }) => {
   const validateCorsoLaureaHandler = (value: string) => setCorsoLaureaIsValid(value.trim().length > 0 && containsOnlyLetters(value.trim()));
   const validateAnnoAccademicoNumber = (value: string) => setAnnoAccademicoIsValid(value.trim().length === 4 && containsOnlyNumbers(value));
 
-  return (
-    <motion.form
-      className={classes["form"]}
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.8 }}
-      viewport={{ once: true }}
-    >
-    <form className={classes["form"]}>
-      <div className={classes["container-form"]}>
-        <div className={classes["credentials"]}>
-          <div className={`${classes["credential"]} ${nameIsValid === false ? classes.invalid : ""}`}>
-            <label htmlFor="name" className={classes["voice"]}>
-              Nome:
-            </label>
-            <div style={{ flexDirection: "column" }}>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={enteredName}
-                onChange={nameChangeHandler}
-                onBlur={validateNameHandler.bind(null, enteredName)}
-              />
-              {/*nameIsValid === false && (
-                <p style={{ color: "red", margin: 0 }}>Il nome inserito non è valido!</p>
-              )*/}
-            </div>
-          </div>
-          <div className={`${classes["credential"]} ${surnameIsValid === false ? classes.invalid : ""}`}>
-            <label htmlFor="surname" className={classes["voice"]}>
-              Cognome:
-            </label>
-            <div style={{ flexDirection: "column" }}>
-              <input
-                type="text"
-                id="surname"
-                name="surname"
-                value={enteredSurname}
-                onChange={surnameChangeHandler}
-                onBlur={validateSurnameHandler.bind(null, enteredSurname)}
-              />
-              {/*surnameIsValid === false && (
-                <p style={{ color: "red", margin: 0 }}>
-                  Il cognome inserito non è valido!
-                </p>
-              )*/}
-            </div>
-          </div>
+// Form.tsx (solo la parte JSX interna)
+return (
+  <motion.form
+    className={classes.form}
+    initial={{ opacity: 0, y: 30 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.8 }}
+    viewport={{ once: true }}
+  >
+    <div className={classes["container-form"]}>
+      {/* UNICO contenitore credentials */}
+      <div className={classes.credentials}>
+        {/* Nome */}
+        <div className={`${classes.credential} ${nameIsValid === false ? classes.invalid : ""}`}>
+          <label htmlFor="name" className={classes.voice}>Nome:</label>
+          <input
+            type="text"
+            id="name"
+            value={enteredName}
+            onChange={nameChangeHandler}
+            onBlur={() => validateNameHandler(enteredName)}
+          />
         </div>
-        <div className={classes["credentials"]}>
-          <div className={`${classes["credential"]} ${emailIsValid === false ? classes.invalid : ""}`}>
-            <label htmlFor="email" className={classes["voice"]}>
-              Email:
-            </label>
-            <div style={{ flexDirection: "column" }}>
-              <input
-                type="text"
-                id="email"
-                name="email"
-                value={enteredEmail}
-                onChange={emailChangeHandler}
-                onBlur={validateEmailHandler.bind(null, enteredEmail)}
-              />
-              {/*emailIsValid === false && (
-                <p style={{ color: "red", margin: 0 }}>L'email inserita non è valida!</p>
-              )*/}
-            </div>
-          </div>
-          <div className={`${classes["credential"]} ${telephoneNumberIsValid === false ? classes.invalid : ""}`}>
-            <label htmlFor="telephoneNumber" className={classes["voice"]}>
-              Telefono:
-            </label>
-            <div style={{ flexDirection: "column" }}>
-              <input
-                type="text"
-                id="telephoneNumber"
-                name="telephoneNumber"
-                value={enteredTelephoneNumber}
-                onChange={telephoneNumberChangeHandler}
-                onBlur={validateTelephoneNumber.bind(
-                  null,
-                  enteredTelephoneNumber
-                )}
-              />
-              {/*telephoneNumberIsValid === false && (
-                <p style={{ color: "red", margin: 0 }}>Il numero inserito non è valido!</p>
-              )*/}
-            </div>
-          </div>
+
+        {/* Cognome */}
+        <div className={`${classes.credential} ${surnameIsValid === false ? classes.invalid : ""}`}>
+          <label htmlFor="surname" className={classes.voice}>Cognome:</label>
+          <input
+            type="text"
+            id="surname"
+            value={enteredSurname}
+            onChange={surnameChangeHandler}
+            onBlur={() => validateSurnameHandler(enteredSurname)}
+          />
         </div>
-        <div className={classes["credentials"]}>
-          <div className={`${classes["credential"]} ${corsoLaureaIsValid === false ? classes.invalid : ""}`}>
-            <label htmlFor="corsoLaurea" className={classes["voice"]}>
-              Corso:
-            </label>
-            <div style={{ flexDirection: "column" }}>
-              <input
-                type="text"
-                id="corsoLaurea"
-                name="corsoLaurea"
-                value={enteredCorsoLaurea}
-                onChange={corsoLaureaChangeHandler}
-                onBlur={validateCorsoLaureaHandler.bind(null, enteredCorsoLaurea)}
-              />
-              {/*corsoLaureaIsValid === false && (
-                <p style={{ color: "red", margin: 0 }}>Il corso di Laurea inserito non è valido!</p>
-              )*/}
-            </div>
-          </div>
-          <div className={`${classes["credential"]} ${telephoneNumberIsValid === false ? classes.invalid : ""}`}>
-            <label htmlFor="annoAccademico" className={classes["voice"]}>
-              Anno:
-            </label>
-            <div style={{ flexDirection: "column" }}>
-              <input
-                type="text"
-                id="annoAccademico"
-                name="annoAccademico"
-                value={enteredAnnoAccademico}
-                onChange={annoAccademicoChangeHandler}
-                onBlur={validateAnnoAccademicoNumber.bind(
-                  null,
-                  enteredAnnoAccademico
-                )}
-              />
-              {/*annoAccademicoIsValid === false && (
-                <p style={{ color: "red", margin: 0 }}>L'anno accademico inserito non è valido!</p>
-              )*/}
-            </div>
-          </div>
+
+        {/* Email */}
+        <div className={`${classes.credential} ${emailIsValid === false ? classes.invalid : ""}`}>
+          <label htmlFor="email" className={classes.voice}>Email:</label>
+          <input
+            type="text"
+            id="email"
+            value={enteredEmail}
+            onChange={emailChangeHandler}
+            onBlur={() => validateEmailHandler(enteredEmail)}
+          />
+        </div>
+
+        {/* Telefono */}
+        <div className={`${classes.credential} ${telephoneNumberIsValid === false ? classes.invalid : ""}`}>
+          <label htmlFor="telephoneNumber" className={classes.voice}>Telefono:</label>
+          <input
+            type="text"
+            id="telephoneNumber"
+            value={enteredTelephoneNumber}
+            onChange={telephoneNumberChangeHandler}
+            onBlur={() => validateTelephoneNumber(enteredTelephoneNumber)}
+          />
+        </div>
+
+        {/* Corso di laurea */}
+        <div className={`${classes.credential} ${corsoLaureaIsValid === false ? classes.invalid : ""}`}>
+          <label htmlFor="corsoLaurea" className={classes.voice}>Corso:</label>
+          <input
+            type="text"
+            id="corsoLaurea"
+            value={enteredCorsoLaurea}
+            onChange={corsoLaureaChangeHandler}
+            onBlur={() => validateCorsoLaureaHandler(enteredCorsoLaurea)}
+          />
+        </div>
+
+        {/* Anno accademico */}
+        <div className={`${classes.credential} ${annoAccademicoIsValid === false ? classes.invalid : ""}`}>
+          <label htmlFor="annoAccademico" className={classes.voice}>Anno:</label>
+          <input
+            type="text"
+            id="annoAccademico"
+            value={enteredAnnoAccademico}
+            onChange={annoAccademicoChangeHandler}
+            onBlur={() => validateAnnoAccademicoNumber(enteredAnnoAccademico)}
+          />
         </div>
       </div>
-    </form>
-    </motion.form>
-  );
+    </div>
+  </motion.form>
+);
 };
 
 export default React.memo(Form);

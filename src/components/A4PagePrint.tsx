@@ -566,52 +566,48 @@ const A4PagePrint = () => {
             />
 
           </div>
-          <SingleDelimiter />
+       
           <IntervalloPagine
             onSendData={setRangePagesHandler}
             maxValue={numeroPaginePDF}
             disable={numeroPDF >= 2}
             errorMessage="Disponibile soltanto per un singolo PDF"
           />
-          <SingleDelimiter />
+         <br />
           <NumeroCopie onSendData={setCopiesHandler} />
-
-
         </div>
+        
         <div className={classes["subContainerA4Right"]}>
           <RiepilogoOrdine
-  numeroPDF={numeroPDF}
-  inchiostro={inchiostro === 0 ? "Bianco e nero" : "Colore"}
-  pagina={pagina === 0 ? "Fronte-retro" : "Fronte"}
-  layout={
-    layout === 0
-      ? "Verticale"
-      : layout === 1
-      ? "Orizzontale"
-      : layout === 2
-      ? "2 pagine in 1 orizzontale"
-      : "2 pagine in 1 verticale"
-  }
-  rilegatura={
-    rilegatura === 0
-      ? "Anelli"
-      : rilegatura === 1
-      ? "Fascetta"
-      : rilegatura === 2
-      ? "Ciappatura"
-      : "Nessuna"
-  }
-  rilegaturaUnica={rilegaturaUnica === 0 ? "Si" : "No"}
-  intervalloPagine={daA}
-  numeroCopie={numeroCopie}
-  prezzo={preventivo}
-  onConfirmOrder={submitFormHandler}
-  disabled={!data.isValid || file.length === 0 || !intervalloPagineIsValid || formSubmitting}
-  loading={formSubmitting}
-  
-/>
-
-
+            numeroPDF={numeroPDF}
+            inchiostro={inchiostro === 0 ? "Bianco e nero" : "Colore"}
+            pagina={pagina === 0 ? "Fronte-retro" : "Fronte"}
+            layout={
+              layout === 0
+                ? "Verticale"
+                : layout === 1
+                  ? "Orizzontale"
+                  : layout === 2
+                    ? "2 pagine in 1 orizzontale"
+                    : "2 pagine in 1 verticale"
+            }
+            rilegatura={
+              rilegatura === 0
+                ? "Anelli"
+                : rilegatura === 1
+                  ? "Fascetta"
+                  : rilegatura === 2
+                    ? "Ciappatura"
+                    : "Nessuna"
+            }
+            rilegaturaUnica={rilegaturaUnica === 0 ? "Si" : "No"}
+            intervalloPagine={daA}
+            numeroCopie={numeroCopie}
+            prezzo={preventivo}
+            onConfirmOrder={submitFormHandler}
+            disabled={!data.isValid || file.length === 0 || !intervalloPagineIsValid || formSubmitting}
+            loading={formSubmitting}
+          />
         </div>
       </div>
 
@@ -620,6 +616,7 @@ const A4PagePrint = () => {
         onSubmit={submitFormHandler}
         disabled={!data.isValid || file.length === 0 || !intervalloPagineIsValid}
       />*/}
+      <SingleDelimiter />
       <Footer />
       {(formSubmitted || formSubmitting) && (
         <FinalModal

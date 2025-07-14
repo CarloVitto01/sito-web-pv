@@ -1,43 +1,55 @@
+/* ContainerCards.module.css */
 @import '../styles/variables.css';
 
 .container-cards {
   width: 100%;
+  max-width: 600px;
   margin: 2rem auto;
+  text-align: center;
 }
 
 .title {
-  text-align: center;
   font-size: 1.5rem;
   font-weight: 500;
   color: var(--color-gold);
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   font-family: var(--font-main);
 }
 
 .container {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 1rem;
-  padding: 1rem;
-  border-radius: var(--radius);
   background-color: var(--color-background);
   box-shadow: var(--shadow-light);
+  border-radius: var(--radius);
+  padding: 1rem;
 }
 
+/* Questo è il vero wrapper delle card */
 .subContainer {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 1rem;
+  flex-wrap: wrap;           
+  justify-content: center;   
+  gap: 0.5rem;               
 }
 
-@media screen and (max-width: 500px) {
-  .title {
-    font-size: 1.3rem;
-  }
+/* Forza ogni card a non essere full-width */
+.subContainer > * {
+  flex: 0 1 200px;           /* larghezza minima 200px, poi si riduce se serve */
+  max-width: 200px;          /* evita che crescano oltre */
+  box-sizing: border-box;
+}
 
-  .container {
-    padding: 1rem 0.5rem;
+/* Tablet: due card affiancate */
+@media screen and (max-width: 768px) {
+  .subContainer > * {
+    flex: 0 1 45%;
+    max-width: 45%;
+  }
+}
+
+/* Mobile: una card a tutta larghezza */
+@media screen and (max-width: 500px) {
+  .subContainer > * {
+    flex: 0 1 100%;
+    max-width: 100%;
   }
 }

@@ -19,7 +19,7 @@ import { FileHandler } from "../types/FileHandler";
 import Form from "./Form";
 import NumeroCopie from "./NumeroCopie";
 import MultiInput from "./MultiInput";
-import classes from "../components/A4PagePrint.module.css";
+import classes from "../components/A3PagePrint.module.css";
 import RiepilogoOrdineA3 from "../components/RiepilogoOrdineA3";
 
 
@@ -416,6 +416,8 @@ const A3PagePrint = () => {
                         defaultValue="Auto"
                         onSendData={newValue}
                     />
+                    
+                     <NumeroCopie onSendData={setCopiesHandler} />
                 </div>
 
                 <div className={classes["subContainerA4Right"]}>
@@ -438,10 +440,9 @@ const A3PagePrint = () => {
                 </div>
             </div>
             <SingleDelimiter />
-            <NumeroCopie onSendData={setCopiesHandler} />
-            <SingleDelimiter />
-            {/*<Modal totalOrder={preventivo} onSubmit={submitFormHandler} disabled={!data.isValid || !file} />
             <Footer />
+            {/*<Modal totalOrder={preventivo} onSubmit={submitFormHandler} disabled={!data.isValid || !file} />
+            
             {(formSubmitted || formSubmitting) && <FinalModal onConfirm={closeFinalModalHandler} loading={formSubmitting ? "submitting" : "submitted"} />}
             {formError && <FinalModal onConfirm={closeFinalModalHandler} loading={"error"} />}*/}
         </div>
