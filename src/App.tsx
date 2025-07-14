@@ -14,6 +14,7 @@ import A3PagePrint from './components/A3PagePrint';
 import Home from './components/Home'; // corretto il path
 import SplashScreen from './components/SplashScreen'; // aggiunto
 import './App.css'; // per stile splash
+import ComingSoon from './components/ComingSoon/ComingSoon';
 
 const App: React.FC = () => {
   const [showSplash, setShowSplash] = useState(true);
@@ -34,6 +35,8 @@ const App: React.FC = () => {
         <Route path="/" element={<Home />} />
         <Route path="/printA4" element={<A4PagePrint />} />
         <Route path="/printA3" element={<A3PagePrint />} />
+        <Route path="/comingSoon" element={<ComingSoon />} />
+        {/* Aggiungi altre rotte se necessario */}
       </Routes>
     </Router>
   );

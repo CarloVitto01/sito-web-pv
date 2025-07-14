@@ -1,0 +1,91 @@
+/* ComingSoon.module.css */
+
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 100vh;
+  padding: 0 20px;
+  background-color: #0a0a0a;
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Contenitore logo laterale */
+.sideLogo {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.sideLogo img {
+  max-width: 150px;
+  height: auto;
+}
+
+/* Contenuto centrale */
+.content {
+  flex: 2;
+  text-align: center;
+  padding: 0 20px;
+}
+
+.content h1 {
+  font-size: 4rem;
+  margin-bottom: 20px;
+}
+
+.content p {
+  font-size: 1.2rem;
+  margin-bottom: 30px;
+}
+
+/* Form di sottoscrizione */
+.form {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.input {
+  padding: 12px 16px;
+  border-radius: 4px;
+  border: none;
+  font-size: 1rem;
+  width: 250px;
+  max-width: 100%;
+}
+
+.button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 4px;
+  background-color: #deb500;
+  color: #0a0a0a;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.button:hover {
+  background-color: #c4a000;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+    justify-content: center;
+    gap: 40px;
+  }
+
+  .sideLogo {
+    display: none; /* nasconde i loghi laterali su mobile */
+  }
+
+  .content h1 {
+    font-size: 3rem;
+  }
+}

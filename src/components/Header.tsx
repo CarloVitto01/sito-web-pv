@@ -16,7 +16,7 @@ const Header = () => {
   return (
     <div className={classes["header"]}>
       <div className={classes["menu-section"]}>
-        <button className={classes["menu-button-home"]} onClick={toggleMenu}>
+        {/*<button className={classes["menu-button-home"]} onClick={toggleMenu}>
           <FiMenu />
         </button>
         <nav className={`${classes["side-menu"]} ${!isMenuOpen ? classes["hidden"] : ""}`}>
@@ -26,7 +26,7 @@ const Header = () => {
               <Link to="/printA4" className={classes['link-menu']}><li>Print A4</li></Link>
               <Link to="/printA3" className={classes['link-menu']}><li>Print A3</li></Link>
             </ul>
-          </nav>
+          </nav>*/}
       </div>
       <div className={classes["logo-section"]}>
         <Link to="/">
