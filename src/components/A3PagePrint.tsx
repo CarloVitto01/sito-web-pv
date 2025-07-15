@@ -439,7 +439,7 @@ const A3PagePrint = () => {
 
                 </div>
             </div>
-            <SingleDelimiter />
+       
             <Footer />
             {/*<Modal totalOrder={preventivo} onSubmit={submitFormHandler} disabled={!data.isValid || !file} />
             

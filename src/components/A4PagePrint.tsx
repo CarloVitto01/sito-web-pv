@@ -616,7 +616,7 @@ const A4PagePrint = () => {
         onSubmit={submitFormHandler}
         disabled={!data.isValid || file.length === 0 || !intervalloPagineIsValid}
       />*/}
-      <SingleDelimiter />
+  
       <Footer />
       {(formSubmitted || formSubmitting) && (
         <FinalModal
