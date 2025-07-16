@@ -32,6 +32,7 @@ const colore: number = 0.075;
 const anelli = 1.5;
 const fascetta = 1;
 const ciappatura = 0.1;
+const spirale = 2;
 
 //Enum
 
@@ -57,6 +58,7 @@ const rilegaturaEnum = {
   FASCETTA: 1,
   CIAPPATURA: 2,
   NESSUNA: 3,
+  SPIRALE: 4
 };
 
 const rilegaturaUnicaEnum = {
@@ -73,7 +75,7 @@ const A4PagePrint = () => {
     corsoLaurea: "",
     annoAccademico: ""
   });
-  const [file, setFile] = useState<File[]>([]);
+  const [fileData, setFileData] = useState<{ file: File; pages: number }[]>([]);
   const [numeroPaginePDF, setNumeroPaginePDF] = useState<number>(0);
   const [inchiostro, setInchiostro] = useState<number>(
     inchiostroEnum.BIANCOENERO
@@ -149,10 +151,10 @@ const A4PagePrint = () => {
       case "Orizzontale":
         setLayout(layoutEnum.ORIZZONTALE);
         break;
-      case "2 pagine in 1 orizzontale":
+      case "2 in 1 orizzontale":
         setLayout(layoutEnum.DUEPAGORIZZ);
         break;
-      case "2 pagine in 1 verticale":
+      case "2 in 1 verticale":
         setLayout(layoutEnum.DUEPAGVERT);
         break;
       case "Anelli":
@@ -167,6 +169,9 @@ const A4PagePrint = () => {
       case "Nessuna":
         setRilegatura(rilegaturaEnum.NESSUNA);
         break;
+      case "Spirale":
+        setRilegatura(rilegaturaEnum.SPIRALE);
+        break;
       case "Si":
         setRilegaturaUnica(rilegaturaUnicaEnum.SI);
         break;
@@ -177,13 +182,19 @@ const A4PagePrint = () => {
   }, []);
 
   const setPDFHandler = useCallback((files: FileHandler[], totalPages: number) => {
-    const validFiles = files.map(fileHandler => fileHandler.file).filter((file): file is File => file !== null);
+    const validFiles = files
+      .filter((f) => f.file !== null)
+      .map((f) => ({
+        file: f.file as File,
+        pages: f.numPages || 0,
+      }));
 
-    setFile(validFiles); // Imposta i file validi
-    setNumeroPDF(validFiles.length); // Aggiorna il conteggio dei PDF
-    setNumeroPaginePDF(totalPages); // Imposta il numero totale di pagine
-    console.log("Totale numero di pagine:", totalPages);
+    setFileData(validFiles);
+    setNumeroPDF(validFiles.length);
+    setNumeroPaginePDF(totalPages);
   }, []);
+
+
 
   const setRangePagesHandler = useCallback(
     (value: RangePagesData) => {
@@ -265,6 +276,12 @@ const A4PagePrint = () => {
         totale += ciappatura * numeroCopie;
       } else if (numeroPDF > 1 && rilegatura === rilegaturaEnum.CIAPPATURA && rilegaturaUnica === rilegaturaUnicaEnum.NO) {
         totale += ciappatura * numeroPDF * numeroCopie;
+      } else if (numeroPDF === 1 && rilegatura === rilegaturaEnum.SPIRALE) {
+        totale += spirale * numeroCopie;
+      } else if (numeroPDF > 1 && rilegatura === rilegaturaEnum.SPIRALE && rilegaturaUnica === rilegaturaUnicaEnum.SI) {
+        totale += spirale * numeroCopie;
+      } else if (numeroPDF > 1 && rilegatura === rilegaturaEnum.SPIRALE && rilegaturaUnica === rilegaturaUnicaEnum.NO) {
+        totale += spirale * numeroPDF * numeroCopie;
       }
       if (numeroCopie === 0) {
         totale = 0;
@@ -285,28 +302,31 @@ const A4PagePrint = () => {
   const submitFormHandler = useCallback(async (event?: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     event?.preventDefault();
     setFormSubmitting(true);
-    if (file.length === 0 || !data.isValid) { // Controlla se ci sono file
-      setFormSubmitting(false); // Assicurati di impostare formSubmitting su false se non ci sono file
+
+    if (fileData.length === 0 || !data.isValid) {
+      setFormSubmitting(false);
       return;
     }
 
     const id = v4();
-    const paths: string[] = []; // Array per memorizzare i percorsi dei file
-    const urls: string[] = []; // Array per memorizzare gli URL dei file
+    const paths: string[] = [];
+    const urls: string[] = [];
 
-    // Carica i file uno per uno
-    for (const singleFile of file) {
-      const path = `PDF/${data.surname + data.name + "|" + singleFile.name.trim().replace(".pdf", "").replace(/\s/g, "").replace(/\(/g, "[").replace(/\)/g, "]") + "|" + id}.pdf`;
-      paths.push(path); // Aggiungi il percorso all'array
+    for (const { file } of fileData) {
+      const path = `PDF/${data.surname + data.name + "|" + file.name.trim().replace(".pdf", "").replace(/\s/g, "").replace(/\(/g, "[").replace(/\)/g, "]") + "|" + id}.pdf`;
+      paths.push(path);
 
       const fileRef = ref(storage, path);
-      const snapshot = await uploadBytes(fileRef, singleFile);
+      const snapshot = await uploadBytes(fileRef, file);
       const url = await getDownloadURL(snapshot.ref);
-      urls.push(url); // Aggiungi l'URL all'array
+      urls.push(url);
     }
 
-    // Crea il messaggio con i link dei file
-    const fileLinks = urls.map((url, index) => `- [File ${index + 1}](${url.replace(/\(/g, "[").replace(/\)/g, "]")})`).join("\n");
+    // ✅ Messaggio con numero di pagine accanto al link
+    const fileLinks = urls.map((url, index) => {
+      const pages = fileData[index].pages;
+      return `- [File ${index + 1} - ${pages} pagine](${url.replace(/\(/g, "[").replace(/\)/g, "]")})`;
+    }).join("\n");
 
     const dataToUpload = {
       id: id,
@@ -318,10 +338,7 @@ const A4PagePrint = () => {
       corsoLaurea: data.corsoLaurea,
       annoAccademico: data.annoAccademico,
       file: urls,
-      colore:
-        inchiostro === inchiostroEnum.BIANCOENERO
-          ? "Bianco e nero"
-          : "Colore",
+      colore: inchiostro === inchiostroEnum.BIANCOENERO ? "Bianco e nero" : "Colore",
       pagina: pagina === 0 ? "Fronte-retro" : "Fronte",
       layout:
         layout === 0
@@ -338,7 +355,9 @@ const A4PagePrint = () => {
             ? "Fascetta"
             : rilegatura === 2
               ? "Ciappatura"
-              : "Nessuna",
+              : rilegatura === 3
+                ? "Nessuna"
+                : "Spirale",
       pagine: daA,
       rilegaturaUnica: rilegaturaUnica === rilegaturaUnicaEnum.SI ? "SI" : "NO",
       numeroPDF: numeroPDF,
@@ -346,55 +365,54 @@ const A4PagePrint = () => {
       prezzo: preventivo,
       timestamp: serverTimestamp(),
     };
+
     const collectionRef = collection(db, "StampePDF");
     const PDFref = doc(collectionRef, id);
+
     setDoc(PDFref, dataToUpload)
       .then(() => {
         setFormSubmitting(false);
         setFormSubmitted(true);
-        //Send message to telegram channel
-        const messageText = `
-                *NUOVO ORDINE A4*
 
-                📝 *Dettagli Ordine:*
-                *Nome*: ${dataToUpload.nome}
-                *Cognome*: ${dataToUpload.cognome}
-                *Email*: ${dataToUpload.email}
-                *Telefono*: ${dataToUpload.telefono}
-                *Corso Laurea*: ${dataToUpload.corsoLaurea}
-                *Anno Accademico*: ${dataToUpload.annoAccademico}
-                 📁 *Link ai file:* 📄
-                ${fileLinks}
-                🎨 *Colore*: ${dataToUpload.colore}
-                📄 *Pagina*: ${dataToUpload.pagina}
-                📐 *Layout*: ${dataToUpload.layout}
-                📒 *Rilegatura*: ${dataToUpload.rilegatura}
-                📒 *Rilegatura unica*: ${dataToUpload.rilegaturaUnica}
-                *Pagine*: ${dataToUpload.pagine}
-                🔢 *Copie*: ${dataToUpload.copie}
-                💰💰 *Prezzo*: ${preventivo}€ 💰💰
-                
-                `;
+        const messageText = `
+*NUOVO ORDINE A4*
+
+📝 *Dettagli Ordine:*
+*Nome*: ${dataToUpload.nome}
+*Cognome*: ${dataToUpload.cognome}
+*Email*: ${dataToUpload.email}
+*Telefono*: ${dataToUpload.telefono}
+*Corso Laurea*: ${dataToUpload.corsoLaurea}
+*Anno Accademico*: ${dataToUpload.annoAccademico}
+
+📁 *Link ai file:* 📄
+${fileLinks}
+
+🎨 *Colore*: ${dataToUpload.colore}
+📄 *Pagina*: ${dataToUpload.pagina}
+📐 *Layout*: ${dataToUpload.layout}
+📒 *Rilegatura*: ${dataToUpload.rilegatura}
+📒 *Rilegatura unica*: ${dataToUpload.rilegaturaUnica}
+*Pagine*: ${dataToUpload.pagine}
+🔢 *Copie*: ${dataToUpload.copie}
+💰💰 *Prezzo*: ${preventivo}€ 💰💰
+`;
+
         const apiUrl = `https://api.telegram.org/bot${TOKEN}/sendMessage`;
-        const data = {
+        const payload = {
           chat_id: CHAT_ID,
           text: messageText,
           parse_mode: "Markdown",
         };
-        const requestOptions = {
+
+        fetch(apiUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        };
-        fetch(apiUrl, requestOptions)
+          body: JSON.stringify(payload),
+        })
           .then((response) => {
-            if (response.ok) {
-              console.log("Messaggio inviato con successo");
-            } else {
-              console.log(
-                "Errore durante l'invio del messaggio:",
-                response.statusText
-              );
+            if (!response.ok) {
+              console.log("Errore durante l'invio del messaggio:", response.statusText);
             }
           })
           .catch((error) => {
@@ -406,14 +424,23 @@ const A4PagePrint = () => {
         setFormError(true);
         setFormSubmitting(false);
       });
-  }, [daA, data.annoAccademico, data.corsoLaurea, data.email, data.isValid, data.name, data.surname, data.telephoneNumber, file, inchiostro, layout, numeroCopie, numeroPDF, pagina, preventivo, rilegatura, rilegaturaUnica]);    // Final modal handling
+  }, [data, fileData, numeroPDF, preventivo, pagina, layout, inchiostro, numeroCopie, rilegatura, rilegaturaUnica, daA]);
 
-  const closeFinalModalHandler = useCallback(() => {
-    setFormSubmitted(false);
-    setFormSubmitting(false);
-    setFormError(false);
-    window.location.reload(); // Ricarica la pagina
-  }, []);
+  // const closeFinalModalHandler = useCallback(() => {
+  //   setFormSubmitted(false);
+  //   setFormSubmitting(false);
+  //   setFormError(false);
+  //   window.location.reload(); // Ricarica la pagina
+  // }, []);
+
+  useEffect(() => {
+    if (formSubmitted) {
+      const timeout = setTimeout(() => {
+        window.location.reload(); // 🔄 ricarica la pagina
+      }, 3000); // ⏱️ attende 3 secondi prima del refresh
+      return () => clearTimeout(timeout);
+    }
+  }, [formSubmitted]);
 
   return (
     <div className="">
@@ -436,13 +463,13 @@ const A4PagePrint = () => {
                 () => [
                   {
                     title: "Bianco e nero",
-                    imageSrc: require("../assets/images/Bianco_e_nero.jpg"),
+                    imageSrc: require("../assets/images/Bianco_Nero_Ruota.png"),
                     disabled: false,
                     errorMessage: "",
                   },
                   {
                     title: "Colore",
-                    imageSrc: require("../assets/images/Colore.jpg"),
+                    imageSrc: require("../assets/images/Colori_ruota.png"),
                     disabled: false,
                     errorMessage: "",
                   },
@@ -469,13 +496,13 @@ const A4PagePrint = () => {
                     errorMessage: "",
                   },
                   {
-                    title: "2 pagine in 1 orizzontale",
+                    title: "2 in 1 orizzontale",
                     imageSrc: require("../assets/images/2in1Orizzontale.jpg"),
                     disabled: false,
                     errorMessage: "",
                   },
                   {
-                    title: "2 pagine in 1 verticale",
+                    title: "2 in 1 verticale",
                     imageSrc: require("../assets/images/2in1Verticale.jpg"),
                     disabled: false,
                     errorMessage: "",
@@ -537,8 +564,14 @@ const A4PagePrint = () => {
                   {
                     title: "Anelli",
                     imageSrc: require("../assets/images/Anelli.jpg"),
-                    disabled: false, // Aggiungi la proprietà disabled
-                    errorMessage: "",
+                    disabled: numeroPaginePDF > 670 && intervalloPagine > 670, // Aggiungi la proprietà disabled
+                    errorMessage: "Limite di 670 pagine",
+                  },
+                  {
+                    title: "Spirale",
+                    imageSrc: require("../assets/images/Spirale.png"),
+                    disabled: numeroPaginePDF > 500 && intervalloPagine > 500, // Aggiungi la proprietà disabled
+                    errorMessage: "Limite di 500 pagine",
                   },
                   {
                     title: "Fascetta",
@@ -549,7 +582,7 @@ const A4PagePrint = () => {
                   {
                     title: "Ciappatura",
                     imageSrc: require("../assets/images/Ciappatura.jpg"),
-                    disabled: numeroPaginePDF > 40 && intervalloPagine > 40, // Mantieni la logica di disabilitazione
+                    disabled: numeroPaginePDF > 35 && intervalloPagine > 35, // Mantieni la logica di disabilitazione
                     errorMessage: "Limite di 40 pagine"
                   },
                   {
@@ -566,17 +599,17 @@ const A4PagePrint = () => {
             />
 
           </div>
-       
+
           <IntervalloPagine
             onSendData={setRangePagesHandler}
             maxValue={numeroPaginePDF}
             disable={numeroPDF >= 2}
             errorMessage="Disponibile soltanto per un singolo PDF"
           />
-         <br />
+          <br />
           <NumeroCopie onSendData={setCopiesHandler} />
         </div>
-        
+
         <div className={classes["subContainerA4Right"]}>
           <RiepilogoOrdine
             numeroPDF={numeroPDF}
@@ -598,27 +631,30 @@ const A4PagePrint = () => {
                   ? "Fascetta"
                   : rilegatura === 2
                     ? "Ciappatura"
-                    : "Nessuna"
+                    : rilegatura === 3
+                      ? "Nessuna"
+                      : "Spirale"
             }
             rilegaturaUnica={rilegaturaUnica === 0 ? "Si" : "No"}
             intervalloPagine={daA}
             numeroCopie={numeroCopie}
             prezzo={preventivo}
             onConfirmOrder={submitFormHandler}
-            disabled={!data.isValid || file.length === 0 || !intervalloPagineIsValid || formSubmitting}
+            disabled={!data.isValid || fileData.length === 0 || !intervalloPagineIsValid || formSubmitting}
             loading={formSubmitting}
+            submitted={formSubmitted}
           />
         </div>
       </div>
 
       {/*<Modal
-        totalOrder={preventivo}
-        onSubmit={submitFormHandler}
-        disabled={!data.isValid || file.length === 0 || !intervalloPagineIsValid}
-      />*/}
-  
+       totalOrder={preventivo}
+       onSubmit={submitFormHandler}
+       disabled={!data.isValid || file.length === 0 || !intervalloPagineIsValid}
+     />*/}
+
       <Footer />
-      {(formSubmitted || formSubmitting) && (
+      {/*(formSubmitted || formSubmitting) && (
         <FinalModal
           onConfirm={closeFinalModalHandler}
           loading={formSubmitting ? "submitting" : "submitted"}
@@ -626,7 +662,7 @@ const A4PagePrint = () => {
       )}
       {formError && (
         <FinalModal onConfirm={closeFinalModalHandler} loading={"error"} />
-      )}
+      )*/}
     </div>
   );
 };

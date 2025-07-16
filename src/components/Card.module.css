@@ -1,40 +1,33 @@
-@import '../styles/variables.css';
-
 .cardWrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin: 0.5rem;
+  margin: 0.8rem;
+  width: 160px;
 }
 
 .pillButton {
-  background-color: var(--color-background);
+  background-color: #121212;
   border: 2px solid var(--color-gold);
-  color: var(--color-text);
-  border-radius: 10px;
-  padding: 0 10px 0 0; /* top right bottom left */ /* <-- nessun padding interno */
-  display: flex;
-  align-items: center;
-  gap: 0; /* <-- nessun gap automatico */
+  border-radius: 16px;
+  padding: 0.8rem;
+  width: 100%;
+  text-align: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
-  transition: all var(--transition-fast);
-  font-family: var(--font-main);
-  font-size: 1rem;
-  box-shadow: var(--shadow-light);
-  height: 60px; /* o altro valore fisso */
-  overflow: hidden;
+  box-shadow: 0 0 10px rgba(222, 181, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .pillButton:hover {
-  transform: scale(1.05);
-  border-color: var(--color-gold); /* sostituito --color-gold-dark con color-gold */
+  transform: translateY(-3px);
+  box-shadow: 0 0 20px rgba(222, 181, 0, 0.4);
 }
 
 .selected {
-  background-color: var(--color-gold);
-  color: var(--color-background); /* sostituito --color-white */
-  font-weight: bold;
-  box-shadow: var(--shadow-light); /* sostituito --shadow-gold-glow */
+  background: linear-gradient(to bottom, var(--color-gold), #b79600);
+  color: #000;
+  font-weight: 600;
+  box-shadow: 0 0 20px rgba(222, 181, 0, 0.6);
 }
 
 .disabled {
@@ -43,26 +36,27 @@
 }
 
 .imageWrapper {
-  width: 60px; /* larghezza fissa per mantenere la pillola */
-  height:60px;
-  overflow: hidden;
-  background-color: var(--color-background); /* sostituito --color-white */
+  width: 64px;
+  height: 64px;
+  background-color: #1e1e1e;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
+  margin-bottom: 0.5rem;
 }
 
 .image {
   width: 100%;
   height: auto;
   object-fit: contain;
-  object-fit: cover;
+  filter: brightness(1.1);
 }
 
 .label {
   font-size: 1rem;
-  margin-left: 1rem;
+  color: var(--color-text);
+  text-align: center;
 }
 
 .error {
@@ -70,21 +64,4 @@
   font-size: 0.75rem;
   margin-top: 0.4rem;
   text-align: center;
-}
-
-@media screen and (max-width: 500px) {
-  .pillButton {
-    padding: 0.8rem;
-    font-size: 0.9rem;
-    gap: 0.6rem;
-  }
-
-  .imageWrapper {
-    width: 2rem;
-    height: 2rem;
-  }
-
-  .label {
-    font-size: 0.9rem;
-  }
 }

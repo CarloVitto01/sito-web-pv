@@ -1,4 +1,3 @@
-// src/components/RiepilogoOrdineA3.tsx
 import styles from "./RiepilogoOrdine.module.css";
 import React from "react";
 
@@ -12,10 +11,10 @@ type RiepilogoA3Props = {
   numeroPDF: number;
   numeroPagine: number;
   prezzo: string;
-  
-  onConfirmOrder: () => void; // nuova prop
-  disabled?: boolean; // opzionale, per disabilitare il pulsante
-  loading?: boolean;  // opzionale, per indicare stato invio
+  onConfirmOrder: () => Promise<void>;
+  disabled?: boolean;
+  loading?: boolean;
+  submitted?: boolean;
 };
 
 const RiepilogoOrdineA3 = ({
@@ -31,6 +30,7 @@ const RiepilogoOrdineA3 = ({
   onConfirmOrder,
   disabled = false,
   loading = false,
+  submitted = false,
 }: RiepilogoA3Props) => {
   return (
     <div className={styles["riepilogo-container"]}>
@@ -45,13 +45,28 @@ const RiepilogoOrdineA3 = ({
       <p className="riepilogo-item"><strong>Numero copie:</strong> {numeroCopie}</p>
       <p className="riepilogo-item"><strong>💰 Prezzo totale:</strong> {prezzo} €</p>
 
-      <button
-        className={styles["confirm-button"]}
-        onClick={onConfirmOrder}
-        disabled={disabled}
-      >
-        {loading ? "Invio in corso..." : "✅ Conferma Ordine"}
-      </button>
+      {!loading && !submitted && (
+        <button
+          className={styles["confirm-button"]}
+          onClick={onConfirmOrder}
+          disabled={disabled}
+        >
+          ✅ Conferma Ordine
+        </button>
+      )}
+
+      {loading && (
+        <>
+          <p className={styles.loadingText}>Invio in corso...</p>
+          <div className={styles.loader}></div>
+        </>
+      )}
+
+      {submitted && (
+        <div className={styles.successMessage}>
+          🎉 Ordine inviato con successo!
+        </div>
+      )}
     </div>
   );
 };

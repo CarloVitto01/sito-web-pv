@@ -416,8 +416,8 @@ const A3PagePrint = () => {
                         defaultValue="Auto"
                         onSendData={newValue}
                     />
-                    
-                     <NumeroCopie onSendData={setCopiesHandler} />
+
+                    <NumeroCopie onSendData={setCopiesHandler} />
                 </div>
 
                 <div className={classes["subContainerA4Right"]}>
@@ -431,15 +431,14 @@ const A3PagePrint = () => {
                         layout={layout === 0 ? "Orizzontale" : layout === 1 ? "Verticale" : "Auto"}
                         plastificazione={plastificazione === 0 ? "Si" : "No"}
                         prezzo={preventivo}
-                        
-  onConfirmOrder={submitFormHandler}
-  disabled={!data.isValid || file.length === 0 || formSubmitting}
-  loading={formSubmitting}
+                        onConfirmOrder={submitFormHandler}
+                        disabled={!data.isValid || file.length === 0 || formSubmitting}
+                        loading={formSubmitting}
+                        submitted={formSubmitted}
                     />
-
                 </div>
             </div>
-       
+
             <Footer />
             {/*<Modal totalOrder={preventivo} onSubmit={submitFormHandler} disabled={!data.isValid || !file} />
             
