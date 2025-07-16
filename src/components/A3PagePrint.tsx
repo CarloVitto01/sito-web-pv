@@ -284,6 +284,18 @@ const A3PagePrint = () => {
         setNumeroCopie(value);
     }, []);
 
+
+
+     useEffect(() => {
+        if (formSubmitted) {
+          const timeout = setTimeout(() => {
+            window.location.reload(); // 🔄 ricarica la pagina
+          }, 3000); // ⏱️ attende 3 secondi prima del refresh
+          return () => clearTimeout(timeout);
+        }
+      }, [formSubmitted]);
+    
+
     return (
         <div className="container">
             <Header />
@@ -328,13 +340,13 @@ const A3PagePrint = () => {
                             () => [
                                 {
                                     title: "Colore",
-                                    imageSrc: require("../assets/images/Colore.jpg"),
+                                    imageSrc: require("../assets/images/Colori_ruota.png"),
                                     disabled: false,
                                     errorMessage: ""
                                 },
                                 {
                                     title: "Bianco e nero",
-                                    imageSrc: require("../assets/images/Bianco_e_nero.jpg"),
+                                    imageSrc: require("../assets/images/Bianco_Nero_Ruota.png"),
                                     disabled: false,
                                     errorMessage: ""
                                 },

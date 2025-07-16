@@ -1,5 +1,5 @@
 import styles from "./RiepilogoOrdine.module.css";
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 type RiepilogoA3Props = {
   inchiostro: string;
@@ -17,6 +17,8 @@ type RiepilogoA3Props = {
   submitted?: boolean;
 };
 
+
+
 const RiepilogoOrdineA3 = ({
   inchiostro,
   pagina,
@@ -32,6 +34,39 @@ const RiepilogoOrdineA3 = ({
   loading = false,
   submitted = false,
 }: RiepilogoA3Props) => {
+  const [progress, setProgress] = useState(0);
+  const [loadingStarted, setLoadingStarted] = useState(false);
+
+  const handleConfirmOrder = async () => {
+    setProgress(0);
+    setLoadingStarted(true);
+    await onConfirmOrder();
+  };
+
+  // Simula avanzamento barra a scatti durante loading
+  useEffect(() => {
+    if (loading) {
+      let current = 0;
+      const interval = setInterval(() => {
+        current += Math.floor(Math.random() * 10) + 5; // scatti da 5–15
+        if (current >= 90) {
+          clearInterval(interval);
+        } else {
+          setProgress(current);
+        }
+      }, 300);
+
+      return () => clearInterval(interval);
+    }
+  }, [loading]);
+
+  // Quando ordine completato -> forza 100%
+  useEffect(() => {
+    if (submitted) {
+      setProgress(100);
+    }
+  }, [submitted]);
+
   return (
     <div className={styles["riepilogo-container"]}>
       <h3 className="riepilogo-title">📋 Riepilogo ordine A3</h3>
@@ -45,10 +80,10 @@ const RiepilogoOrdineA3 = ({
       <p className="riepilogo-item"><strong>Numero copie:</strong> {numeroCopie}</p>
       <p className="riepilogo-item"><strong>💰 Prezzo totale:</strong> {prezzo} €</p>
 
-      {!loading && !submitted && (
+   {!loading && !submitted && (
         <button
           className={styles["confirm-button"]}
-          onClick={onConfirmOrder}
+          onClick={handleConfirmOrder}
           disabled={disabled}
         >
           ✅ Conferma Ordine
@@ -58,7 +93,12 @@ const RiepilogoOrdineA3 = ({
       {loading && (
         <>
           <p className={styles.loadingText}>Invio in corso...</p>
-          <div className={styles.loader}></div>
+          <div className={styles.loader}>
+            <div
+              className={styles.loaderBar}
+              style={{ width: `${progress}%` }}
+            />
+          </div>
         </>
       )}
 
@@ -70,5 +110,6 @@ const RiepilogoOrdineA3 = ({
     </div>
   );
 };
+
 
 export default RiepilogoOrdineA3;
