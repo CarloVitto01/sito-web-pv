@@ -1,13 +1,14 @@
 .container {
   text-align: center;
-  padding: 80px 20px;
+  padding: 50px 50px;
+  
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
 .title {
-  font-size: 3rem;
+  font-size: 1.5rem;
   margin-bottom: 10px;
   color: white;
 }
