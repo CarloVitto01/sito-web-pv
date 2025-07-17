@@ -1,5 +1,5 @@
 /* MultiInput.module.css */
-
+@import '../styles/variables.css';
 /* Stili generali */
 .containerMultiInput {
     background-color: var(--color-background);
@@ -11,7 +11,8 @@
 }
 
 .dropzone {
-    background-color: var(--color-text); /* se vuoi puoi aggiungere variabile */
+    background-color: var(--color-text);
+    /* se vuoi puoi aggiungere variabile */
     border-radius: 10px;
     padding: 5px 20px 5px 20px;
     color: var(--color-background);
@@ -66,13 +67,14 @@
 }
 
 .pdfName {
-    font-size: 16px;
+    font-size: 12px;
     flex-grow: 1;
+    color: var(--color-text);
 }
 
 .previewButton {
     background-color: var(--color-gold);
-    color: var(--color-white);
+    color: var(--color-text);
     border: none;
     border-radius: 5px;
     padding: 5px 10px;

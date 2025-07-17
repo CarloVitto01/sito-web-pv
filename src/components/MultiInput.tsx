@@ -106,7 +106,7 @@ const MultiInput: React.FC<PropsContainer> = ({ onSendData }) => {
             <div className={classes["containerPDFMultiInput"]}>
                 {files.map((file, index) => (
                     <div key={index} className={classes.pdfContainer}>
-                        <img src={"https://play-lh.googleusercontent.com/oFQmEzOrE0d3MfZ2A_Mm7FTso94um6JfXb3Biz_LH1xk4vWFVUbnTF0wNZfpVevYhoCl"} alt="PDF Icon" className={classes["pdfIcon"]} />
+                        <img src={require("../assets/images/PDF_file_icon.svg.png")} alt="PDF Icon" className={classes["pdfIcon"]} />
                         <span className={classes["pdfName"]}>
                             {file.name.length > 30
                                 ? file.name.slice(0, 30) + '...'
@@ -173,7 +173,7 @@ const MultiInput: React.FC<PropsContainer> = ({ onSendData }) => {
                                     <GrCaretPrevious />
                                 </div>
                             </div>
-                            <span>Pagina {pageNumber} di {numPages[currentFileIndex]}</span>
+                            <span style={{color:"white"}}>Pagina {pageNumber} di {numPages[currentFileIndex]}</span>
                             <div className={classes["button-container"]}>
                                 <div
                                     className={classes["artButton"]}
