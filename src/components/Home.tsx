@@ -7,11 +7,14 @@ import CardsSection from './HomeComponents/CardsSection';
 import AlternatingContentSection from './HomeComponents/AlternatingContentSection';
 import './Home.module.css';
 
+import ImageCarousel from './HomeComponents/ImageCarousel';
+
 const Home: React.FC = () => {
   return (
     <div className="home-container">
       <Header />
       <DescriptionSection />
+      <ImageCarousel /> {/* ← Inserito qui */}
       <CardsSection />
       {/*<NewsCarousel />*/}
       <AlternatingContentSection />
@@ -19,5 +22,6 @@ const Home: React.FC = () => {
     </div>
   );
 };
+
 
 export default Home;
