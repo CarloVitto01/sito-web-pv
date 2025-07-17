@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../../../backend/firebase"; // Assicurati che il path sia corretto
+import { auth } from "../../../backend/firebase";
 import "./Login.css";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 
@@ -19,22 +19,17 @@ const Login: React.FC = () => {
   } = useForm<LoginFormInputs>();
 
   const navigate = useNavigate();
-  const [error, setError] = useState("");
-  const [showPassword, setShowPassword] = useState(false); // ⬅️ stato per visibilità
+  const [authError, setAuthError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
     try {
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        data.username,
-        data.password
-      );
-
-      console.log("Login riuscito:", userCredential.user);
+      await signInWithEmailAndPassword(auth, data.username, data.password);
+      console.log("Login riuscito");
       navigate("/");
     } catch (err: any) {
       console.error("Errore login:", err.message);
-      setError("Email o password non corretti");
+      setAuthError("Email o password non corretti");
     }
   };
 
@@ -47,7 +42,7 @@ const Login: React.FC = () => {
       <div className="login-container">
         <h2>Login</h2>
         <form onSubmit={handleSubmit(onSubmit)}>
-          <div >
+          <div>
             <label>Email:</label>
             <input
               type="email"
@@ -55,6 +50,9 @@ const Login: React.FC = () => {
                 required: "Questo campo non può essere vuoto",
               })}
             />
+            {errors.username && (
+              <p className="error-message">{errors.username.message}</p>
+            )}
           </div>
 
           <div className="password-field">
@@ -73,7 +71,13 @@ const Login: React.FC = () => {
                 {showPassword ? <FiEyeOff /> : <FiEye />}
               </span>
             </div>
+            {errors.password && (
+              <p className="error-message">{errors.password.message}</p>
+            )}
           </div>
+
+          {authError && <p className="auth-error-message">{authError}</p>}
+
           <div className="button-row">
             <button type="submit">Login</button>
             <button
@@ -85,12 +89,11 @@ const Login: React.FC = () => {
             </button>
           </div>
           <div className="home-button-container">
-            <button className="home-button" onClick={() => navigate("/")}>Torna Alla Home</button>
-           
-
+            <button className="home-button" onClick={() => navigate("/")}>
+              Torna Alla Home
+            </button>
           </div>
         </form>
-         {error && <p className="error-message">{error}</p>}
       </div>
     </div>
   );

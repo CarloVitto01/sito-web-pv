@@ -91,6 +91,14 @@
   margin-bottom: 10px;
 }
 
+.auth-error-message {
+  color: red;
+  font-size: 0.9rem;
+  text-align: center;
+  margin-top: 10px;
+  font-weight: bold;
+}
+
 
 .home-button-container {
   display: flex;
@@ -158,28 +166,25 @@
   font-size: 20px;
 }
 
-@media screen and (max-width: 430px) {
+@media screen and (max-width: 480px) {
   .login-page .login-container {
-    width:100%;
-    margin: 5%;
+    width:70%;
   }
 
   .login-page,
   .login-page .login-container button,
   .login-page .register-button,
   .password-input-wrapper {
-    width: 100% !important;
+    width: 100% ;
   }
 
   .password-input-wrapper input {
-    width: 100%;
+    width: 90%;
     margin-left: 0;
   }
 
   .login-page .button-row {
     flex-direction: column;
-    gap: 10px;
-    align-items: center;
   }
 
   .toggle-password {

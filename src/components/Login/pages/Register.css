@@ -119,18 +119,18 @@
 
 @media screen and (max-width: 480px) {
   .register-container {
-    width: 95%;
-    padding: 20px;
+    width: 70%;
   }
 
   .register-container input,
   .register-container button,
   .password-input-wrapper-register {
-    width: 100% !important;
+    width: 90% ;
   }
 
   .password-input-wrapper-register {
-    margin-right: 0;
+    width: 100%;
+    margin-left: 25px; /* aggiusta la posizione per schermi piccoli */
   }
 
   .toggle-password-icon {
