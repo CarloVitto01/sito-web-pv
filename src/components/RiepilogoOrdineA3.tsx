@@ -35,7 +35,7 @@ const RiepilogoOrdineA3 = ({
   submitted = false,
 }: RiepilogoA3Props) => {
   const [progress, setProgress] = useState(0);
-  const [loadingStarted, setLoadingStarted] = useState(false);
+  const [/*loadingStarted*/, setLoadingStarted] = useState(false);
 
   const handleConfirmOrder = async () => {
     setProgress(0);
@@ -73,7 +73,7 @@ const RiepilogoOrdineA3 = ({
       <p className="riepilogo-item"><strong>Numero PDF:</strong> {numeroPDF}</p>
       <p className="riepilogo-item"><strong>Numero pagine totali:</strong> {numeroPagine}</p>
       <p className="riepilogo-item"><strong>Grammatura:</strong> {grammatura}</p>
-      <p className="riepilogo-item"><strong>Inchiostro:</strong> {inchiostro}</p>
+      <p className="riepilogo-item"><strong>Colore:</strong> {inchiostro}</p>
       <p className="riepilogo-item"><strong>Gestione pagina:</strong> {pagina}</p>
       <p className="riepilogo-item"><strong>Layout:</strong> {layout}</p>
       <p className="riepilogo-item"><strong>Plastificazione:</strong> {plastificazione}</p>

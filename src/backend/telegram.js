@@ -1,2 +1,5 @@
-export const TOKEN = "6627906863:AAHKxcu5wZD5anFVhRUn7_hTBRvhpyJa24k";
-export const CHAT_ID = "-1001877391096";
+export const TOKENA4 = "6627906863:AAHKxcu5wZD5anFVhRUn7_hTBRvhpyJa24k";
+export const CHAT_IDA4 = "-1001877391096";
+
+export const TOKENA3 = "7958253697:AAH9CDyOpCML2XWAB-k5WS8DafA0dtruync";
+export const CHAT_IDA3 = "-1002762822730";

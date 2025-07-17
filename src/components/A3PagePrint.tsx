@@ -5,15 +5,15 @@ import Header from "../components/Header";
 import Intro from "../components/Intro";
 import ContainerCards from "../components/ContainerCards";
 import SingleDelimiter from "../components/SingleDelimiter";
-import Modal from "../components/Modal";
-import FinalModal from "../components/FinalModal";
+//import Modal from "../components/Modal";
+//import FinalModal from "../components/FinalModal";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { storage } from "../backend/firebase";
 import { db } from "../backend/firebase";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { v4 } from "uuid";
 import { collection, doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { TOKEN, CHAT_ID } from "../backend/telegram";
+import { TOKENA3, CHAT_IDA3 } from "../backend/telegram";
 import { FormData } from "../types/FormData";
 import { FileHandler } from "../types/FileHandler";
 import Form from "./Form";
@@ -65,7 +65,7 @@ const A3PagePrint = () => {
         corsoLaurea: "",
         annoAccademico: ""
     });
-    const [file, setFile] = useState<File[]>([]);
+    const [fileData, setFileData] = useState<{ file: File; pages: number }[]>([]);
     const [numeroPaginePDF, setNumeroPaginePDF] = useState<number>(0);
     const [inchiostro, setInchiostro] = useState<number>(inchiostroEnum.COLORE);
     const [grammatura, setGrammatura] = useState<number>(grammaturaEnum.NORMALE);
@@ -117,12 +117,18 @@ const A3PagePrint = () => {
     }, []);
 
     const setPDFHandler = useCallback((files: FileHandler[], totalPages: number) => {
-        const validFiles = files.map(fileHandler => fileHandler.file).filter((file): file is File => file !== null);
-        setFile(validFiles);
+        const validFiles = files
+            .filter((f) => f.file !== null)
+            .map((f) => ({
+                file: f.file as File,
+                pages: f.numPages || 0,
+            }));
+
+        setFileData(validFiles);
         setNumeroPDF(validFiles.length);
         setNumeroPaginePDF(totalPages);
-        console.log("Totale numero di pagine:", totalPages);
     }, []);
+
 
 
 
@@ -169,7 +175,7 @@ const A3PagePrint = () => {
     const submitFormHandler = useCallback(async (event?: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
         event?.preventDefault();
         setFormSubmitting(true);
-        if (file.length === 0 || !data.isValid) { // Controlla se ci sono file
+        if (fileData.length === 0 || !data.isValid) { // Controlla se ci sono file
             setFormSubmitting(false); // Assicurati di impostare formSubmitting su false se non ci sono file
             return;
         }
@@ -179,18 +185,21 @@ const A3PagePrint = () => {
         const urls: string[] = []; // Array per memorizzare gli URL dei file
 
         // Carica i file uno per uno
-        for (const singleFile of file) {
-            const path = `PDF/${data.surname + data.name + "|" + singleFile.name.trim().replace(".pdf", "").replace(/\s/g, "").replace(/\(/g, "[").replace(/\)/g, "]") + "|" + id}.pdf`;
-            paths.push(path); // Aggiungi il percorso all'array
+        for (const { file } of fileData) {
+            const path = `PDF/${data.surname + data.name + "|" + file.name.trim().replace(".pdf", "").replace(/\s/g, "").replace(/\(/g, "[").replace(/\)/g, "]") + "|" + id}.pdf`;
+            paths.push(path);
 
             const fileRef = ref(storage, path);
-            const snapshot = await uploadBytes(fileRef, singleFile);
+            const snapshot = await uploadBytes(fileRef, file);
             const url = await getDownloadURL(snapshot.ref);
-            urls.push(url); // Aggiungi l'URL all'array
+            urls.push(url);
         }
 
         // Crea il messaggio con i link dei file
-        const fileLinks = urls.map((url, index) => `- [File ${index + 1}](${url.replace(/\(/g, "[").replace(/\)/g, "]")})`).join("\n");
+        const fileLinks = urls.map((url, index) => {
+            const pages = fileData[index].pages;
+            return `- [File ${index + 1} - ${pages} pagine](${url.replace(/\(/g, "[").replace(/\)/g, "]")})`;
+        }).join("\n");
 
         const dataToUpload = {
             id: id,
@@ -222,28 +231,32 @@ const A3PagePrint = () => {
                 setFormSubmitted(true);
                 // Invia il messaggio a Telegram
                 const messageText = `
-                *NUOVO ORDINE A3*
+=====================
+  *NUOVO ORDINE A3*
+=====================
 
-                📝 *Dettagli Ordine:*
-              - *Nome*: ${dataToUpload.nome}
-              - *Cognome*: ${dataToUpload.cognome}
-              - *Email*: ${dataToUpload.email}
-              - *Telefono*: ${dataToUpload.telefono}
-              - *Corso Laurea*: ${dataToUpload.corsoLaurea}
-              - *Anno Accademico*: ${dataToUpload.annoAccademico}
-                 📁 *Link ai file:* 📄
-                ${fileLinks}
-                *Grammatura*: ${dataToUpload.grammatura}
-                🎨 *Colore*: ${dataToUpload.colore}
-                📄 *Pagina*: ${dataToUpload.pagina}
-                📐 *Layout*: ${dataToUpload.layout}
-                *Plastificazione*: ${dataToUpload.plastificazione}
-                🔢 *Copie*: ${dataToUpload.copie}
-                💰💰 *Prezzo*: ${preventivo}€ 💰💰
-                `;
-                const apiUrl = `https://api.telegram.org/bot${TOKEN}/sendMessage`;
+📝 *Dettagli Ordine:*
+*Nome*: ${dataToUpload.nome}
+*Cognome*: ${dataToUpload.cognome}
+*Email*: ${dataToUpload.email}
+*Telefono*: ${dataToUpload.telefono}
+*Corso Laurea*: ${dataToUpload.corsoLaurea}
+*Anno Accademico*: ${dataToUpload.annoAccademico}
+
+📁 *Link ai file:* 📄
+${fileLinks}
+
+⚖ *Grammatura*: ${dataToUpload.grammatura}
+🎨 *Colore*: ${dataToUpload.colore}
+📄 *Pagina*: ${dataToUpload.pagina}
+📐 *Layout*: ${dataToUpload.layout}
+*Plastificazione*: ${dataToUpload.plastificazione}
+🔢 *Copie*: ${dataToUpload.copie}
+💰💰 *Prezzo*: ${preventivo}€ 💰💰
+`;
+                const apiUrl = `https://api.telegram.org/bot${TOKENA3}/sendMessage`;
                 const data = {
-                    chat_id: CHAT_ID,
+                    chat_id: CHAT_IDA3,
                     text: messageText,
                     parse_mode: "Markdown",
                 };
@@ -269,32 +282,32 @@ const A3PagePrint = () => {
                 setFormError(true);
                 setFormSubmitting(false);
             });
-    }, [data.annoAccademico, data.corsoLaurea, data.email, data.isValid, data.name, data.surname, data.telephoneNumber, file, grammatura, inchiostro, layout, numeroCopie, numeroPDF, numeroPaginePDF, pagina, plastificazione, preventivo]);
+    }, [data.annoAccademico, data.corsoLaurea, data.email, data.isValid, data.name, data.surname, data.telephoneNumber, fileData, grammatura, inchiostro, layout, numeroCopie, numeroPDF, numeroPaginePDF, pagina, plastificazione, preventivo]);
 
 
 
     // Send data to the Firebase server
-    const closeFinalModalHandler = useCallback(() => {
-        setFormSubmitted(false);
-        setFormSubmitting(false);
-        setFormError(false);
-        window.location.reload();
-    }, []);
+    //const closeFinalModalHandler = useCallback(() => {
+    //    setFormSubmitted(false);
+    //    setFormSubmitting(false);
+    //    setFormError(false);
+    //    window.location.reload();
+    //}, []);
     const setCopiesHandler = useCallback((value: number) => {
         setNumeroCopie(value);
     }, []);
 
 
 
-     useEffect(() => {
+    useEffect(() => {
         if (formSubmitted) {
-          const timeout = setTimeout(() => {
-            window.location.reload(); // 🔄 ricarica la pagina
-          }, 3000); // ⏱️ attende 3 secondi prima del refresh
-          return () => clearTimeout(timeout);
+            const timeout = setTimeout(() => {
+                window.location.reload(); // 🔄 ricarica la pagina
+            }, 3000); // ⏱️ attende 3 secondi prima del refresh
+            return () => clearTimeout(timeout);
         }
-      }, [formSubmitted]);
-    
+    }, [formSubmitted]);
+
 
     return (
         <div className="container">
@@ -444,7 +457,7 @@ const A3PagePrint = () => {
                         plastificazione={plastificazione === 0 ? "Si" : "No"}
                         prezzo={preventivo}
                         onConfirmOrder={submitFormHandler}
-                        disabled={!data.isValid || file.length === 0 || formSubmitting}
+                        disabled={!data.isValid || fileData.length === 0 || formSubmitting}
                         loading={formSubmitting}
                         submitted={formSubmitted}
                     />

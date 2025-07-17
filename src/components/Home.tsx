@@ -3,7 +3,7 @@ import Header from './Header';
 import Footer from './Footer';
 import DescriptionSection from './HomeComponents/DescriptionSection';
 import CardsSection from './HomeComponents/CardsSection';
-import NewsCarousel from './HomeComponents/NewsCarousel';
+//import NewsCarousel from './HomeComponents/NewsCarousel';
 import AlternatingContentSection from './HomeComponents/AlternatingContentSection';
 import './Home.module.css';
 

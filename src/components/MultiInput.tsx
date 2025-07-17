@@ -20,7 +20,7 @@ interface PropsContainer {
 const MultiInput: React.FC<PropsContainer> = ({ onSendData }) => {
     const [files, setFiles] = useState<File[]>([]);
     const [numPages, setNumPages] = useState<number[]>([]);
-    const [totalNumPages, setTotalNumPages] = useState<number>(0);
+    const [/*totalNumPages*/, setTotalNumPages] = useState<number>(0);
     const [isOpen, setIsOpen] = useState<boolean>(false);
     const [currentFile, setCurrentFile] = useState<File | null>(null);
     const [currentFileIndex, setCurrentFileIndex] = useState<number | null>(null);

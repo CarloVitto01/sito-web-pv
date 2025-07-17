@@ -15,8 +15,8 @@ import { db } from "../backend/firebase";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { v4 } from "uuid";
 import { collection, doc, setDoc, serverTimestamp } from "firebase/firestore";
-import FinalModal from "../components/FinalModal";
-import { TOKEN, CHAT_ID } from "../backend/telegram";
+//import FinalModal from "../components/FinalModal";
+import { TOKENA4, CHAT_IDA4 } from "../backend/telegram";
 import { FormData } from "../types/FormData";
 import { FileHandler } from "../types/FileHandler";
 import { RangePagesData } from "../types/RangePagesData";
@@ -375,7 +375,9 @@ const A4PagePrint = () => {
         setFormSubmitted(true);
 
         const messageText = `
-*NUOVO ORDINE A4*
+=====================
+  *NUOVO ORDINE A4*
+=====================
 
 📝 *Dettagli Ordine:*
 *Nome*: ${dataToUpload.nome}
@@ -385,7 +387,7 @@ const A4PagePrint = () => {
 *Corso Laurea*: ${dataToUpload.corsoLaurea}
 *Anno Accademico*: ${dataToUpload.annoAccademico}
 
-📁 *Link ai file:* 📄
+📁 *Link ai file:* 📃
 ${fileLinks}
 
 🎨 *Colore*: ${dataToUpload.colore}
@@ -398,9 +400,9 @@ ${fileLinks}
 💰💰 *Prezzo*: ${preventivo}€ 💰💰
 `;
 
-        const apiUrl = `https://api.telegram.org/bot${TOKEN}/sendMessage`;
+        const apiUrl = `https://api.telegram.org/bot${TOKENA4}/sendMessage`;
         const payload = {
-          chat_id: CHAT_ID,
+          chat_id: CHAT_IDA4,
           text: messageText,
           parse_mode: "Markdown",
         };

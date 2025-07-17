@@ -33,7 +33,7 @@ const RiepilogoOrdine = ({
   loading = false,
 }: RiepilogoProps) => {
   const [progress, setProgress] = useState(0);
-  const [loadingStarted, setLoadingStarted] = useState(false);
+  const [/*loadingStarted*/, setLoadingStarted] = useState(false);
 
   const handleConfirmOrder = async () => {
     setProgress(0);
