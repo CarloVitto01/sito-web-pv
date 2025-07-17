@@ -106,3 +106,28 @@
 .side-menu.hidden {
   transform: translateX(-100%);
 }
+
+.menu-button-gold {
+  background-color: var(--color-gold);
+  color: var(--color-text);
+  border: 1px solid var(--color-gold);
+  padding: 5px 12px;
+  margin-left: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  transition: background-color 0.2s ease;
+}
+
+.menu-button-gold:hover {
+  background-color: rgba(222, 181, 0, 0.1);
+}
+
+.user-name {
+  color: var(--color-text);
+  font-weight: 500;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+}

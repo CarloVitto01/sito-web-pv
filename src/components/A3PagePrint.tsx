@@ -8,11 +8,11 @@ import SingleDelimiter from "../components/SingleDelimiter";
 //import Modal from "../components/Modal";
 //import FinalModal from "../components/FinalModal";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { storage } from "../backend/firebase";
+import { auth, storage } from "../backend/firebase";
 import { db } from "../backend/firebase";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { v4 } from "uuid";
-import { collection, doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { collection, doc, setDoc, serverTimestamp, getDoc, updateDoc } from "firebase/firestore";
 import { TOKENA3, CHAT_IDA3 } from "../backend/telegram";
 import { FormData } from "../types/FormData";
 import { FileHandler } from "../types/FileHandler";
@@ -78,6 +78,30 @@ const A3PagePrint = () => {
     const [formSubmitting, setFormSubmitting] = useState<boolean>(false);
     const [formError, setFormError] = useState<boolean>(false);
     const [numeroPDF, setNumeroPDF] = useState<number>(0);
+
+    useEffect(() => {
+        const fetchUserData = async () => {
+            if (auth.currentUser) {
+                const userRef = doc(db, "users", auth.currentUser.uid);
+                const userSnap = await getDoc(userRef);
+                if (userSnap.exists()) {
+                    const userData = userSnap.data();
+                    setData((prev) => ({
+                        ...prev,
+                        name: userData.displayName || "",
+                        surname: userData.cognome || "",
+                        email: userData.email || "",
+                        telephoneNumber: userData.telefono || "",
+                        corsoLaurea: userData.corsoLaurea || "",
+                        annoAccademico: userData.annoAccademico || "",
+                        isValid: true,
+                    }));
+                }
+            }
+        };
+        fetchUserData();
+    }, []);
+
 
     useEffect(() => {
         if (formSubmitted || formSubmitting || formError) {
@@ -223,6 +247,18 @@ const A3PagePrint = () => {
             timestamp: serverTimestamp(),
         };
 
+        if (auth.currentUser) {
+            const userRef = doc(db, "users", auth.currentUser.uid);
+            await updateDoc(userRef, {
+                displayName: dataToUpload.nome,
+                cognome: dataToUpload.cognome,
+                email: dataToUpload.email,
+                telefono: dataToUpload.telefono,
+                corsoLaurea: dataToUpload.corsoLaurea,
+                annoAccademico: dataToUpload.annoAccademico,
+            });
+        }
+
         const collectionRef = collection(db, "StampePDF");
         const PDFref = doc(collectionRef, id);
         setDoc(PDFref, dataToUpload)
@@ -309,6 +345,7 @@ ${fileLinks}
     }, [formSubmitted]);
 
 
+
     return (
         <div className="container">
             <Header />
@@ -317,7 +354,7 @@ ${fileLinks}
                 text={"In questa pagina potrai ordinare la stampa del tuo documento, inserisci le caratteristiche disponibili nelle varie sezioni per poter avere dei documenti cartacei di qualità."}
             />
             <SingleDelimiter />
-            <Form onSendData={setDataHandler} />
+            <Form onSendData={setDataHandler} defaultValues={data} />
             <SingleDelimiter />
             <MultiInput onSendData={setPDFHandler} />
             <SingleDelimiter />

@@ -20,9 +20,10 @@ const containsOnlyNumbers = (number: string) => {
 
 interface propsContainer {
   onSendData: (value: FormData) => void;
+  defaultValues?: FormData; // 👈 aggiunto
 }
 
-const Form: React.FC<propsContainer> = ({ onSendData }) => {
+const Form: React.FC<propsContainer> = ({ onSendData, defaultValues  }) => {
   const [enteredName, setEnteredName] = useState<string>("");
   const [nameIsValid, setNameIsValid] = useState<boolean>();
   const [enteredSurname, setEnteredSurname] = useState<string>("");
@@ -43,6 +44,19 @@ const Form: React.FC<propsContainer> = ({ onSendData }) => {
     corsoLaurea: "",
     annoAccademico: ""
   });
+
+  useEffect(() => {
+  if (defaultValues) {
+    setEnteredName(defaultValues.name || "");
+    setEnteredSurname(defaultValues.surname || "");
+    setEnteredEmail(defaultValues.email || "");
+    setEnteredTelephoneNumber(defaultValues.telephoneNumber || "");
+    setEnteredCorsoLaurea(defaultValues.corsoLaurea || "");
+    setEnteredAnnoAccademico(defaultValues.annoAccademico || "");
+  }
+}, [defaultValues]);
+
+  
 
   useEffect(() => {
     if (enteredName) validateNameHandler(enteredName);
@@ -85,6 +99,8 @@ const Form: React.FC<propsContainer> = ({ onSendData }) => {
       isValid: nameIsValid && surnameIsValid && emailIsValid && telephoneNumberIsValid && corsoLaureaIsValid && annoAccademicoIsValid,
     });
   }, [data, onSendData, nameIsValid, surnameIsValid, emailIsValid, telephoneNumberIsValid, corsoLaureaIsValid, annoAccademicoIsValid]);
+
+  
 
   const nameChangeHandler = (e: React.ChangeEvent<HTMLInputElement>) => setEnteredName(e.target.value);
   const surnameChangeHandler = (e: React.ChangeEvent<HTMLInputElement>) => setEnteredSurname(e.target.value);

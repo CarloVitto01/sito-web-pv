@@ -10,11 +10,11 @@ import IntervalloPagine from "../components/IntervalloPagine";
 import SingleDelimiter from "../components/SingleDelimiter";
 import NumeroCopie from "../components/NumeroCopie";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { storage } from "../backend/firebase";
+import { auth, storage } from "../backend/firebase";
 import { db } from "../backend/firebase";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { v4 } from "uuid";
-import { collection, doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { collection, doc, setDoc, serverTimestamp, getDoc, updateDoc } from "firebase/firestore";
 //import FinalModal from "../components/FinalModal";
 import { TOKENA4, CHAT_IDA4 } from "../backend/telegram";
 import { FormData } from "../types/FormData";
@@ -22,6 +22,7 @@ import { FileHandler } from "../types/FileHandler";
 import { RangePagesData } from "../types/RangePagesData";
 import MultiInput from "./MultiInput";
 import RiepilogoOrdine from "../components/RiepilogoOrdine";
+import { onAuthStateChanged } from "firebase/auth";
 
 //Constants
 
@@ -370,9 +371,23 @@ const A4PagePrint = () => {
     const PDFref = doc(collectionRef, id);
 
     setDoc(PDFref, dataToUpload)
-      .then(() => {
-        setFormSubmitting(false);
-        setFormSubmitted(true);
+  .then(async () => {
+    // 🔄 AGGIORNA I DATI UTENTE SU RACCOLTA "users"
+    if (auth.currentUser) {
+      const userRef = doc(db, "users", auth.currentUser.uid);
+      await updateDoc(userRef, {
+        displayName: dataToUpload.nome,
+        cognome: dataToUpload.cognome,
+        email: dataToUpload.email,
+        telefono: dataToUpload.telefono,
+        corsoLaurea: dataToUpload.corsoLaurea,
+        annoAccademico: dataToUpload.annoAccademico,
+      });
+    }
+
+    setFormSubmitting(false);
+    setFormSubmitted(true);
+
 
         const messageText = `
 =====================
@@ -444,6 +459,32 @@ ${fileLinks}
     }
   }, [formSubmitted]);
 
+    useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      const docRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(docRef);
+
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+
+        setData({
+          name: userData.displayName || "",
+          surname: userData.cognome || "",
+          email: userData.email || "",
+          telephoneNumber: userData.telefono || "",
+          corsoLaurea: userData.corsoLaurea || "",
+          annoAccademico: userData.annoAccademico || "",
+          isValid: false // Validazione verrà fatta normalmente da Form
+        });
+      }
+    }
+  });
+
+  return () => unsubscribe();
+}, []);
+
+
   return (
     <div className="">
       <Header />
@@ -452,7 +493,8 @@ ${fileLinks}
         text={"In questa pagina potrai ordinare la stampa del tuo documento, inserisci le caratteristiche disponibili nelle varie sezioni per poter avere dei documenti cartacei di qualità."}
       />
       <SingleDelimiter />
-      <Form onSendData={setDataHandler} />
+      <Form onSendData={setDataHandler} defaultValues={data} />
+
       <SingleDelimiter />
       <MultiInput onSendData={setPDFHandler} />
       <SingleDelimiter />

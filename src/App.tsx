@@ -15,6 +15,8 @@ import Home from './components/Home'; // corretto il path
 import SplashScreen from './components/SplashScreen'; // aggiunto
 import './App.css'; // per stile splash
 import ComingSoon from './components/ComingSoon/ComingSoon';
+import Login from './components/Login/pages/Login';
+import Register from './components/Login/pages/Register';
 
 const App: React.FC = () => {
   const [showSplash, setShowSplash] = useState(true);
@@ -32,7 +34,9 @@ const App: React.FC = () => {
     <Router>
       <ScrollToTop />
       <Routes>
+        <Route path="/login" element={<Login />} />
         <Route path="/" element={<Home />} />
+        <Route path="/register" element={<Register />} />
         <Route path="/printA4" element={<A4PagePrint />} />
         <Route path="/printA3" element={<A3PagePrint />} />
         <Route path="/comingSoon" element={<ComingSoon />} />
