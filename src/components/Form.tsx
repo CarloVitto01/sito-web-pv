@@ -3,27 +3,16 @@ import classes from "./Form.module.css";
 import { FormData } from "../types/FormData";
 import { motion } from "framer-motion";
 
-const containsOnlyLetters = (value: string) => {
-  var regex = /^[a-zA-Z\s]+$/;
-  return regex.test(value);
-};
-
-const validateEmail = (email: string) => {
-  var regex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
-  return regex.test(email);
-};
-
-const containsOnlyNumbers = (number: string) => {
-  var regex = /^[0-9\s]+$/;
-  return regex.test(number);
-};
+const containsOnlyLetters = (value: string) => /^[a-zA-Z\s]+$/.test(value);
+const validateEmail = (email: string) => /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/.test(email);
+const containsOnlyNumbers = (number: string) => /^[0-9\s]+$/.test(number);
 
 interface propsContainer {
   onSendData: (value: FormData) => void;
-  defaultValues?: FormData; // 👈 aggiunto
+  defaultValues?: FormData;
 }
 
-const Form: React.FC<propsContainer> = ({ onSendData, defaultValues  }) => {
+const Form: React.FC<propsContainer> = ({ onSendData, defaultValues }) => {
   const [enteredName, setEnteredName] = useState<string>("");
   const [nameIsValid, setNameIsValid] = useState<boolean>();
   const [enteredSurname, setEnteredSurname] = useState<string>("");
@@ -33,9 +22,8 @@ const Form: React.FC<propsContainer> = ({ onSendData, defaultValues  }) => {
   const [enteredTelephoneNumber, setEnteredTelephoneNumber] = useState<string>("");
   const [telephoneNumberIsValid, setTelephoneNumberIsValid] = useState<boolean>();
   const [enteredCorsoLaurea, setEnteredCorsoLaurea] = useState<string>("");
-  const [corsoLaureaIsValid, setCorsoLaureaIsValid] = useState<boolean>();
   const [enteredAnnoAccademico, setEnteredAnnoAccademico] = useState<string>("");
-  const [annoAccademicoIsValid, setAnnoAccademicoIsValid] = useState<boolean>();
+
   const [data, setData] = useState<FormData>({
     name: "",
     surname: "",
@@ -46,17 +34,15 @@ const Form: React.FC<propsContainer> = ({ onSendData, defaultValues  }) => {
   });
 
   useEffect(() => {
-  if (defaultValues) {
-    setEnteredName(defaultValues.name || "");
-    setEnteredSurname(defaultValues.surname || "");
-    setEnteredEmail(defaultValues.email || "");
-    setEnteredTelephoneNumber(defaultValues.telephoneNumber || "");
-    setEnteredCorsoLaurea(defaultValues.corsoLaurea || "");
-    setEnteredAnnoAccademico(defaultValues.annoAccademico || "");
-  }
-}, [defaultValues]);
-
-  
+    if (defaultValues) {
+      setEnteredName(defaultValues.name || "");
+      setEnteredSurname(defaultValues.surname || "");
+      setEnteredEmail(defaultValues.email || "");
+      setEnteredTelephoneNumber(defaultValues.telephoneNumber || "");
+      setEnteredCorsoLaurea(defaultValues.corsoLaurea || "");
+      setEnteredAnnoAccademico(defaultValues.annoAccademico || "");
+    }
+  }, [defaultValues]);
 
   useEffect(() => {
     if (enteredName) validateNameHandler(enteredName);
@@ -75,14 +61,6 @@ const Form: React.FC<propsContainer> = ({ onSendData, defaultValues  }) => {
   }, [enteredTelephoneNumber]);
 
   useEffect(() => {
-    if (enteredCorsoLaurea) validateCorsoLaureaHandler(enteredCorsoLaurea);
-  }, [enteredCorsoLaurea]);
-
-  useEffect(() => {
-    if (enteredAnnoAccademico) validateAnnoAccademicoNumber(enteredAnnoAccademico);
-  }, [enteredAnnoAccademico]);
-
-  useEffect(() => {
     setData({
       name: enteredName,
       surname: enteredSurname,
@@ -95,13 +73,10 @@ const Form: React.FC<propsContainer> = ({ onSendData, defaultValues  }) => {
 
   useEffect(() => {
     onSendData({
-  ...data,
-  isValid: nameIsValid && surnameIsValid && emailIsValid && telephoneNumberIsValid,
-});
-
-  }, [data, onSendData, nameIsValid, surnameIsValid, emailIsValid, telephoneNumberIsValid, corsoLaureaIsValid, annoAccademicoIsValid]);
-
-  
+      ...data,
+      isValid: nameIsValid && surnameIsValid && emailIsValid && telephoneNumberIsValid,
+    });
+  }, [data, onSendData, nameIsValid, surnameIsValid, emailIsValid, telephoneNumberIsValid]);
 
   const nameChangeHandler = (e: React.ChangeEvent<HTMLInputElement>) => setEnteredName(e.target.value);
   const surnameChangeHandler = (e: React.ChangeEvent<HTMLInputElement>) => setEnteredSurname(e.target.value);
@@ -117,96 +92,45 @@ const Form: React.FC<propsContainer> = ({ onSendData, defaultValues  }) => {
     const sanitized = number.replace(/\s+/g, '');
     setTelephoneNumberIsValid(sanitized.length === 10 && containsOnlyNumbers(sanitized));
   };
-  const validateCorsoLaureaHandler = (value: string) => setCorsoLaureaIsValid(value.trim().length > 0 && containsOnlyLetters(value.trim()));
-  const validateAnnoAccademicoNumber = (value: string) => setAnnoAccademicoIsValid(value.trim().length === 4 && containsOnlyNumbers(value));
 
-// Form.tsx (solo la parte JSX interna)
-return (
-  <motion.form
-    className={classes.form}
-    initial={{ opacity: 0, y: 30 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.8 }}
-    viewport={{ once: true }}
-  >
-    <div className={classes["container-form"]}>
-      {/* UNICO contenitore credentials */}
-      <div className={classes.credentials}>
-        {/* Nome */}
-        <div className={`${classes.credential} ${nameIsValid === false ? classes.invalid : ""}`}>
-          <label htmlFor="name" className={classes.voice}>Nome:</label>
-          <input
-            type="text"
-            id="name"
-            value={enteredName}
-            onChange={nameChangeHandler}
-            onBlur={() => validateNameHandler(enteredName)}
-          />
-        </div>
-
-        {/* Cognome */}
-        <div className={`${classes.credential} ${surnameIsValid === false ? classes.invalid : ""}`}>
-          <label htmlFor="surname" className={classes.voice}>Cognome:</label>
-          <input
-            type="text"
-            id="surname"
-            value={enteredSurname}
-            onChange={surnameChangeHandler}
-            onBlur={() => validateSurnameHandler(enteredSurname)}
-          />
-        </div>
-
-        {/* Email */}
-        <div className={`${classes.credential} ${emailIsValid === false ? classes.invalid : ""}`}>
-          <label htmlFor="email" className={classes.voice}>Email:</label>
-          <input
-            type="text"
-            id="email"
-            value={enteredEmail}
-            onChange={emailChangeHandler}
-            onBlur={() => validateEmailHandler(enteredEmail)}
-          />
-        </div>
-
-        {/* Telefono */}
-        <div className={`${classes.credential} ${telephoneNumberIsValid === false ? classes.invalid : ""}`}>
-          <label htmlFor="telephoneNumber" className={classes.voice}>Telefono:</label>
-          <input
-            type="text"
-            id="telephoneNumber"
-            value={enteredTelephoneNumber}
-            onChange={telephoneNumberChangeHandler}
-            onBlur={() => validateTelephoneNumber(enteredTelephoneNumber)}
-          />
-        </div>
-
-        {/* Corso di laurea */}
-        <div className={`${classes.credential} ${corsoLaureaIsValid === false ? classes.invalid : ""}`}>
-          <label htmlFor="corsoLaurea" className={classes.voice}>Corso:</label>
-          <input
-            type="text"
-            id="corsoLaurea"
-            value={enteredCorsoLaurea}
-            onChange={corsoLaureaChangeHandler}
-            onBlur={() => validateCorsoLaureaHandler(enteredCorsoLaurea)}
-          />
-        </div>
-
-        {/* Anno accademico */}
-        <div className={`${classes.credential} ${annoAccademicoIsValid === false ? classes.invalid : ""}`}>
-          <label htmlFor="annoAccademico" className={classes.voice}>Anno:</label>
-          <input
-            type="text"
-            id="annoAccademico"
-            value={enteredAnnoAccademico}
-            onChange={annoAccademicoChangeHandler}
-            onBlur={() => validateAnnoAccademicoNumber(enteredAnnoAccademico)}
-          />
+  return (
+    <motion.form
+      className={classes.form}
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8 }}
+      viewport={{ once: true }}
+    >
+      <div className={classes["container-form"]}>
+        <div className={classes.credentials}>
+          <div className={`${classes.credential} ${nameIsValid === false ? classes.invalid : ""}`}>
+            <label htmlFor="name" className={classes.voice}>Nome:</label>
+            <input type="text" id="name" value={enteredName} onChange={nameChangeHandler} onBlur={() => validateNameHandler(enteredName)} />
+          </div>
+          <div className={`${classes.credential} ${surnameIsValid === false ? classes.invalid : ""}`}>
+            <label htmlFor="surname" className={classes.voice}>Cognome:</label>
+            <input type="text" id="surname" value={enteredSurname} onChange={surnameChangeHandler} onBlur={() => validateSurnameHandler(enteredSurname)} />
+          </div>
+          <div className={`${classes.credential} ${emailIsValid === false ? classes.invalid : ""}`}>
+            <label htmlFor="email" className={classes.voice}>Email:</label>
+            <input type="text" id="email" value={enteredEmail} onChange={emailChangeHandler} onBlur={() => validateEmailHandler(enteredEmail)} />
+          </div>
+          <div className={`${classes.credential} ${telephoneNumberIsValid === false ? classes.invalid : ""}`}>
+            <label htmlFor="telephoneNumber" className={classes.voice}>Telefono:</label>
+            <input type="text" id="telephoneNumber" value={enteredTelephoneNumber} onChange={telephoneNumberChangeHandler} onBlur={() => validateTelephoneNumber(enteredTelephoneNumber)} />
+          </div>
+          <div className={classes.credential}>
+            <label htmlFor="corsoLaurea" className={classes.voice}>Corso (opzionale):</label>
+            <input type="text" id="corsoLaurea" value={enteredCorsoLaurea} onChange={corsoLaureaChangeHandler} />
+          </div>
+          <div className={classes.credential}>
+            <label htmlFor="annoAccademico" className={classes.voice}>Anno (opzionale):</label>
+            <input type="text" id="annoAccademico" value={enteredAnnoAccademico} onChange={annoAccademicoChangeHandler} />
+          </div>
         </div>
       </div>
-    </div>
-  </motion.form>
-);
+    </motion.form>
+  );
 };
 
 export default React.memo(Form);

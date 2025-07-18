@@ -5,14 +5,11 @@ import Header from "../components/Header";
 import Intro from "../components/Intro";
 import ContainerCards from "../components/ContainerCards";
 import SingleDelimiter from "../components/SingleDelimiter";
-//import Modal from "../components/Modal";
-//import FinalModal from "../components/FinalModal";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { auth, storage } from "../backend/firebase";
-import { db } from "../backend/firebase";
+import { auth, storage, db } from "../backend/firebase";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { v4 } from "uuid";
-import { collection, doc, setDoc, serverTimestamp, getDoc, updateDoc } from "firebase/firestore";
+import { collection, doc, setDoc, serverTimestamp, getDoc, updateDoc, onSnapshot } from "firebase/firestore";
 import { TOKENA3, CHAT_IDA3 } from "../backend/telegram";
 import { FormData } from "../types/FormData";
 import { FileHandler } from "../types/FileHandler";
@@ -21,40 +18,13 @@ import NumeroCopie from "./NumeroCopie";
 import MultiInput from "./MultiInput";
 import classes from "../components/A3PagePrint.module.css";
 import RiepilogoOrdineA3 from "../components/RiepilogoOrdineA3";
+import { onAuthStateChanged } from "firebase/auth";
 
-
-// Constants
-const grammaturaNormale: number = 0.12;
-const grammaturaCartoncino: number = 0.17;
-const biancoNero: number = 0.03;
-const colore: number = 0.13;
-
-
-const inchiostroEnum = {
-    BIANCOENERO: 0,
-    COLORE: 1,
-};
-
-const paginaEnum = {
-    FRONTE_RETRO: 0,
-    FRONTE: 1,
-};
-
-const plastificazioneEnum = {
-    SI: 0,
-    NO: 1,
-};
-
-const layoutEnum = {
-    ORIZZONTALE: 0,
-    VERTICALE: 1,
-    AUTO: 2,
-};
-
-const grammaturaEnum = {
-    NORMALE: 0,
-    CARTONCINO: 1
-}
+const inchiostroEnum = { BIANCOENERO: 0, COLORE: 1 };
+const paginaEnum = { FRONTE_RETRO: 0, FRONTE: 1 };
+const plastificazioneEnum = { SI: 0, NO: 1 };
+const layoutEnum = { ORIZZONTALE: 0, VERTICALE: 1, AUTO: 2 };
+const grammaturaEnum = { NORMALE: 0, CARTONCINO: 1 };
 
 const A3PagePrint = () => {
     const [data, setData] = useState<FormData>({
@@ -78,30 +48,40 @@ const A3PagePrint = () => {
     const [formSubmitting, setFormSubmitting] = useState<boolean>(false);
     const [formError, setFormError] = useState<boolean>(false);
     const [numeroPDF, setNumeroPDF] = useState<number>(0);
+    const [costi, setCosti] = useState({
+        grammaturaNormale: 0.12,
+        grammaturaCartoncino: 0.17,
+        biancoNero: 0.03,
+        colore: 0.13,
+        plastificazione: 0.30
+    });
+
+    
 
     useEffect(() => {
-        const fetchUserData = async () => {
-            if (auth.currentUser) {
-                const userRef = doc(db, "users", auth.currentUser.uid);
-                const userSnap = await getDoc(userRef);
-                if (userSnap.exists()) {
-                    const userData = userSnap.data();
-                    setData((prev) => ({
-                        ...prev,
-                        name: userData.displayName || "",
-                        surname: userData.cognome || "",
-                        email: userData.email || "",
-                        telephoneNumber: userData.telefono || "",
-                        corsoLaurea: userData.corsoLaurea || "",
-                        annoAccademico: userData.annoAccademico || "",
-                        isValid: true,
-                    }));
+        const costiRef = doc(db, "configA3", "costi");
+        const unsub = onSnapshot(costiRef, (snap) => {
+            if (snap.exists()) {
+                const data = snap.data();
+                if (
+                    typeof data.grammaturaNormale === "number" &&
+                    typeof data.grammaturaCartoncino === "number" &&
+                    typeof data.biancoNero === "number" &&
+                    typeof data.colore === "number" &&
+                    typeof data.plastificazione === "number"
+                ) {
+                    setCosti(data as {
+                        grammaturaNormale: number;
+                        grammaturaCartoncino: number;
+                        biancoNero: number;
+                        colore: number;
+                        plastificazione: number;
+                    });
                 }
             }
-        };
-        fetchUserData();
+        });
+        return () => unsub();
     }, []);
-
 
     useEffect(() => {
         if (formSubmitted || formSubmitting || formError) {
@@ -142,18 +122,16 @@ const A3PagePrint = () => {
 
     const setPDFHandler = useCallback((files: FileHandler[], totalPages: number) => {
         const validFiles = files
-            .filter((f) => f.file !== null)
-            .map((f) => ({
-                file: f.file as File,
-                pages: f.numPages || 0,
-            }));
-
+          .filter((f) => f.file !== null)
+          .map((f) => ({
+            file: f.file as File,
+            pages: f.numPages || 0,
+          }));
+    
         setFileData(validFiles);
         setNumeroPDF(validFiles.length);
         setNumeroPaginePDF(totalPages);
-    }, []);
-
-
+      }, []);
 
 
     // Calculate total order
@@ -161,40 +139,25 @@ const A3PagePrint = () => {
         const calcoloPreventivo = () => {
             let totale = 0;
             let pagine = numeroPaginePDF;
-            let fogli;
-            let foglio = grammatura === grammaturaEnum.CARTONCINO ? grammaturaCartoncino : grammaturaNormale;
-            let inchiostroTotale;
-            let prezzoInchiostro = inchiostro === inchiostroEnum.COLORE ? colore : biancoNero;
+            let fogli = pagina === paginaEnum.FRONTE_RETRO ? Math.ceil(pagine / 2) : pagine;
+            let costoFoglio = grammatura === grammaturaEnum.CARTONCINO ? costi.grammaturaCartoncino : costi.grammaturaNormale;
+            let costoInchiostro = inchiostro === inchiostroEnum.COLORE ? costi.colore : costi.biancoNero;
+            let inchiostroTotale = pagina === paginaEnum.FRONTE_RETRO ? 2 * costoInchiostro : costoInchiostro;
 
-            if (pagina === paginaEnum.FRONTE_RETRO) {
-                fogli = Math.ceil(pagine / 2);
-                inchiostroTotale = 2 * prezzoInchiostro;
-            } else {
-                fogli = pagine;
-                inchiostroTotale = prezzoInchiostro;
-            }
-
-            totale += fogli * (foglio + inchiostroTotale);
+            totale += fogli * (costoFoglio + inchiostroTotale);
             totale *= numeroCopie;
-
-            if (plastificazione === plastificazioneEnum.SI) {
-                totale += 0.30 * pagine;
-            }
-            if (numeroCopie === 0) {
-                totale = 0;
-            }
-
+            if (plastificazione === plastificazioneEnum.SI) totale += costi.plastificazione * pagine;
+            if (numeroCopie === 0) totale = 0;
             return totale.toFixed(2);
         };
 
-        if (numeroPaginePDF > 0) {
-            let total = calcoloPreventivo();
-            setPreventivo(total);
-        }
-        if (numeroPDF === 0) {
-            setPreventivo("0.00")
-        }
-    }, [inchiostro, pagina, layout, numeroPaginePDF, numeroCopie, plastificazione, grammatura, numeroPDF]);
+        if (numeroPaginePDF > 0) setPreventivo(calcoloPreventivo());
+        if (numeroPDF === 0) setPreventivo("0.00");
+    }, [costi, inchiostro, pagina, numeroPaginePDF, numeroCopie, plastificazione, grammatura, numeroPDF]);
+
+    const setCopiesHandler = useCallback((value: number) => {
+        setNumeroCopie(value);
+    }, []);
 
     const submitFormHandler = useCallback(async (event?: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
         event?.preventDefault();
@@ -259,7 +222,7 @@ const A3PagePrint = () => {
             });
         }
 
-        const collectionRef = collection(db, "StampePDF");
+        const collectionRef = collection(db, "StampePDFA3");
         const PDFref = doc(collectionRef, id);
         setDoc(PDFref, dataToUpload)
             .then(() => {
@@ -322,19 +285,6 @@ ${fileLinks}
 
 
 
-    // Send data to the Firebase server
-    //const closeFinalModalHandler = useCallback(() => {
-    //    setFormSubmitted(false);
-    //    setFormSubmitting(false);
-    //    setFormError(false);
-    //    window.location.reload();
-    //}, []);
-    const setCopiesHandler = useCallback((value: number) => {
-        setNumeroCopie(value);
-    }, []);
-
-
-
     useEffect(() => {
         if (formSubmitted) {
             const timeout = setTimeout(() => {
@@ -344,7 +294,30 @@ ${fileLinks}
         }
     }, [formSubmitted]);
 
+useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const docRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(docRef);
 
+        if (userSnap.exists()) {
+          const userData = userSnap.data();
+
+          setData({
+            name: userData.displayName || "",
+            surname: userData.cognome || "",
+            email: userData.email || "",
+            telephoneNumber: userData.telefono || "",
+            corsoLaurea: userData.corsoLaurea || "",
+            annoAccademico: userData.annoAccademico || "",
+            isValid: false // Validazione verrà fatta normalmente da Form
+          });
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
     return (
         <div className="container">
@@ -493,7 +466,7 @@ ${fileLinks}
                         layout={layout === 0 ? "Orizzontale" : layout === 1 ? "Verticale" : "Auto"}
                         plastificazione={plastificazione === 0 ? "Si" : "No"}
                         prezzo={preventivo}
-                        onConfirmOrder={submitFormHandler}
+                        onConfirmOrder={submitFormHandler} // Da completare se necessario
                         disabled={!data.isValid || fileData.length === 0 || formSubmitting}
                         loading={formSubmitting}
                         submitted={formSubmitted}

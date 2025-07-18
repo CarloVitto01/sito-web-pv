@@ -130,6 +130,13 @@ const Header: React.FC = () => {
                   </Link>
                 </li>
               )}
+                {userRole === "amministratore" && (
+                  <li>
+                    <Link to="/gestionaleA3" onClick={toggleSideMenu} className={classes["link-menu"]}>
+                      Gestionale A3
+                    </Link>
+                  </li>
+                )}
 
             </ul>
 
