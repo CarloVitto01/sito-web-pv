@@ -380,22 +380,22 @@ const A4PagePrint = () => {
     const PDFref = doc(collectionRef, id);
 
     setDoc(PDFref, dataToUpload)
-      .then(async () => {
-        // 🔄 AGGIORNA I DATI UTENTE SU RACCOLTA "users"
-        if (auth.currentUser) {
-          const userRef = doc(db, "users", auth.currentUser.uid);
-          await updateDoc(userRef, {
-            displayName: dataToUpload.nome,
-            cognome: dataToUpload.cognome,
-            email: dataToUpload.email,
-            telefono: dataToUpload.telefono,
-            corsoLaurea: dataToUpload.corsoLaurea,
-            annoAccademico: dataToUpload.annoAccademico,
-          });
-        }
+  .then(async () => {
+    // 🔄 AGGIORNA I DATI UTENTE SU RACCOLTA "users"
+    if (auth.currentUser) {
+      const userRef = doc(db, "users", auth.currentUser.uid);
+      await updateDoc(userRef, {
+        displayName: dataToUpload.nome,
+        cognome: dataToUpload.cognome,
+        email: dataToUpload.email,
+        telefono: dataToUpload.telefono,
+        corsoLaurea: dataToUpload.corsoLaurea,
+        annoAccademico: dataToUpload.annoAccademico,
+      });
+    }
 
-        setFormSubmitting(false);
-        setFormSubmitted(true);
+    setFormSubmitting(false);
+    setFormSubmitted(true);
 
 
         const messageText = `
@@ -468,30 +468,30 @@ ${fileLinks}
     }
   }, [formSubmitted]);
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const docRef = doc(db, "users", user.uid);
-        const userSnap = await getDoc(docRef);
+    useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      const docRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(docRef);
 
-        if (userSnap.exists()) {
-          const userData = userSnap.data();
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
 
-          setData({
-            name: userData.displayName || "",
-            surname: userData.cognome || "",
-            email: userData.email || "",
-            telephoneNumber: userData.telefono || "",
-            corsoLaurea: userData.corsoLaurea || "",
-            annoAccademico: userData.annoAccademico || "",
-            isValid: false // Validazione verrà fatta normalmente da Form
-          });
-        }
+        setData({
+          name: userData.displayName || "",
+          surname: userData.cognome || "",
+          email: userData.email || "",
+          telephoneNumber: userData.telefono || "",
+          corsoLaurea: userData.corsoLaurea || "",
+          annoAccademico: userData.annoAccademico || "",
+          isValid: false // Validazione verrà fatta normalmente da Form
+        });
       }
-    });
+    }
+  });
 
-    return () => unsubscribe();
-  }, []);
+  return () => unsubscribe();
+}, []);
 
 
   return (

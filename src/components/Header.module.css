@@ -79,10 +79,14 @@
   align-items: center;
 }
 
-/* Burger Menu - visibile solo su mobile */
 .burger-section {
-  display: none;
+  display: block;
+  /* rimuovi display: none */
+  position: absolute;
+  left: 20px;
+  top: 15px;
 }
+
 
 .burger-icon {
   font-size: 1.8rem;
@@ -134,23 +138,27 @@
 
 .side-menu li {
   margin: 1em 0;
-  border-bottom: 1px solid var(--color-gold); /* fisso dorato */
+  border-bottom: 1px solid var(--color-gold);
+  /* fisso dorato */
   padding-bottom: 0.5em;
 }
 
 .side-menu li:hover {
-  border-bottom: 1px solid var(--color-gold); /* rimane dorata */
+  border-bottom: 1px solid var(--color-gold);
+  /* rimane dorata */
 }
 
 .close-button {
   background: none;
   border: none;
-  font-size: 24px;
+  font-size: 40%;
   color: var(--color-gold);
   cursor: pointer;
   position: absolute;
-  top: 20px;
+  top: 10px;
   right: 20px;
+  font-weight: bold;
+  text-shadow: 0 0 5px gold;
 }
 
 .welcome-user {
@@ -161,28 +169,20 @@
   margin-bottom: 10px;
 }
 
+.menu-section,
+.placeholder-section {
+  display: none;
+}
 
-/* Responsive mobile */
-@media (max-width: 768px) {
-  .burger-section {
-    display: block;
-    position: absolute;
-    left: 20px;
-    top: 15px;
-  }
+.logo-section {
+  grid-column: 1 / -1;
+  justify-content: center;
+}
 
-  .menu-section,
-  .placeholder-section {
-    display: none;
-  
-  }
-
-  .logo-section {
-    grid-column: 1 / -1;
-    justify-content: center;
-  }
-
-  .Logo {
-    margin: 0 auto;
-  }
+.Logo {
+  max-width: 180px;
+  /* leggermente più piccolo se vuoi equilibrio */
+  width: 100%;
+  margin: 8px auto;
+  filter: drop-shadow(0 0 6px rgba(199, 171, 43, 0.7));
 }

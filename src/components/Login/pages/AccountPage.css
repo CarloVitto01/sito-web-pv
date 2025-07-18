@@ -1,0 +1,49 @@
+.account-page {
+  display: flex;
+  justify-content: center;
+  padding: 30px;
+  padding-top: 100px;
+}
+
+.account-container {
+  background-color: #111;
+  padding: 30px;
+  border: 2px solid gold;
+  border-radius: 10px;
+  color: white;
+  max-width: 500px;
+  width: 100%;
+}
+
+.account-container h2 {
+  text-align: center;
+}
+
+.account-container input {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+}
+
+
+.account-container input[readonly] {
+  background-color: #111;
+  color: white;
+  cursor: default;
+}
+
+
+.account-container .button-row {
+  display: flex;
+  justify-content: space-between;
+  gap:10px;
+}
+
+.account-container .success-message {
+  color: lightgreen;
+}
+
+.account-container .error-message {
+  color: red;
+}

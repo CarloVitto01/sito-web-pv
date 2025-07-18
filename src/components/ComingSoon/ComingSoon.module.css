@@ -73,19 +73,71 @@
   background-color: #c4a000;
 }
 
-/* Responsive */
+/* Nuove classi per i loghi laterali */
+.sideLogoLeft,
+.sideLogoRight {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.sideLogoLeft img,
+.sideLogoRight img {
+  max-width: 150px;
+  height: auto;
+}
+
+/* Loghi mobile */
+.mobileLogoTop,
+.mobileLogoBottom {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .container {
     flex-direction: column;
     justify-content: center;
-    gap: 40px;
+    align-items: center; /* centra anche orizzontalmente */
+    gap: 20px;
+    text-align: center;
+    padding: 40px 20px;
   }
 
-  .sideLogo {
-    display: none; /* nasconde i loghi laterali su mobile */
+  .sideLogoLeft,
+  .sideLogoRight {
+    display: none; /* nasconde loghi laterali su mobile */
+  }
+
+  .mobileLogoTop,
+  .mobileLogoBottom {
+    display: block;
+    text-align: center;
+    margin-top: 40px; 
+  }
+
+  .mobileLogoTop img,
+  .mobileLogoBottom img {
+    max-width: 90px;
+    height: auto;
+    margin: 0 auto;
+  }
+
+  .content {
+    width: 100%;
   }
 
   .content h1 {
-    font-size: 3rem;
+    font-size: 2.5rem;
+    margin: 20px 0;
+  }
+
+  .content p {
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+  }
+
+  .form, .button {
+    justify-content: center;
   }
 }

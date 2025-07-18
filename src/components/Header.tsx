@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { FiMenu } from "react-icons/fi";
 import logo from "../assets/images/Firma_Bianca_oro_PV.png";
@@ -18,6 +18,7 @@ const Header: React.FC = () => {
 
   const location = useLocation();
   const navigate = useNavigate();
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -43,6 +44,19 @@ const Header: React.FC = () => {
 
   //const toggleMenu = () => setMenuOpen(!isMenuOpen);
   const goHome = () => navigate("/");
+
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (sideMenuOpen && menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setSideMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [sideMenuOpen]);
+
 
   return (
     <div className={classes.header}>
@@ -71,37 +85,10 @@ const Header: React.FC = () => {
         </Link>
       </div>
 
-      {/* Login / Logout solo desktop */}
-      <div className={classes["placeholder-section"]}>
-        {user ? (
-          <>
-            <span className={classes["user-name"]}>{displayName}</span>
-            <button
-              onClick={() => {
-                signOut(auth).then(() => {
-                  setUser(null);
-                  setDisplayName("");
-                  window.location.href = "/";
-                });
-              }}
-              className={classes["menu-button-gold"]}
-            >
-              Esci
-            </button>
-          </>
-        ) : (
-          <button
-            onClick={() => navigate("/login")}
-            className={classes["menu-button-gold"]}
-          >
-            Accedi
-          </button>
-        )}
-      </div>
 
       {/* Side Menu Mobile */}
       {sideMenuOpen && (
-        <div className={classes["side-menu"]}>
+       <div ref={menuRef} className={classes["side-menu"]}>
           <button onClick={toggleSideMenu} className={classes["close-button"]}>✕</button>
           <nav className={classes["side-nav"]}>
             {/* Benvenuto utente */}
@@ -113,6 +100,18 @@ const Header: React.FC = () => {
 
             {/* Collegamenti principali */}
             <ul>
+              {location.pathname !== "/" && (
+                <li>
+                  <Link
+                    to="/"
+                    onClick={toggleSideMenu}
+                    className={classes["link-menu"]}
+                  >
+                    Torna Alla Home
+                  </Link>
+                </li>
+              )}
+
               <li>
                 <Link to="/printA4" onClick={toggleSideMenu} className={classes["link-menu"]}>
                   🖨️ Stampa in A4
@@ -130,30 +129,43 @@ const Header: React.FC = () => {
                   </Link>
                 </li>
               )}
-                {userRole === "amministratore" && (
-                  <li>
-                    <Link to="/gestionaleA3" onClick={toggleSideMenu} className={classes["link-menu"]}>
-                      Gestionale A3
-                    </Link>
-                  </li>
-                )}
+              {userRole === "amministratore" && (
+                <li>
+                  <Link to="/gestionaleA3" onClick={toggleSideMenu} className={classes["link-menu"]}>
+                    Gestionale A3
+                  </Link>
+                </li>
+              )}
 
             </ul>
 
             {/* Login / Logout o Registrazione */}
             {user ? (
-              <button
-                onClick={() => {
-                  signOut(auth).then(() => {
-                    setUser(null);
-                    setDisplayName("");
-                    window.location.href = "/";
-                  });
-                }}
-                className={classes["logout-button"]}
-              >
-                Esci
-              </button>
+              <>
+                {/* 👤 Link alla pagina Account */}
+                <button
+                  onClick={() => {
+                    toggleSideMenu();
+                    navigate("/account");
+                  }}
+                  className={classes["account-button"]} // Puoi aggiungere stile se serve
+                >
+                  👤 Il mio Account
+                </button>
+
+                <button
+                  onClick={() => {
+                    signOut(auth).then(() => {
+                      setUser(null);
+                      setDisplayName("");
+                      window.location.href = "/";
+                    });
+                  }}
+                  className={classes["logout-button"]}
+                >
+                  Esci
+                </button>
+              </>
             ) : (
               <div className={classes["auth-links"]}>
                 <button onClick={() => {
@@ -171,6 +183,7 @@ const Header: React.FC = () => {
                 </button>
               </div>
             )}
+
           </nav>
         </div>
       )}
