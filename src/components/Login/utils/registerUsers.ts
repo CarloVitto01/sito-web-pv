@@ -15,12 +15,13 @@ export const registerUser = async (
 ) => {
   const cred = await createUserWithEmailAndPassword(auth, email, password);
 
-  // Rimuove i campi undefined
+  // Rimuove i campi undefined e imposta ruolo PublicUser
   const filteredData = Object.fromEntries(
     Object.entries({
       uid: cred.user.uid,
       email: cred.user.email,
       displayName: displayName || "",
+      ruolo: "PublicUser", // 👈 aggiunto ruolo fisso
       createdAt: serverTimestamp(),
       ...extraData,
     }).filter(([_, v]) => v !== undefined)

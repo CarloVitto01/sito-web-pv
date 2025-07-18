@@ -2,7 +2,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   align-items: center;
-  background-color: var(--color-background); /* era #0a0a0a */
+  background-color: var(--color-background);
   border-bottom: 2px solid var(--color-gold);
   position: fixed;
   top: 0;
@@ -39,6 +39,7 @@
   filter: drop-shadow(0 0 6px rgba(199, 171, 43, 0.7));
 }
 
+/* Button: Home */
 .menu-button-home {
   background-color: transparent;
   display: flex;
@@ -52,61 +53,7 @@
   font-size: 15px;
 }
 
-.side-menu {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 260px;
-  height: 100%;
-  background-color: rgba(15, 15, 15, 0.97); /* lasciato così: simula trasparenza su fondo scuro */
-  box-shadow: 2px 0 10px rgba(199, 171, 43, 0.3);
-  z-index: 999;
-  transition: transform var(--transition-fast) ease;
-  transform: translateX(0);
-  backdrop-filter: blur(5px);
-  padding-top: 60px;
-}
-
-.link-menu {
-  text-decoration: none;
-  color: var(--color-text); /* era #ffffff */
-  transition: color var(--transition-fast);
-}
-
-.link-menu:hover {
-  color: var(--color-gold);
-}
-
-.side-menu ul {
-  list-style: none;
-  padding: 0 20px;
-}
-
-.side-menu li {
-  margin: 1em 0;
-  border-bottom: 1px solid var(--color-text); /* era #333 */
-  padding-bottom: 0.5em;
-}
-
-.side-menu li:hover {
-  border-bottom: 1px solid var(--color-gold);
-}
-
-.close-button {
-  background: none;
-  border: none;
-  font-size: 24px;
-  color: var(--color-gold);
-  cursor: pointer;
-  position: absolute;
-  top: 20px;
-  right: 20px;
-}
-
-.side-menu.hidden {
-  transform: translateX(-100%);
-}
-
+/* Button: Login/Logout gold */
 .menu-button-gold {
   background-color: var(--color-gold);
   color: var(--color-text);
@@ -130,4 +77,112 @@
   margin-right: 8px;
   display: flex;
   align-items: center;
+}
+
+/* Burger Menu - visibile solo su mobile */
+.burger-section {
+  display: none;
+}
+
+.burger-icon {
+  font-size: 1.8rem;
+  color: var(--color-gold);
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+/* Side Menu - mobile */
+.side-menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 70%;
+  max-width: 260px;
+  background-color: rgba(15, 15, 15, 0.97);
+  box-shadow: 2px 0 10px rgba(199, 171, 43, 0.3);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  backdrop-filter: blur(5px);
+  transform: translateX(0);
+  transition: transform var(--transition-fast) ease;
+}
+
+.side-menu.hidden {
+  transform: translateX(-100%);
+}
+
+.side-menu a,
+.side-menu button {
+  color: var(--color-gold);
+  text-decoration: none;
+  background: none;
+  border: none;
+  margin: 10px 0;
+  font-size: 16px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.side-menu ul {
+  list-style: none;
+  padding: 0 20px;
+}
+
+.side-menu li {
+  margin: 1em 0;
+  border-bottom: 1px solid var(--color-gold); /* fisso dorato */
+  padding-bottom: 0.5em;
+}
+
+.side-menu li:hover {
+  border-bottom: 1px solid var(--color-gold); /* rimane dorata */
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--color-gold);
+  cursor: pointer;
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+.welcome-user {
+  color: white;
+  font-size: 16px;
+  font-weight: 500;
+  padding: 0 20px;
+  margin-bottom: 10px;
+}
+
+
+/* Responsive mobile */
+@media (max-width: 768px) {
+  .burger-section {
+    display: block;
+    position: absolute;
+    left: 20px;
+    top: 15px;
+  }
+
+  .menu-section,
+  .placeholder-section {
+    display: none;
+  
+  }
+
+  .logo-section {
+    grid-column: 1 / -1;
+    justify-content: center;
+  }
+
+  .Logo {
+    margin: 0 auto;
+  }
 }

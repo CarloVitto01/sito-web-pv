@@ -18,6 +18,7 @@ import ComingSoon from './components/ComingSoon/ComingSoon';
 import Login from './components/Login/pages/Login';
 import Register from './components/Login/pages/Register';
 
+
 const App: React.FC = () => {
   const [showSplash, setShowSplash] = useState(true);
 

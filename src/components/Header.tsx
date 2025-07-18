@@ -11,6 +11,10 @@ const Header: React.FC = () => {
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [displayName, setDisplayName] = useState("");
+
+  const [sideMenuOpen, setSideMenuOpen] = useState(false);
+  const toggleSideMenu = () => setSideMenuOpen((prev) => !prev);
+
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -38,14 +42,19 @@ const Header: React.FC = () => {
 
   return (
     <div className={classes.header}>
-      {/* Pulsante Home */}
+      {/* Menu burger solo mobile */}
+      <div className={classes["burger-section"]}>
+        <FiMenu
+          className={classes["burger-icon"]}
+          onClick={toggleSideMenu}
+          aria-label="Apri menu"
+        />
+      </div>
+
+      {/* Pulsante Home desktop */}
       <div className={classes["menu-section"]}>
         {location.pathname !== "/" && (
-          <button
-            className={classes["menu-button-home"]}
-            onClick={goHome}
-            aria-label="Torna alla Home"
-          >
+          <button className={classes["menu-button-home"]} onClick={goHome}>
             HOME
           </button>
         )}
@@ -58,7 +67,7 @@ const Header: React.FC = () => {
         </Link>
       </div>
 
-      {/* Login / Logout */}
+      {/* Login / Logout solo desktop */}
       <div className={classes["placeholder-section"]}>
         {user ? (
           <>
@@ -68,15 +77,13 @@ const Header: React.FC = () => {
                 signOut(auth).then(() => {
                   setUser(null);
                   setDisplayName("");
-                  window.location.href = "/"; // 🔁 Reload forzato alla root per mostrare di nuovo lo SplashScreen
+                  window.location.href = "/";
                 });
               }}
               className={classes["menu-button-gold"]}
             >
               Esci
             </button>
-
-
           </>
         ) : (
           <button
@@ -87,7 +94,69 @@ const Header: React.FC = () => {
           </button>
         )}
       </div>
+
+      {/* Side Menu Mobile */}
+      {sideMenuOpen && (
+        <div className={classes["side-menu"]}>
+          <button onClick={toggleSideMenu} className={classes["close-button"]}>✕</button>
+          <nav className={classes["side-nav"]}>
+            {/* Benvenuto utente */}
+            {user && (
+              <div className={classes["welcome-user"]}>
+                👋 Benvenuto, <strong>{displayName}</strong>
+              </div>
+            )}
+
+            {/* Collegamenti principali */}
+            <ul>
+              <li>
+                <Link to="/printA4" onClick={toggleSideMenu} className={classes["link-menu"]}>
+                  🖨️ Stampa in A4
+                </Link>
+              </li>
+              <li>
+                <Link to="/printA3" onClick={toggleSideMenu} className={classes["link-menu"]}>
+                  🖨️ Stampa in A3
+                </Link>
+              </li>
+            </ul>
+
+            {/* Login / Logout o Registrazione */}
+            {user ? (
+              <button
+                onClick={() => {
+                  signOut(auth).then(() => {
+                    setUser(null);
+                    setDisplayName("");
+                    window.location.href = "/";
+                  });
+                }}
+                className={classes["logout-button"]}
+              >
+                Esci
+              </button>
+            ) : (
+              <div className={classes["auth-links"]}>
+                <button onClick={() => {
+                  toggleSideMenu();
+                  navigate("/login");
+                }}>
+                  Accedi
+                </button>
+                <span style={{color:"white"}}>/</span>
+                <button onClick={() => {
+                  toggleSideMenu();
+                  navigate("/register");
+                }}>
+                  Registrati
+                </button>
+              </div>
+            )}
+          </nav>
+        </div>
+      )}
     </div>
+
   );
 };
 
