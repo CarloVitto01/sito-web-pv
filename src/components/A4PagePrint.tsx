@@ -14,7 +14,7 @@ import { auth, storage } from "../backend/firebase";
 import { db } from "../backend/firebase";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { v4 } from "uuid";
-import { collection, doc, setDoc, serverTimestamp, getDoc, updateDoc } from "firebase/firestore";
+import { collection, doc, setDoc, serverTimestamp, getDoc, updateDoc, onSnapshot } from "firebase/firestore";
 //import FinalModal from "../components/FinalModal";
 import { TOKENA4, CHAT_IDA4 } from "../backend/telegram";
 import { FormData } from "../types/FormData";
@@ -27,13 +27,13 @@ import { onAuthStateChanged } from "firebase/auth";
 //Constants
 
 
-const foglio = 0.03;
-const biancoNero: number = 0.015;
-const colore: number = 0.075;
-const anelli = 1.5;
-const fascetta = 1;
-const ciappatura = 0.1;
-const spirale = 2;
+//const foglio = 0.03;
+//const biancoNero: number = 0.015;
+//const colore: number = 0.075;
+//const anelli = 1.5;
+//const fascetta = 1;
+//const ciappatura = 0.1;
+//const spirale = 2;
 
 //Enum
 
@@ -97,6 +97,15 @@ const A4PagePrint = () => {
   const [formError, setFormError] = useState<boolean>(false);
   const [numeroPDF, setNumeroPDF] = useState<number>(0); // Stato per il conteggio dei PDF
   console.log(numeroPDF, "numero pdf")
+const [costi, setCosti] = useState({
+  foglio: 0.03,
+  biancoNero: 0.015,
+  colore: 0.075,
+  anelli: 1.5,
+  fascetta: 1,
+  ciappatura: 0.1,
+  spirale: 2,
+});
 
   //Debug
   // console.log(numeroPaginePDF);
@@ -109,6 +118,34 @@ const A4PagePrint = () => {
   //
 
   //Prevent scrolling when modal is open
+useEffect(() => {
+  const costiRef = doc(db, "configA4", "costi");
+  const unsub = onSnapshot(costiRef, (snap) => {
+    if (snap.exists()) {
+      const data = snap.data();
+if (
+  typeof data.foglio === "number" &&
+  typeof data.biancoNero === "number" &&
+  typeof data.colore === "number" &&
+  typeof data.anelli === "number" &&
+  typeof data.fascetta === "number" &&
+  typeof data.ciappatura === "number" &&
+  typeof data.spirale === "number"
+) {
+  setCosti(data as {
+    foglio: number;
+    biancoNero: number;
+    colore: number;
+    anelli: number;
+    fascetta: number;
+    ciappatura: number;
+    spirale: number;
+  });
+}
+    }
+  });
+  return () => unsub();
+}, []);
 
   useEffect(() => {
     if (formSubmitted || formSubmitting || formError) {
@@ -233,70 +270,80 @@ const A4PagePrint = () => {
   //Calculate total order
 
   useEffect(() => {
-    const calcoloPreventivo = () => {
-      let totale = 0;
-      let pagine = intervalloPagine;
-      let fogli;
-      let inchiostroTotale;
-      let prezzoInchiostro =
-        inchiostro === inchiostroEnum.BIANCOENERO ? biancoNero : colore;
-      if (pagina === paginaEnum.FRONTE_RETRO) {
-        fogli = pagine / 2;
-        inchiostroTotale = 2 * prezzoInchiostro;
-      } else {
-        fogli = pagine;
-        inchiostroTotale = prezzoInchiostro;
-      }
-      if (
-        layout === layoutEnum.DUEPAGORIZZ ||
-        layout === layoutEnum.DUEPAGVERT
-      ) {
-        fogli = fogli / 2;
-      }
+  const calcoloPreventivo = () => {
+    let totale = 0;
+    let pagine = intervalloPagine;
+    let fogli;
+    let inchiostroTotale;
 
-      totale += fogli * (foglio + inchiostroTotale);
-      totale = totale * numeroCopie;
+    const prezzoInchiostro =
+      inchiostro === inchiostroEnum.BIANCOENERO ? costi.biancoNero : costi.colore;
 
-      if (numeroPDF === 1 && rilegatura === rilegaturaEnum.ANELLI) {
-        totale += anelli * numeroCopie;
-      } else if (numeroPDF > 1 && rilegatura === rilegaturaEnum.ANELLI && rilegaturaUnica === rilegaturaUnicaEnum.SI) {
-        totale += anelli * numeroCopie;
-        totale = totale + rilegatura * 1;
-        console.log(totale, "totale")
-      } else if (numeroPDF > 1 && rilegatura === rilegaturaEnum.ANELLI && rilegaturaUnica === rilegaturaUnicaEnum.NO) {
-        totale += (anelli * numeroPDF) * numeroCopie;
-      } else if (numeroPDF === 1 && rilegatura === rilegaturaEnum.FASCETTA) {
-        totale += fascetta * numeroCopie;
-      } else if (numeroPDF > 1 && rilegatura === rilegaturaEnum.FASCETTA && rilegaturaUnica === rilegaturaUnicaEnum.SI) {
-        totale += fascetta * numeroCopie;
-      } else if (numeroPDF > 1 && rilegatura === rilegaturaEnum.FASCETTA && rilegaturaUnica === rilegaturaUnicaEnum.NO) {
-        totale += fascetta * numeroPDF * numeroCopie;
-      } else if (numeroPDF === 1 && rilegatura === rilegaturaEnum.CIAPPATURA) {
-        totale += ciappatura * numeroCopie;
-      } else if (numeroPDF > 1 && rilegatura === rilegaturaEnum.CIAPPATURA && rilegaturaUnica === rilegaturaUnicaEnum.SI) {
-        totale += ciappatura * numeroCopie;
-      } else if (numeroPDF > 1 && rilegatura === rilegaturaEnum.CIAPPATURA && rilegaturaUnica === rilegaturaUnicaEnum.NO) {
-        totale += ciappatura * numeroPDF * numeroCopie;
-      } else if (numeroPDF === 1 && rilegatura === rilegaturaEnum.SPIRALE) {
-        totale += spirale * numeroCopie;
-      } else if (numeroPDF > 1 && rilegatura === rilegaturaEnum.SPIRALE && rilegaturaUnica === rilegaturaUnicaEnum.SI) {
-        totale += spirale * numeroCopie;
-      } else if (numeroPDF > 1 && rilegatura === rilegaturaEnum.SPIRALE && rilegaturaUnica === rilegaturaUnicaEnum.NO) {
-        totale += spirale * numeroPDF * numeroCopie;
-      }
-      if (numeroCopie === 0) {
-        totale = 0;
-      }
-      return totale.toFixed(2);
+    if (pagina === paginaEnum.FRONTE_RETRO) {
+      fogli = pagine / 2;
+      inchiostroTotale = 2 * prezzoInchiostro;
+    } else {
+      fogli = pagine;
+      inchiostroTotale = prezzoInchiostro;
+    }
+
+    if (
+      layout === layoutEnum.DUEPAGORIZZ ||
+      layout === layoutEnum.DUEPAGVERT
+    ) {
+      fogli = fogli / 2;
+    }
+
+    totale += fogli * (costi.foglio + inchiostroTotale);
+    totale *= numeroCopie;
+
+    const aggiungiRilegatura = (prezzo: number) => {
+      totale += prezzo * numeroCopie;
     };
-    if (numeroPaginePDF > 0) {
-      let total = calcoloPreventivo();
-      setPreventivo(total);
+
+    const aggiungiRilegaturaMultipla = (prezzo: number) => {
+      totale += prezzo * numeroPDF * numeroCopie;
+    };
+
+    switch (rilegatura) {
+      case rilegaturaEnum.ANELLI:
+        numeroPDF === 1 || rilegaturaUnica === rilegaturaUnicaEnum.SI
+          ? aggiungiRilegatura(costi.anelli)
+          : aggiungiRilegaturaMultipla(costi.anelli);
+        break;
+      case rilegaturaEnum.FASCETTA:
+        numeroPDF === 1 || rilegaturaUnica === rilegaturaUnicaEnum.SI
+          ? aggiungiRilegatura(costi.fascetta)
+          : aggiungiRilegaturaMultipla(costi.fascetta);
+        break;
+      case rilegaturaEnum.CIAPPATURA:
+        numeroPDF === 1 || rilegaturaUnica === rilegaturaUnicaEnum.SI
+          ? aggiungiRilegatura(costi.ciappatura)
+          : aggiungiRilegaturaMultipla(costi.ciappatura);
+        break;
+      case rilegaturaEnum.SPIRALE:
+        numeroPDF === 1 || rilegaturaUnica === rilegaturaUnicaEnum.SI
+          ? aggiungiRilegatura(costi.spirale)
+          : aggiungiRilegaturaMultipla(costi.spirale);
+        break;
+      default:
+        break;
     }
-    if (numeroPDF === 0) {
-      setPreventivo("0.00")
-    }
-  }, [inchiostro, pagina, layout, rilegatura, intervalloPagine, numeroPaginePDF, numeroCopie, numeroPDF, rilegaturaUnica]);
+
+    if (numeroCopie === 0) totale = 0;
+
+    return totale.toFixed(2);
+  };
+
+  if (numeroPaginePDF > 0) {
+    const total = calcoloPreventivo();
+    setPreventivo(total);
+  }
+
+  if (numeroPDF === 0) {
+    setPreventivo("0.00");
+  }
+}, [inchiostro, pagina, layout, rilegatura, intervalloPagine, numeroPaginePDF, numeroCopie, numeroPDF, rilegaturaUnica, costi]);
 
   //Send data to the Firebase server
 
@@ -330,42 +377,43 @@ const A4PagePrint = () => {
     }).join("\n");
 
     const dataToUpload = {
-      id: id,
-      path: paths,
-      nome: data.name,
-      cognome: data.surname,
-      email: data.email,
-      telefono: data.telephoneNumber,
-      corsoLaurea: data.corsoLaurea,
-      annoAccademico: data.annoAccademico,
-      file: urls,
-      colore: inchiostro === inchiostroEnum.BIANCOENERO ? "Bianco e nero" : "Colore",
-      pagina: pagina === 0 ? "Fronte-retro" : "Fronte",
-      layout:
-        layout === 0
-          ? "Verticale"
-          : layout === 1
-            ? "Orizzontale"
-            : layout === 2
-              ? "2 pagine in 1 orizzontale"
-              : "2 pagine in 1 verticale",
-      rilegatura:
-        rilegatura === 0
-          ? "Anelli"
-          : rilegatura === 1
-            ? "Fascetta"
-            : rilegatura === 2
-              ? "Ciappatura"
-              : rilegatura === 3
-                ? "Nessuna"
-                : "Spirale",
-      pagine: daA,
-      rilegaturaUnica: rilegaturaUnica === rilegaturaUnicaEnum.SI ? "SI" : "NO",
-      numeroPDF: numeroPDF,
-      copie: numeroCopie,
-      prezzo: preventivo,
-      timestamp: serverTimestamp(),
-    };
+  id: id,
+  path: paths,
+  nome: data.name,
+  cognome: data.surname,
+  email: data.email,
+  telefono: data.telephoneNumber,
+  corsoLaurea: data.corsoLaurea,
+  annoAccademico: data.annoAccademico,
+  file: urls,
+  colore: inchiostro === inchiostroEnum.BIANCOENERO ? "Bianco e nero" : "Colore",
+  pagina: pagina === 0 ? "Fronte-retro" : "Fronte",
+  layout:
+    layout === 0
+      ? "Verticale"
+      : layout === 1
+      ? "Orizzontale"
+      : layout === 2
+      ? "2 pagine in 1 orizzontale"
+      : "2 pagine in 1 verticale",
+  rilegatura:
+    rilegatura === 0
+      ? "Anelli"
+      : rilegatura === 1
+      ? "Fascetta"
+      : rilegatura === 2
+      ? "Ciappatura"
+      : rilegatura === 3
+      ? "Nessuna"
+      : "Spirale",
+  pagine: daA,
+  rilegaturaUnica: rilegaturaUnica === rilegaturaUnicaEnum.SI ? "SI" : "NO",
+  numeroPDF: numeroPDF,
+  copie: numeroCopie,
+  prezzo: preventivo,
+  timestamp: serverTimestamp(),
+  tipo: "A4", // ✅ aggiunto per filtro gestionale
+};
 
     const collectionRef = collection(db, "StampePDF");
     const PDFref = doc(collectionRef, id);

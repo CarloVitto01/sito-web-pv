@@ -7,11 +7,12 @@ import { auth, db } from "../backend/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
+
 const Header: React.FC = () => {
-  const [isMenuOpen, setMenuOpen] = useState(false);
+  //const [isMenuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [displayName, setDisplayName] = useState("");
-
+  const [userRole, setUserRole] = useState("");
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
   const toggleSideMenu = () => setSideMenuOpen((prev) => !prev);
 
@@ -28,16 +29,19 @@ const Header: React.FC = () => {
         if (userSnap.exists()) {
           const data = userSnap.data();
           setDisplayName(data.displayName);
+          setUserRole(data.ruolo); // 👈 recupera anche il ruolo
         }
       } else {
         setDisplayName("");
+        setUserRole("");
       }
     });
 
     return () => unsubscribe();
   }, []);
 
-  const toggleMenu = () => setMenuOpen(!isMenuOpen);
+
+  //const toggleMenu = () => setMenuOpen(!isMenuOpen);
   const goHome = () => navigate("/");
 
   return (
@@ -119,6 +123,14 @@ const Header: React.FC = () => {
                   🖨️ Stampa in A3
                 </Link>
               </li>
+              {userRole === "amministratore" && (
+                <li>
+                  <Link to="/gestionaleA4" onClick={toggleSideMenu} className={classes["link-menu"]}>
+                    Gestionale A4
+                  </Link>
+                </li>
+              )}
+
             </ul>
 
             {/* Login / Logout o Registrazione */}
@@ -143,7 +155,7 @@ const Header: React.FC = () => {
                 }}>
                   Accedi
                 </button>
-                <span style={{color:"white"}}>/</span>
+                <span style={{ color: "white" }}>/</span>
                 <button onClick={() => {
                   toggleSideMenu();
                   navigate("/register");

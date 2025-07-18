@@ -95,9 +95,10 @@ const Form: React.FC<propsContainer> = ({ onSendData, defaultValues  }) => {
 
   useEffect(() => {
     onSendData({
-      ...data,
-      isValid: nameIsValid && surnameIsValid && emailIsValid && telephoneNumberIsValid && corsoLaureaIsValid && annoAccademicoIsValid,
-    });
+  ...data,
+  isValid: nameIsValid && surnameIsValid && emailIsValid && telephoneNumberIsValid,
+});
+
   }, [data, onSendData, nameIsValid, surnameIsValid, emailIsValid, telephoneNumberIsValid, corsoLaureaIsValid, annoAccademicoIsValid]);
 
   
