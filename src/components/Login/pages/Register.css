@@ -75,11 +75,11 @@
 }
 
 .register-container .error-message {
-    color: red;
-    font-size: 13px;
-    margin-top: -10px;
-    margin-bottom: 10px;
-    text-align: center;
+  color: red;
+  font-size: 13px;
+  margin-top: 20px; /* ✅ più spazio sopra */
+  margin-bottom: 10px;
+  text-align: center;
 }
 
 
@@ -117,25 +117,79 @@
 }
 
 
-@media screen and (max-width: 480px) {
-  .register-container {
-    width: 70%;
-  }
+.checkbox-wrapper-clean {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    margin-top: -20px;
 
-  .register-container input,
-  .register-container button,
-  .password-input-wrapper-register {
-    width: 90% ;
-  }
+}
 
-  .password-input-wrapper-register {
-    width: 100%;
-    margin-left: 25px; /* aggiusta la posizione per schermi piccoli */
-  }
+.checkbox-wrapper-clean label {
+    color: var(--color-gold);
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: -20px;
+}
 
-  .toggle-password-icon {
-    right: 10px; /* aggiusta la posizione per schermi piccoli */
-  }
+.checkbox-wrapper-clean input[type="checkbox"] {
+    width: auto;
+    height: auto;
+    margin-top: 16px;
+    accent-color: gold;
+    transform: scale(1.2);
+    cursor: pointer;
+}
+
+.button-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  width: 100%;
+}
+
+.button-row button {
+  flex: 1;
+  padding: 12px;
+  background-color: transparent;
+  border: 1px solid var(--color-gold);
+  color: var(--color-gold);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.button-row button:hover {
+  background-color: rgba(222, 181, 0, 0.1);
+  color: #ffffff;
 }
 
 
+
+@media screen and (max-width: 480px) {
+    .register-container {
+        width: 70%;
+    }
+
+    .register-container input,
+    .register-container button,
+    .password-input-wrapper-register {
+        width: 90%;
+    }
+
+    .password-input-wrapper-register {
+        width: 100%;
+        margin-left: 25px;
+        /* aggiusta la posizione per schermi piccoli */
+    }
+
+    .toggle-password-icon {
+        right: 10px;
+        /* aggiusta la posizione per schermi piccoli */
+    }
+}

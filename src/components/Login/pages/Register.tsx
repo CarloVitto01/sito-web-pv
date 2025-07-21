@@ -14,6 +14,8 @@ const Register = () => {
   const [corsoLaurea, setCorsoLaurea] = useState("");
   const [annoAccademico, setAnnoAccademico] = useState("");
   const [error, setError] = useState("");
+  const [isStudente, setIsStudente] = useState(false);
+
 
   const navigate = useNavigate();
 
@@ -47,8 +49,13 @@ const Register = () => {
       });
       navigate("/");
     } catch (err: any) {
-      setError(err.message || "Errore nella registrazione.");
+      if (err.code === "auth/email-already-in-use") {
+        setError("Esiste già un account con questa email. Prova a fare il login.");
+      } else {
+        setError("Registrazione fallita. Riprova più tardi.");
+      }
     }
+
   };
 
   return (
@@ -100,37 +107,47 @@ const Register = () => {
             onChange={(e) => setTelefono(e.target.value)}
             required
           />
+          <div className="checkbox-wrapper-clean">
+            <label htmlFor="isStudente">
+              Sei uno studente universitario (Ecotekne)?
+            </label>
+            <input
+              type="checkbox"
+              id="isStudente"
+              checked={isStudente}
+              onChange={() => setIsStudente(!isStudente)}
+            />
+          </div>
 
-          <label>
-            Corso di Laurea:{" "}
-            <span style={{ fontStyle: "italic", fontWeight: "normal" }}>(opzionale)</span>
-          </label>
-          <input
-            type="text"
-            value={corsoLaurea}
-            onChange={(e) => setCorsoLaurea(e.target.value)}
-          />
 
-          <label>
-            Anno Accademico:{" "}
-            <span style={{ fontStyle: "italic", fontWeight: "normal" }}>(opzionale)</span>
-          </label>
-          <input
-            type="text"
-            value={annoAccademico}
-            onChange={(e) => setAnnoAccademico(e.target.value)}
-          />
+          {isStudente && (
+            <>
+              <label>Corso di Laurea:</label>
+              <input
+                type="text"
+                value={corsoLaurea}
+                onChange={(e) => setCorsoLaurea(e.target.value)}
+                required
+              />
+
+              <label>Anno Accademico:</label>
+              <input
+                type="text"
+                value={annoAccademico}
+                onChange={(e) => setAnnoAccademico(e.target.value)}
+                required
+              />
+            </>
+          )}
+
 
           <div className="button-row">
             <button type="submit">Registrati</button>
-            <button
-              type="button"
-              className="home-button"
-              onClick={() => navigate("/")}
-            >
-              Torna alla Home
+            <button type="button" onClick={() => navigate("/")}>
+              Home
             </button>
           </div>
+
           {error && <p className="error-message">{error}</p>}
 
         </form>

@@ -56,7 +56,7 @@ const A3PagePrint = () => {
         plastificazione: 0.30
     });
 
-    
+
 
     useEffect(() => {
         const costiRef = doc(db, "configA3", "costi");
@@ -122,16 +122,16 @@ const A3PagePrint = () => {
 
     const setPDFHandler = useCallback((files: FileHandler[], totalPages: number) => {
         const validFiles = files
-          .filter((f) => f.file !== null)
-          .map((f) => ({
-            file: f.file as File,
-            pages: f.numPages || 0,
-          }));
-    
+            .filter((f) => f.file !== null)
+            .map((f) => ({
+                file: f.file as File,
+                pages: f.numPages || 0,
+            }));
+
         setFileData(validFiles);
         setNumeroPDF(validFiles.length);
         setNumeroPaginePDF(totalPages);
-      }, []);
+    }, []);
 
 
     // Calculate total order
@@ -225,7 +225,22 @@ const A3PagePrint = () => {
         const collectionRef = collection(db, "StampePDFA3");
         const PDFref = doc(collectionRef, id);
         setDoc(PDFref, dataToUpload)
-            .then(() => {
+            .then(async () => {
+                await setDoc(doc(db, "ArchivioOrdini", id), {
+                    uid: auth.currentUser?.uid,
+                    tipo: "A3",
+                    prezzo: parseFloat(preventivo), // 👈 assicurati che sia numero
+                    timestamp: serverTimestamp(),
+                    nome: dataToUpload.nome,
+                    cognome: dataToUpload.cognome,
+                    email: dataToUpload.email,
+                    telefono: dataToUpload.telefono,
+                    corsoLaurea: dataToUpload.corsoLaurea,
+                    annoAccademico: dataToUpload.annoAccademico,
+                    files: dataToUpload.files,
+                });
+
+
                 setFormSubmitting(false);
                 setFormSubmitted(true);
                 // Invia il messaggio a Telegram
@@ -294,30 +309,30 @@ ${fileLinks}
         }
     }, [formSubmitted]);
 
-useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const docRef = doc(db, "users", user.uid);
-        const userSnap = await getDoc(docRef);
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const docRef = doc(db, "users", user.uid);
+                const userSnap = await getDoc(docRef);
 
-        if (userSnap.exists()) {
-          const userData = userSnap.data();
+                if (userSnap.exists()) {
+                    const userData = userSnap.data();
 
-          setData({
-            name: userData.displayName || "",
-            surname: userData.cognome || "",
-            email: userData.email || "",
-            telephoneNumber: userData.telefono || "",
-            corsoLaurea: userData.corsoLaurea || "",
-            annoAccademico: userData.annoAccademico || "",
-            isValid: false // Validazione verrà fatta normalmente da Form
-          });
-        }
-      }
-    });
+                    setData({
+                        name: userData.displayName || "",
+                        surname: userData.cognome || "",
+                        email: userData.email || "",
+                        telephoneNumber: userData.telefono || "",
+                        corsoLaurea: userData.corsoLaurea || "",
+                        annoAccademico: userData.annoAccademico || "",
+                        isValid: false // Validazione verrà fatta normalmente da Form
+                    });
+                }
+            }
+        });
 
-    return () => unsubscribe();
-  }, []);
+        return () => unsubscribe();
+    }, []);
 
     return (
         <div className="container">

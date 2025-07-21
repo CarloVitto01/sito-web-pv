@@ -342,7 +342,7 @@ const A4PagePrint = () => {
       path: paths,
       nome: data.name,
       cognome: data.surname,
-      email: data.email,
+      email: data.email,  
       telefono: data.telephoneNumber,
       corsoLaurea: data.corsoLaurea,
       annoAccademico: data.annoAccademico,
@@ -374,6 +374,7 @@ const A4PagePrint = () => {
       prezzo: preventivo,
       timestamp: serverTimestamp(),
       tipo: "A4", // ✅ aggiunto per filtro gestionale
+      uid: auth.currentUser?.uid,
     };
 
     const collectionRef = collection(db, "StampePDFA4");
@@ -381,6 +382,10 @@ const A4PagePrint = () => {
 
     setDoc(PDFref, dataToUpload)
   .then(async () => {
+      await setDoc(doc(db, "ArchivioOrdini", id), {
+      ...dataToUpload,
+      timestamp: serverTimestamp(), // va reinserito manualmente
+    });
     // 🔄 AGGIORNA I DATI UTENTE SU RACCOLTA "users"
     if (auth.currentUser) {
       const userRef = doc(db, "users", auth.currentUser.uid);
