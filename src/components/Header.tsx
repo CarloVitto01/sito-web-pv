@@ -94,7 +94,7 @@ const Header: React.FC = () => {
             {/* Benvenuto utente */}
             {user && (
               <div className={classes["welcome-user"]}>
-                👋 Benvenuto, <strong>{displayName}</strong>
+                👋 Benvenuto/a, <strong>{displayName}</strong>
               </div>
             )}
 
@@ -133,6 +133,20 @@ const Header: React.FC = () => {
                 <li>
                   <Link to="/gestionaleA3" onClick={toggleSideMenu} className={classes["link-menu"]}>
                     Gestionale A3
+                  </Link>
+                </li>
+              )}
+              {userRole === "amministratore" && (
+                <li>
+                  <Link to="/utentiGestionale" onClick={toggleSideMenu} className={classes["link-menu"]}>
+                    Gestione Utenti
+                  </Link>
+                </li>
+              )}
+              {userRole === "amministratore" && (
+                <li>
+                  <Link to="/storicoDati" onClick={toggleSideMenu} className={classes["link-menu"]}>
+                    Storico Dati
                   </Link>
                 </li>
               )}
