@@ -37,6 +37,7 @@ const Login: React.FC = () => {
     navigate("/register");
   };
 
+
   return (
     <div className="login-page">
       <div className="login-container">
@@ -78,6 +79,9 @@ const Login: React.FC = () => {
 
           {authError && <p className="auth-error-message">{authError}</p>}
 
+          <p className="forgot-password" onClick={() => navigate("/recoverpassword")}>
+            Hai dimenticato la password?
+          </p>
           <div className="button-row">
             <button type="submit">Login</button>
             <button

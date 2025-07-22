@@ -22,6 +22,8 @@ import { getDoc, doc } from 'firebase/firestore';
 import { db } from './backend/firebase';
 import A3Gestionale from './gestionale/A3Gestionale';
 import AccountPage from './components/Login/pages/AccountPage';
+import RecoverPassword from './components/Login/pages/RecoverPassword';
+import ResetPassword from './components/Login/pages/ResetPassword';
 
 const ScrollToTop: React.FC = () => {
   const navigationType = useNavigationType();
@@ -87,6 +89,8 @@ const App: React.FC = () => {
           <Route path="/gestionaleA4" element={<AdminRoute element={<A4Gestionale />} />} />
           <Route path="/gestionaleA3" element={<AdminRoute element={<A3Gestionale />} />} />
           <Route path="/account" element={<AccountPage />} />
+          <Route path="/recoverpassword" element={<RecoverPassword />} />
+          <Route path="/resetpassword" element={<ResetPassword />} />
         </Routes>
       )}
     </Router>

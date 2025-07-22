@@ -3,14 +3,16 @@
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: #000000; /* sfondo nero */
+  background-color: #000000;
+  /* sfondo nero */
 }
 
 .login-page .login-container {
-  background-color: #000000; /* fondo scuro */
+  background-color: #000000;
+  /* fondo scuro */
   padding: 25px 30px;
   border-radius: 12px;
- box-shadow: 0px 1px 15px 20px rgba(222, 181, 0, 0.2);
+  box-shadow: 0px 1px 15px 20px rgba(222, 181, 0, 0.2);
   text-align: center;
   width: 330px;
   border: 1px solid var(--color-gold);
@@ -127,17 +129,20 @@
 .password-field {
   width: 90%;
   position: relative;
-  
+
 }
 
 .password-input-wrapper {
   position: relative;
-  width: 94%; /* UGUALE agli altri input */
+  width: 94%;
+  /* UGUALE agli altri input */
 }
 
 .password-input-wrapper input {
-  width: 100%; /* prende il 100% del wrapper */
-  padding-right: 40px; /* spazio per l'icona */
+  width: 100%;
+  /* prende il 100% del wrapper */
+  padding-right: 40px;
+  /* spazio per l'icona */
   box-sizing: border-box;
   margin-left: 20px;
   border: 2px solid var(--color-gold);
@@ -166,16 +171,31 @@
   font-size: 20px;
 }
 
+.forgot-password {
+  color: var(--color-gold);
+  font-size: 14px;
+  text-align: center;
+  margin-top: 15px;
+  cursor: pointer;
+  text-decoration: underline;
+  transition: opacity 0.2s ease;
+}
+
+.forgot-password:hover {
+  opacity: 0.7;
+}
+
+
 @media screen and (max-width: 480px) {
   .login-page .login-container {
-    width:70%;
+    width: 70%;
   }
 
   .login-page,
   .login-page .login-container button,
   .login-page .register-button,
   .password-input-wrapper {
-    width: 100% ;
+    width: 100%;
   }
 
   .password-input-wrapper input {
@@ -200,8 +220,3 @@
     text-align: center;
   }
 }
-
-
-
-
-
