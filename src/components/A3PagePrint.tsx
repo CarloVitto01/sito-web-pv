@@ -243,6 +243,15 @@ const A3PagePrint = () => {
 
                 setFormSubmitting(false);
                 setFormSubmitted(true);
+
+                //salvataggio dati in ArchivioOrdini
+                const { files, paths, ...rest } = dataToUpload;
+                const datiSnelli = {
+                    ...rest,
+                    timestamp: serverTimestamp(), // Reimposta il timestamp
+                };
+
+                await setDoc(doc(db, "ArchivioOrdini", id), datiSnelli);
                 // Invia il messaggio a Telegram
                 const messageText = `
 =====================
