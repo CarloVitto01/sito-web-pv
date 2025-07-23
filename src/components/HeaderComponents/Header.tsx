@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { FiMenu } from "react-icons/fi";
-import logo from "../assets/images/Firma_Bianca_oro_PV.png";
+import logo from "../../assets/images/Firma_Bianca_oro_PV.png";
 import classes from "./Header.module.css";
-import { auth, db } from "../backend/firebase";
+import { auth, db } from "../../backend/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 

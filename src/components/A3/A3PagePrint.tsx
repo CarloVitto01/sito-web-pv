@@ -1,23 +1,23 @@
 // src/A4PagePrint.tsx
-import "../App.css";
-import Footer from "../components/Footer";
-import Header from "../components/Header";
-import Intro from "../components/Intro";
-import ContainerCards from "../components/ContainerCards";
-import SingleDelimiter from "../components/SingleDelimiter";
+import "../../App.css";
+import Footer from "../FooterComponents/Footer";
+import Header from "../HeaderComponents/Header";
+import Intro from "../IntroComponents/Intro";
+import ContainerCards from "../CardComponents/ContainerCards";
+import SingleDelimiter from "../SingleDelimiterComponents/SingleDelimiter";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { auth, storage, db } from "../backend/firebase";
+import { auth, storage, db } from "../../backend/firebase";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { v4 } from "uuid";
 import { collection, doc, setDoc, serverTimestamp, getDoc, updateDoc, onSnapshot } from "firebase/firestore";
-import { TOKENA3, CHAT_IDA3 } from "../backend/telegram";
-import { FormData } from "../types/FormData";
-import { FileHandler } from "../types/FileHandler";
-import Form from "./Form";
-import NumeroCopie from "./NumeroCopie";
-import MultiInput from "./MultiInput";
-import classes from "../components/A3PagePrint.module.css";
-import RiepilogoOrdineA3 from "../components/RiepilogoOrdineA3";
+import { TOKENA3, CHAT_IDA3 } from "../../backend/telegram";
+import { FormData } from "../../types/FormData";
+import { FileHandler } from "../../types/FileHandler";
+import Form from "../FormComponents/Form";
+import NumeroCopie from "../NumeroCopieComponents/NumeroCopie";
+import MultiInput from "../MultiInputComponents/MultiInput";
+import classes from "../A3/A3PagePrint.module.css";
+import RiepilogoOrdineA3 from "../RiepilogoOrdineComponents/RiepilogoOrdineA3";
 import { onAuthStateChanged } from "firebase/auth";
 
 const inchiostroEnum = { BIANCOENERO: 0, COLORE: 1 };
@@ -365,13 +365,13 @@ ${fileLinks}
                             () => [
                                 {
                                     title: "Normale",
-                                    imageSrc: require("../assets/images/Colore.jpg"),
+                                    imageSrc: require("../../assets/images/Colore.jpg"),
                                     disabled: false,
                                     errorMessage: ""
                                 },
                                 {
                                     title: "Cartoncino",
-                                    imageSrc: require("../assets/images/Bianco_e_nero.jpg"),
+                                    imageSrc: require("../../assets/images/Bianco_e_nero.jpg"),
                                     disabled: false,
                                     errorMessage: ""
                                 },
@@ -387,13 +387,13 @@ ${fileLinks}
                             () => [
                                 {
                                     title: "Colore",
-                                    imageSrc: require("../assets/images/Colori_ruota.png"),
+                                    imageSrc: require("../../assets/images/Colori_ruota.png"),
                                     disabled: false,
                                     errorMessage: ""
                                 },
                                 {
                                     title: "Bianco e nero",
-                                    imageSrc: require("../assets/images/Bianco_Nero_Ruota.png"),
+                                    imageSrc: require("../../assets/images/Bianco_Nero_Ruota.png"),
                                     disabled: false,
                                     errorMessage: ""
                                 },
@@ -409,13 +409,13 @@ ${fileLinks}
                             () => [
                                 {
                                     title: "Fronte",
-                                    imageSrc: require("../assets/images/Fronte.png"),
+                                    imageSrc: require("../../assets/images/Fronte.png"),
                                     disabled: false,
                                     errorMessage: ""
                                 },
                                 {
                                     title: "Fronte-retro",
-                                    imageSrc: require("../assets/images/Fronte_retro.png"),
+                                    imageSrc: require("../../assets/images/Fronte_retro.png"),
                                     disabled: false,
                                     errorMessage: ""
                                 },
@@ -431,13 +431,13 @@ ${fileLinks}
                             () => [
                                 {
                                     title: "Si",
-                                    imageSrc: require("../assets/images/Anelli.jpg"),
+                                    imageSrc: require("../../assets/images/Anelli.jpg"),
                                     disabled: false,
                                     errorMessage: ""
                                 },
                                 {
                                     title: "No",
-                                    imageSrc: require("../assets/images/Nessuna.jpg"),
+                                    imageSrc: require("../../assets/images/Nessuna.jpg"),
                                     disabled: false,
                                     errorMessage: ""
                                 },
@@ -453,19 +453,19 @@ ${fileLinks}
                             () => [
                                 {
                                     title: "Auto",
-                                    imageSrc: require("../assets/images/2in1Orizzontale.jpg"),
+                                    imageSrc: require("../../assets/images/2in1Orizzontale.jpg"),
                                     disabled: false,
                                     errorMessage: "",
                                 },
                                 {
                                     title: "Orizzontale",
-                                    imageSrc: require("../assets/images/Orizzontale.jpg"),
+                                    imageSrc: require("../../assets/images/Orizzontale.jpg"),
                                     disabled: false,
                                     errorMessage: "",
                                 },
                                 {
                                     title: "Verticale",
-                                    imageSrc: require("../assets/images/Verticale.jpg"),
+                                    imageSrc: require("../../assets/images/Verticale.jpg"),
                                     disabled: false,
                                     errorMessage: "",
                                 },

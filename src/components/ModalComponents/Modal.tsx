@@ -1,5 +1,5 @@
 import classes from "./Modal.module.css";
-import Sticky from "./Sticky";
+import Sticky from "../Sticky";
 import React, { useState } from "react";
 import { CiCircleInfo } from "react-icons/ci";
 

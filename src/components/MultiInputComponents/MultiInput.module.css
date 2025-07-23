@@ -1,5 +1,5 @@
 /* MultiInput.module.css */
-@import '../styles/variables.css';
+@import '../../styles/variables.css';
 /* Stili generali */
 .containerMultiInput {
     background-color: var(--color-background);

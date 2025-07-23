@@ -3,6 +3,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { confirmPasswordReset } from "firebase/auth";
 import { auth } from "../../../backend/firebase";
 import "./ResetPassword.css"; // ✅ crea un CSS simile a login/register
+import { FiEye, FiEyeOff } from "react-icons/fi";
+
 
 const ResetPassword: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -14,6 +16,9 @@ const ResetPassword: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,20 +48,36 @@ const ResetPassword: React.FC = () => {
         <h2>Reimposta la tua password</h2>
         <form onSubmit={handleReset}>
           <label>Nuova Password:</label>
-          <input
-            type="password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            required
-          />
+          <div className="password-input-wrapper">
+            <input
+              type={showNewPassword ? "text" : "password"}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              required
+            />
+            <span
+              className="password-toggle-icon"
+              onClick={() => setShowNewPassword((prev) => !prev)}
+            >
+              {showNewPassword ? <FiEyeOff /> : <FiEye />}
+            </span>
+          </div>
 
           <label>Conferma Password:</label>
-          <input
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-          />
+          <div className="password-input-wrapper">
+            <input
+              type={showConfirmPassword ? "text" : "password"}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+            />
+            <span
+              className="password-toggle-icon"
+              onClick={() => setShowConfirmPassword((prev) => !prev)}
+            >
+              {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
+            </span>
+          </div>
 
           <button type="submit">Aggiorna Password</button>
           {error && <p className="error-message">{error}</p>}

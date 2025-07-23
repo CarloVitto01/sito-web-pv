@@ -1,5 +1,5 @@
 import styles from "./RiepilogoOrdine.module.css";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 type RiepilogoA3Props = {
   inchiostro: string;

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import classes from "./MultiInput.module.css";
-import { FileHandler } from "../types/FileHandler";
+import { FileHandler } from "../../types/FileHandler";
 import { Document, Page } from "react-pdf";
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
-import Loading from "./Loading";
+import Loading from "../LoadingComponents/Loading";
 import { GrCaretNext, GrCaretPrevious } from "react-icons/gr";
 import { AiOutlineClose } from "react-icons/ai";
 import { MdDelete, MdOutlinePreview } from "react-icons/md";
@@ -106,7 +106,7 @@ const MultiInput: React.FC<PropsContainer> = ({ onSendData }) => {
             <div className={classes["containerPDFMultiInput"]}>
                 {files.map((file, index) => (
                     <div key={index} className={classes.pdfContainer}>
-                        <img src={require("../assets/images/PDF_file_icon.svg.png")} alt="PDF Icon" className={classes["pdfIcon"]} />
+                        <img src={require("../../assets/images/PDF_file_icon.svg.png")} alt="PDF Icon" className={classes["pdfIcon"]} />
                         <span className={classes["pdfName"]}>
                             {file.name.length > 30
                                 ? file.name.slice(0, 30) + '...'

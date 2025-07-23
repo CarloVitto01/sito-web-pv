@@ -5,8 +5,8 @@ import { collection, doc, getDoc, getDocs, query, updateDoc, where } from "fireb
 import { useNavigate } from "react-router-dom";
 // ✅ Adatta il path se diverso
 import "./AccountPage.css";
-import Header from "../../Header";
-import Footer from "../../Footer";
+import Header from "../../HeaderComponents/Header";
+import Footer from "../../FooterComponents/Footer";
 
 const AccountPage: React.FC = () => {
     const [loading, setLoading] = useState(true);

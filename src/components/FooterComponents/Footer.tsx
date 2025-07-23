@@ -1,8 +1,8 @@
 import React from "react";
-import Logo_Whatsapp from "../assets/images/Logo_Whatsapp.png";
-import Logo_Telegram from "../assets/images/Logo_Telegram.png";
-import Logo_mail from "../assets/images/Logo_mail.png";
-import Logo_Instagram from "../assets/images/Logo_Instagram.png";
+import Logo_Whatsapp from "../../assets/images/Logo_Whatsapp.png";
+import Logo_Telegram from "../../assets/images/Logo_Telegram.png";
+import Logo_mail from "../../assets/images/Logo_mail.png";
+import Logo_Instagram from "../../assets/images/Logo_Instagram.png";
 import classes from "./Footer.module.css";
 import { motion } from "framer-motion";
 

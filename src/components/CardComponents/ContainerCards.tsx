@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Card from "./Card";
 import classes from "./ContainerCards.module.css";
-import { Card as CardType } from "../types/Card";
+import { Card as CardType } from "../../types/Card"; // Adjust the import path as necessary
 
 interface propsContainer {
   title: string;

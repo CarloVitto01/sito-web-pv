@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { collection, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { db } from "../backend/firebase";
-import Header from "../components/Header";
+import Header from "../components/HeaderComponents/Header";
 import styles from "./UtentiGestionale.module.css";
 
 type Utente = {

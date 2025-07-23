@@ -9,7 +9,7 @@ import {
     setDoc,
 } from "firebase/firestore";
 import styles from "./A3Gestionale.module.css";
-import Header from "../components/Header";
+import Header from "../components/HeaderComponents/Header";
 
 type CostiA3 = {
     grammaturaNormale: number;

@@ -1,27 +1,27 @@
 // src/A4PagePrint.tsx
-import "../App.css";
-import classes from "../components/A4PagePrint.module.css";
-import Footer from "../components/Footer";
-import Header from "../components/Header";
-import Intro from "../components/Intro";
-import Form from "../components/Form";
-import ContainerCards from "../components/ContainerCards";
-import IntervalloPagine from "../components/IntervalloPagine";
-import SingleDelimiter from "../components/SingleDelimiter";
-import NumeroCopie from "../components/NumeroCopie";
+import "../../App.css";
+import classes from "../A4/A4PagePrint.module.css";
+import Footer from "../FooterComponents/Footer";
+import Header from "../HeaderComponents/Header";
+import Intro from "../IntroComponents/Intro";
+import Form from "../FormComponents/Form";
+import ContainerCards from "../../components/CardComponents/ContainerCards";
+import IntervalloPagine from "../IntervalloPagineComponents/IntervalloPagine";
+import SingleDelimiter from "../SingleDelimiterComponents/SingleDelimiter";
+import NumeroCopie from "../NumeroCopieComponents/NumeroCopie";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { auth, storage } from "../backend/firebase";
-import { db } from "../backend/firebase";
+import { auth, storage } from "../../backend/firebase";
+import { db } from "../../backend/firebase";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { v4 } from "uuid";
 import { collection, doc, setDoc, serverTimestamp, getDoc, updateDoc, onSnapshot } from "firebase/firestore";
 //import FinalModal from "../components/FinalModal";
-import { TOKENA4, CHAT_IDA4 } from "../backend/telegram";
-import { FormData } from "../types/FormData";
-import { FileHandler } from "../types/FileHandler";
-import { RangePagesData } from "../types/RangePagesData";
-import MultiInput from "./MultiInput";
-import RiepilogoOrdine from "../components/RiepilogoOrdine";
+import { TOKENA4, CHAT_IDA4 } from "../../backend/telegram";
+import { FormData } from "../../types/FormData";
+import { FileHandler } from "../../types/FileHandler";
+import { RangePagesData } from "../../types/RangePagesData";
+import MultiInput from "../MultiInputComponents/MultiInput";
+import RiepilogoOrdine from "../RiepilogoOrdineComponents/RiepilogoOrdine";
 import { onAuthStateChanged } from "firebase/auth";
 
 //Constants
@@ -527,13 +527,13 @@ ${fileLinks}
                 () => [
                   {
                     title: "Bianco e nero",
-                    imageSrc: require("../assets/images/Bianco_Nero_Ruota.png"),
+                    imageSrc: require("../../assets/images/Bianco_Nero_Ruota.png"),
                     disabled: false,
                     errorMessage: "",
                   },
                   {
                     title: "Colore",
-                    imageSrc: require("../assets/images/Colori_ruota.png"),
+                    imageSrc: require("../../assets/images/Colori_ruota.png"),
                     disabled: false,
                     errorMessage: "",
                   },
@@ -549,25 +549,25 @@ ${fileLinks}
                 () => [
                   {
                     title: "Verticale",
-                    imageSrc: require("../assets/images/Verticale.jpg"),
+                    imageSrc: require("../../assets/images/Verticale.jpg"),
                     disabled: false,
                     errorMessage: "",
                   },
                   {
                     title: "Orizzontale",
-                    imageSrc: require("../assets/images/Orizzontale.jpg"),
+                    imageSrc: require("../../assets/images/Orizzontale.jpg"),
                     disabled: false,
                     errorMessage: "",
                   },
                   {
                     title: "2 in 1 orizzontale",
-                    imageSrc: require("../assets/images/2in1Orizzontale.jpg"),
+                    imageSrc: require("../../assets/images/2in1Orizzontale.jpg"),
                     disabled: false,
                     errorMessage: "",
                   },
                   {
                     title: "2 in 1 verticale",
-                    imageSrc: require("../assets/images/2in1Verticale.jpg"),
+                    imageSrc: require("../../assets/images/2in1Verticale.jpg"),
                     disabled: false,
                     errorMessage: "",
                   },
@@ -583,13 +583,13 @@ ${fileLinks}
                 () => [
                   {
                     title: "Fronte-retro",
-                    imageSrc: require("../assets/images/Fronte_retro.png"),
+                    imageSrc: require("../../assets/images/Fronte_retro.png"),
                     disabled: false,
                     errorMessage: "",
                   },
                   {
                     title: "Fronte",
-                    imageSrc: require("../assets/images/Fronte.png"),
+                    imageSrc: require("../../assets/images/Fronte.png"),
                     disabled: false,
                     errorMessage: "",
                   },
@@ -605,13 +605,13 @@ ${fileLinks}
                 () => [
                   {
                     title: "Si",
-                    imageSrc: require("../assets/images/Fronte_retro.png"),
+                    imageSrc: require("../../assets/images/Fronte_retro.png"),
                     disabled: numeroPDF === 1,
                     errorMessage: "Disponibile Soltanto per 2 o più PDF",
                   },
                   {
                     title: "No",
-                    imageSrc: require("../assets/images/Fronte.png"),
+                    imageSrc: require("../../assets/images/Fronte.png"),
                     disabled: numeroPDF === 1,
                     errorMessage: "Disponibile Soltanto per 2 o più PDF",
                   },
@@ -627,31 +627,31 @@ ${fileLinks}
                 () => [
                   {
                     title: "Anelli",
-                    imageSrc: require("../assets/images/Anelli.jpg"),
+                    imageSrc: require("../../assets/images/Anelli.jpg"),
                     disabled: numeroPaginePDF > 670 && intervalloPagine > 670, // Aggiungi la proprietà disabled
                     errorMessage: "Limite di 670 pagine",
                   },
                   {
                     title: "Spirale",
-                    imageSrc: require("../assets/images/Spirale.png"),
+                    imageSrc: require("../../assets/images/Spirale.png"),
                     disabled: numeroPaginePDF > 500 && intervalloPagine > 500, // Aggiungi la proprietà disabled
                     errorMessage: "Limite di 500 pagine",
                   },
                   {
                     title: "Fascetta",
-                    imageSrc: require("../assets/images/Fascetta.jpg"),
+                    imageSrc: require("../../assets/images/Fascetta.jpg"),
                     disabled: numeroPaginePDF > 80 && intervalloPagine > 80, // Aggiungi la proprietà disabled
                     errorMessage: "Limite di 80 pagine",
                   },
                   {
                     title: "Ciappatura",
-                    imageSrc: require("../assets/images/Ciappatura.jpg"),
+                    imageSrc: require("../../assets/images/Ciappatura.jpg"),
                     disabled: numeroPaginePDF > 35 && intervalloPagine > 35, // Mantieni la logica di disabilitazione
                     errorMessage: "Limite di 40 pagine"
                   },
                   {
                     title: "Nessuna",
-                    imageSrc: require("../assets/images/Nessuna.jpg"),
+                    imageSrc: require("../../assets/images/Nessuna.jpg"),
                     disabled: false, // Aggiungi la proprietà disabled
                     errorMessage: "",
                   },

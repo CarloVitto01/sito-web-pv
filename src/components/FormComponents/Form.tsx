@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import classes from "./Form.module.css";
-import { FormData } from "../types/FormData";
+import { FormData } from "../../types/FormData";
 import { motion } from "framer-motion";
 
 const containsOnlyLetters = (value: string) => /^[a-zA-Z\s]+$/.test(value);

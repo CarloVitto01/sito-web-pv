@@ -8,10 +8,10 @@ import {
   Navigate,
 } from 'react-router-dom';
 
-import A4PagePrint from './components/A4PagePrint';
-import A3PagePrint from './components/A3PagePrint';
-import Home from './components/Home';
-import SplashScreen from './components/SplashScreen';
+import A4PagePrint from './components/A4/A4PagePrint';
+import A3PagePrint from './components/A3/A3PagePrint';
+import Home from './components/HomeComponents/Home';
+import SplashScreen from './components/SplashScreenComponents/SplashScreen';
 import './App.css';
 import ComingSoon from './components/ComingSoon/ComingSoon';
 import Login from './components/Login/pages/Login';
