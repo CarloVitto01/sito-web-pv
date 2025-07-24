@@ -41,7 +41,7 @@
 }
 
 .login-page .login-container input {
-  width: 90%;
+  width: 100%;
   padding: 10px;
   margin-bottom: 15px;
   border: 2px solid var(--color-gold);
@@ -51,7 +51,9 @@
   font-size: 16px;
   outline: none;
   transition: border 0.2s ease;
+  box-sizing: border-box;
 }
+
 
 .login-page .login-container input:focus {
   border: 2px solid #deb500;
@@ -126,25 +128,15 @@
   background-color: #caa700;
 }
 
-.password-field {
+.login-email-wrapper {
   width: 90%;
-  position: relative;
-
+  margin-bottom: 15px;
 }
 
-.password-input-wrapper {
-  position: relative;
-  width: 94%;
-  /* UGUALE agli altri input */
-}
-
-.password-input-wrapper input {
+.login-email-input {
   width: 100%;
-  /* prende il 100% del wrapper */
-  padding-right: 40px;
-  /* spazio per l'icona */
+  padding: 10px;
   box-sizing: border-box;
-  margin-left: 20px;
   border: 2px solid var(--color-gold);
   border-radius: 6px;
   background-color: #ffffff;
@@ -154,22 +146,52 @@
   transition: border 0.2s ease;
 }
 
-
-.password-input-wrapper input:focus {
+.login-email-input:focus {
   border: 2px solid #deb500;
   box-shadow: 0 0 5px rgba(222, 181, 0, 0.4);
 }
 
+.password-field {
+  width: 90%;
+  position: relative;
 
-.toggle-password {
+}
+
+.login-password-wrapper {
+  position: relative;
+  width: 90%;
+  margin-bottom: 15px;
+}
+
+.login-password-input {
+  width: 100%;
+  padding: 10px;
+  padding-right: 40px;
+  box-sizing: border-box;
+  border: 2px solid var(--color-gold);
+  border-radius: 6px;
+  background-color: #ffffff;
+  color: #000000;
+  font-size: 16px;
+  outline: none;
+  transition: border 0.2s ease;
+}
+
+.login-password-input:focus {
+  border: 2px solid #deb500;
+  box-shadow: 0 0 5px rgba(222, 181, 0, 0.4);
+}
+
+.login-toggle-password {
   position: absolute;
-  top: 40%;
+  top: 58%;
   right: 10px;
   transform: translateY(-50%);
   cursor: pointer;
-  color: var(--color-gold, #deb500);
+  color: var(--color-gold);
   font-size: 20px;
 }
+
 
 .forgot-password {
   color: var(--color-gold);

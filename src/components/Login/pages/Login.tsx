@@ -43,10 +43,11 @@ const Login: React.FC = () => {
       <div className="login-container">
         <h2>Login</h2>
         <form onSubmit={handleSubmit(onSubmit)}>
-          <div>
+          <div className="login-email-wrapper">
             <label>Email:</label>
             <input
               type="email"
+              className="login-email-input"
               {...register("username", {
                 required: "Questo campo non può essere vuoto",
               })}
@@ -55,10 +56,9 @@ const Login: React.FC = () => {
               <p className="error-message">{errors.username.message}</p>
             )}
           </div>
-
           <div className="password-field">
             <label>Password:</label>
-            <div className="password-input-wrapper">
+            <div className="login-password-input-wrapper">
               <input
                 type={showPassword ? "text" : "password"}
                 {...register("password", {
@@ -66,7 +66,7 @@ const Login: React.FC = () => {
                 })}
               />
               <span
-                className="toggle-password"
+                className="login-toggle-password"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? <FiEyeOff /> : <FiEye />}
