@@ -29,7 +29,6 @@ const UtentiGestionale: React.FC = () => {
       for (const docSnap of querySnapshot.docs) {
         const data = docSnap.data();
 
-        // Se manca il ruolo, aggiorna Firestore
         if (!data.ruolo) {
           await updateDoc(doc(db, "users", docSnap.id), { ruolo: "PublicUser" });
         }
@@ -76,38 +75,6 @@ const UtentiGestionale: React.FC = () => {
     );
   };
 
-  const exportCSV = () => {
-    const headers = [
-      "Nome",
-      "Cognome",
-      "Email",
-      "Telefono",
-      "Corso di Laurea",
-      "Anno Accademico",
-      "Ruolo",
-    ];
-    const rows = utenti.map((u) => [
-      u.displayName,
-      u.cognome,
-      u.email,
-      u.telefono,
-      u.corsoLaurea || "",
-      u.annoAccademico || "",
-      u.ruolo,
-    ]);
-    const csvContent =
-      "data:text/csv;charset=utf-8," +
-      [headers, ...rows].map((e) => e.join(",")).join("\n");
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "utenti.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   const utentiFiltrati = utenti.filter((u) => {
     const matchRuolo = filtroRuolo === "Tutti" || u.ruolo === filtroRuolo;
     const lowerQuery = query.toLowerCase();
@@ -144,10 +111,6 @@ const UtentiGestionale: React.FC = () => {
             className={styles.input}
             style={{ flexGrow: 1, minWidth: 200 }}
           />
-
-          <button onClick={exportCSV} className={styles.button}>
-            📤 Esporta CSV
-          </button>
         </div>
 
         <ul className={styles.orderList}>

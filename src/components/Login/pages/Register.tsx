@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { registerUser } from "../utils/registerUsers";
-import { FiEye, FiEyeOff } from "react-icons/fi"; // 👈 Importa le icone
+import { FiEye, FiEyeOff } from "react-icons/fi";
 import "./Register.css";
 
 const Register = () => {
@@ -9,13 +9,14 @@ const Register = () => {
   const [surname, setSurname] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false); // 👈 aggiunto
   const [telefono, setTelefono] = useState("");
   const [corsoLaurea, setCorsoLaurea] = useState("");
   const [annoAccademico, setAnnoAccademico] = useState("");
   const [error, setError] = useState("");
   const [isStudente, setIsStudente] = useState(false);
-
 
   const navigate = useNavigate();
 
@@ -32,9 +33,9 @@ const Register = () => {
     if (!onlyLetters(surname)) return setError("Il cognome deve contenere solo lettere.");
     if (!validEmail(email)) return setError("Inserisci un'email valida.");
     if (password.length < 6) return setError("La password deve contenere almeno 6 caratteri.");
+    if (password !== confirmPassword) return setError("Le password non coincidono.");
     if (!onlyNumbers(telefono) || telefono.length !== 10)
       return setError("Il numero di telefono deve contenere 10 cifre.");
-
     if (corsoLaurea && !onlyLetters(corsoLaurea))
       return setError("Il corso di laurea deve contenere solo lettere.");
     if (annoAccademico && (!onlyNumbers(annoAccademico) || annoAccademico.length !== 4))
@@ -55,7 +56,6 @@ const Register = () => {
         setError("Registrazione fallita. Riprova più tardi.");
       }
     }
-
   };
 
   return (
@@ -64,28 +64,13 @@ const Register = () => {
         <h2>Registrazione</h2>
         <form onSubmit={handleSubmit}>
           <label>Nome:</label>
-          <input
-            type="text"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            required
-          />
+          <input type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
 
           <label>Cognome:</label>
-          <input
-            type="text"
-            value={surname}
-            onChange={(e) => setSurname(e.target.value)}
-            required
-          />
+          <input type="text" value={surname} onChange={(e) => setSurname(e.target.value)} required />
 
           <label>Email:</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
 
           <label>Password:</label>
           <div className="password-input-wrapper-register">
@@ -100,13 +85,22 @@ const Register = () => {
             </span>
           </div>
 
+          <label>Conferma Password:</label>
+          <div className="password-input-wrapper-register">
+            <input
+              type={showConfirmPassword ? "text" : "password"}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+            />
+            <span className="toggle-password-icon" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+              {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
+            </span>
+          </div>
+
           <label>Telefono:</label>
-          <input
-            type="text"
-            value={telefono}
-            onChange={(e) => setTelefono(e.target.value)}
-            required
-          />
+          <input type="text" value={telefono} onChange={(e) => setTelefono(e.target.value)} required />
+
           <div className="checkbox-wrapper-clean">
             <label htmlFor="isStudente">
               Sei uno studente universitario (Ecotekne)?
@@ -119,27 +113,15 @@ const Register = () => {
             />
           </div>
 
-
           {isStudente && (
             <>
               <label>Corso di Laurea:</label>
-              <input
-                type="text"
-                value={corsoLaurea}
-                onChange={(e) => setCorsoLaurea(e.target.value)}
-                required
-              />
+              <input type="text" value={corsoLaurea} onChange={(e) => setCorsoLaurea(e.target.value)} required />
 
               <label>Anno Accademico:</label>
-              <input
-                type="text"
-                value={annoAccademico}
-                onChange={(e) => setAnnoAccademico(e.target.value)}
-                required
-              />
+              <input type="text" value={annoAccademico} onChange={(e) => setAnnoAccademico(e.target.value)} required />
             </>
           )}
-
 
           <div className="button-row">
             <button type="submit">Registrati</button>
@@ -149,7 +131,6 @@ const Register = () => {
           </div>
 
           {error && <p className="error-message">{error}</p>}
-
         </form>
       </div>
     </div>
