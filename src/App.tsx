@@ -26,6 +26,7 @@ import RecoverPassword from './components/Login/pages/RecoverPassword';
 import ResetPassword from './components/Login/pages/ResetPassword';
 import UtentiGestionale from './gestionale/UtentiGestionale';
 import StoricoDati from './gestionale/StoricoDati';
+import ContattiServiziFotoVideo from './components/Foto_e_Video/ContattiServiziFotoVideo';
 
 const ScrollToTop: React.FC = () => {
   const navigationType = useNavigationType();
@@ -92,6 +93,7 @@ const App: React.FC = () => {
           <Route path="/gestionaleA3" element={<AdminRoute element={<A3Gestionale />} />} />
           <Route path="/utentiGestionale" element={<AdminRoute element={<UtentiGestionale />} />} />
           <Route path="/storicoDati" element={<AdminRoute element={<StoricoDati />} />} />
+          <Route path="/contatti-servizi-foto-video" element={<ContattiServiziFotoVideo />} />
 
           <Route path="/account" element={<AccountPage />} />
           <Route path="/recoverpassword" element={<RecoverPassword />} />

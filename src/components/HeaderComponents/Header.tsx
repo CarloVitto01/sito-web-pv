@@ -122,6 +122,11 @@ const Header: React.FC = () => {
                   🖨️ Stampa in A3
                 </Link>
               </li>
+              <li>
+                <Link to="/contatti-servizi-foto-video" onClick={toggleSideMenu} className={classes["link-menu"]}>
+                  📸 Contatti Servizi Foto/Video
+                </Link>
+              </li>
               {userRole === "amministratore" && (
                 <li>
                   <Link to="/gestionaleA4" onClick={toggleSideMenu} className={classes["link-menu"]}>
