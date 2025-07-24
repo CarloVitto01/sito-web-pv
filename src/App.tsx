@@ -26,6 +26,9 @@ import RecoverPassword from './components/Login/pages/RecoverPassword';
 import ResetPassword from './components/Login/pages/ResetPassword';
 import UtentiGestionale from './gestionale/UtentiGestionale';
 import StoricoDati from './gestionale/StoricoDati';
+import ContattiServiziFotoVideo from './components/Foto_e_Video/ContattiServiziFotoVideo';
+import FotoVideoGestionale from './gestionale/FotoVideoGestionale';
+import GestioneAccessi from './gestionale/GestioneAccessi';
 
 const ScrollToTop: React.FC = () => {
   const navigationType = useNavigationType();
@@ -40,30 +43,32 @@ const ScrollToTop: React.FC = () => {
   return null;
 };
 
-const AdminRoute: React.FC<{ element: JSX.Element }> = ({ element }) => {
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+const ProtectedRoute: React.FC<{ element: JSX.Element; page: string }> = ({ element, page }) => {
+  const [canAccess, setCanAccess] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const checkRole = async () => {
+    const check = async () => {
       const user = auth.currentUser;
       if (!user) {
-        setIsAdmin(false);
+        setCanAccess(false);
         return;
       }
 
-      const userRef = doc(db, 'users', user.uid);
-      const snap = await getDoc(userRef);
-      const data = snap.data();
+      const userSnap = await getDoc(doc(db, "users", user.uid));
+      const ruolo = userSnap.data()?.ruolo || "PublicUser";
 
-      setIsAdmin(data?.ruolo === 'amministratore');
+      const { checkAccess } = await import("./utils/checkAccess");
+      const allowed = await checkAccess(ruolo, page);
+      setCanAccess(allowed);
     };
 
-    checkRole();
-  }, []);
+    check();
+  }, [page]);
 
-  if (isAdmin === null) return <div>Caricamento...</div>;
-  return isAdmin ? element : <Navigate to="/" replace />;
+  if (canAccess === null) return <div>Controllo accessi...</div>;
+  return canAccess ? element : <Navigate to="/" replace />;
 };
+
 
 const App: React.FC = () => {
   const [showSplash, setShowSplash] = useState(true);
@@ -88,10 +93,14 @@ const App: React.FC = () => {
           <Route path="/printA4" element={<A4PagePrint />} />
           <Route path="/printA3" element={<A3PagePrint />} />
           <Route path="/comingSoon" element={<ComingSoon />} />
-          <Route path="/gestionaleA4" element={<AdminRoute element={<A4Gestionale />} />} />
-          <Route path="/gestionaleA3" element={<AdminRoute element={<A3Gestionale />} />} />
-          <Route path="/utentiGestionale" element={<AdminRoute element={<UtentiGestionale />} />} />
-          <Route path="/storicoDati" element={<AdminRoute element={<StoricoDati />} />} />
+          <Route path="/contatti-servizi-foto-video" element={<ContattiServiziFotoVideo />} />
+          <Route path="/gestionaleA4" element={<ProtectedRoute page="gestionaleA4" element={<A4Gestionale />} />} />
+          <Route path="/gestionaleA3" element={<ProtectedRoute page="gestionaleA3" element={<A3Gestionale />} />} />
+          <Route path="/utentiGestionale" element={<ProtectedRoute page="utentiGestionale" element={<UtentiGestionale />} />} />
+          <Route path="/storicoDati" element={<ProtectedRoute page="storicoDati" element={<StoricoDati />} />} />
+          <Route path="/foto-video-gestionale" element={<ProtectedRoute page="foto-video-gestionale" element={<FotoVideoGestionale />} />} />
+          <Route path="/gestione-accessi" element={<ProtectedRoute page="gestione-accessi" element={<GestioneAccessi />} />} />
+
 
           <Route path="/account" element={<AccountPage />} />
           <Route path="/recoverpassword" element={<RecoverPassword />} />

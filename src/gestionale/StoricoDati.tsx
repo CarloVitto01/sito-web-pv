@@ -162,9 +162,38 @@ const StoricoDati: React.FC = () => {
     };
 
 
-    function exportUtenti(): void {
-        throw new Error("Function not implemented.");
-    }
+    const exportUtenti = async () => {
+    const snapshot = await getDocs(collection(db, "users"));
+
+    const utenti: any[] = [];
+
+    snapshot.forEach((doc) => {
+        const data = doc.data();
+        utenti.push({
+            Nome: data.displayName || "",
+            Cognome: data.cognome || "",
+            Email: data.email || "",
+            Telefono: data.telefono || "",
+            Corso: data.corsoLaurea || "",
+            Anno: data.annoAccademico || "",
+            Ruolo: data.ruolo || "PublicUser"
+        });
+    });
+
+    if (utenti.length === 0) return alert("Nessun utente trovato.");
+
+    const worksheet = XLSX.utils.json_to_sheet(utenti);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Utenti");
+
+    const buffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+    const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+
+    saveAs(blob, formatFilename("utenti_registrati"));
+};
+
 
     return (
         <div>

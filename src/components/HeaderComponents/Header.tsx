@@ -7,18 +7,17 @@ import { auth, db } from "../../backend/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
-
 const Header: React.FC = () => {
-  //const [isMenuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [displayName, setDisplayName] = useState("");
-  const [userRole, setUserRole] = useState("");
+  const [accessiblePages, setAccessiblePages] = useState<string[]>([]);
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
-  const toggleSideMenu = () => setSideMenuOpen((prev) => !prev);
 
   const location = useLocation();
   const navigate = useNavigate();
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const toggleSideMenu = () => setSideMenuOpen((prev) => !prev);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -27,24 +26,24 @@ const Header: React.FC = () => {
       if (currentUser) {
         const userRef = doc(db, "users", currentUser.uid);
         const userSnap = await getDoc(userRef);
+
         if (userSnap.exists()) {
           const data = userSnap.data();
-          setDisplayName(data.displayName);
-          setUserRole(data.ruolo); // 👈 recupera anche il ruolo
+          setDisplayName(data.displayName || "");
+
+          const ruolo = data.ruolo || "PublicUser";
+          const accessSnap = await getDoc(doc(db, "ruoliPagineAccesso", ruolo));
+          const accessData = accessSnap.data();
+          setAccessiblePages(accessData?.accessoPagine || []);
         }
       } else {
         setDisplayName("");
-        setUserRole("");
+        setAccessiblePages([]);
       }
     });
 
     return () => unsubscribe();
   }, []);
-
-
-  //const toggleMenu = () => setMenuOpen(!isMenuOpen);
-  const goHome = () => navigate("/");
-
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -57,56 +56,49 @@ const Header: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [sideMenuOpen]);
 
+  const goHome = () => navigate("/");
+
+  const linkAccessibili = [
+    { path: "/gestionaleA4", label: "Gestionale A4" },
+    { path: "/gestionaleA3", label: "Gestionale A3" },
+    { path: "/foto-video-gestionale", label: "Foto & Video Gestionale" },
+    { path: "/utentiGestionale", label: "Gestione Utenti" },
+    { path: "/gestione-accessi", label: "Gestione Accessi Ruoli" },
+    { path: "/storicoDati", label: "Storico Dati" },
+  ];
 
   return (
     <div className={classes.header}>
-      {/* Menu burger solo mobile */}
       <div className={classes["burger-section"]}>
-        <FiMenu
-          className={classes["burger-icon"]}
-          onClick={toggleSideMenu}
-          aria-label="Apri menu"
-        />
+        <FiMenu className={classes["burger-icon"]} onClick={toggleSideMenu} aria-label="Apri menu" />
       </div>
 
-      {/* Pulsante Home desktop */}
       <div className={classes["menu-section"]}>
         {location.pathname !== "/" && (
-          <button className={classes["menu-button-home"]} onClick={goHome}>
-            HOME
-          </button>
+          <button className={classes["menu-button-home"]} onClick={goHome}>HOME</button>
         )}
       </div>
 
-      {/* Logo */}
       <div className={classes["logo-section"]}>
         <Link to="/">
           <img src={logo} alt="Logo" className={classes.Logo} />
         </Link>
       </div>
 
-
-      {/* Side Menu Mobile */}
       {sideMenuOpen && (
-       <div ref={menuRef} className={classes["side-menu"]}>
+        <div ref={menuRef} className={classes["side-menu"]}>
           <button onClick={toggleSideMenu} className={classes["close-button"]}>✕</button>
           <nav className={classes["side-nav"]}>
-            {/* Benvenuto utente */}
             {user && (
               <div className={classes["welcome-user"]}>
                 👋 Benvenuto/a, <strong>{displayName}</strong>
               </div>
             )}
 
-            {/* Collegamenti principali */}
             <ul>
               {location.pathname !== "/" && (
                 <li>
-                  <Link
-                    to="/"
-                    onClick={toggleSideMenu}
-                    className={classes["link-menu"]}
-                  >
+                  <Link to="/" onClick={toggleSideMenu} className={classes["link-menu"]}>
                     Torna Alla Home
                   </Link>
                 </li>
@@ -122,47 +114,31 @@ const Header: React.FC = () => {
                   🖨️ Stampa in A3
                 </Link>
               </li>
-              {userRole === "amministratore" && (
-                <li>
-                  <Link to="/gestionaleA4" onClick={toggleSideMenu} className={classes["link-menu"]}>
-                    Gestionale A4
-                  </Link>
-                </li>
-              )}
-              {userRole === "amministratore" && (
-                <li>
-                  <Link to="/gestionaleA3" onClick={toggleSideMenu} className={classes["link-menu"]}>
-                    Gestionale A3
-                  </Link>
-                </li>
-              )}
-              {userRole === "amministratore" && (
-                <li>
-                  <Link to="/utentiGestionale" onClick={toggleSideMenu} className={classes["link-menu"]}>
-                    Gestione Utenti
-                  </Link>
-                </li>
-              )}
-              {userRole === "amministratore" && (
-                <li>
-                  <Link to="/storicoDati" onClick={toggleSideMenu} className={classes["link-menu"]}>
-                    Storico Dati
-                  </Link>
-                </li>
-              )}
+              <li>
+                <Link to="/contatti-servizi-foto-video" onClick={toggleSideMenu} className={classes["link-menu"]}>
+                  📸 Contatti Servizi Foto/Video
+                </Link>
+              </li>
 
+              {linkAccessibili
+                .filter(({ path }) => accessiblePages.includes(path.replace("/", "")))
+                .map(({ path, label }) => (
+                  <li key={path}>
+                    <Link to={path} onClick={toggleSideMenu} className={classes["link-menu"]}>
+                      {label}
+                    </Link>
+                  </li>
+                ))}
             </ul>
 
-            {/* Login / Logout o Registrazione */}
             {user ? (
               <>
-                {/* 👤 Link alla pagina Account */}
                 <button
                   onClick={() => {
                     toggleSideMenu();
                     navigate("/account");
                   }}
-                  className={classes["account-button"]} // Puoi aggiungere stile se serve
+                  className={classes["account-button"]}
                 >
                   👤 Il mio Account
                 </button>
@@ -182,27 +158,19 @@ const Header: React.FC = () => {
               </>
             ) : (
               <div className={classes["auth-links"]}>
-                <button onClick={() => {
-                  toggleSideMenu();
-                  navigate("/login");
-                }}>
+                <button onClick={() => { toggleSideMenu(); navigate("/login"); }}>
                   Accedi
                 </button>
                 <span style={{ color: "white" }}>/</span>
-                <button onClick={() => {
-                  toggleSideMenu();
-                  navigate("/register");
-                }}>
+                <button onClick={() => { toggleSideMenu(); navigate("/register"); }}>
                   Registrati
                 </button>
               </div>
             )}
-
           </nav>
         </div>
       )}
     </div>
-
   );
 };
 

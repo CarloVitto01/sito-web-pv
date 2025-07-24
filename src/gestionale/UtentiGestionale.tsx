@@ -19,13 +19,22 @@ const UtentiGestionale: React.FC = () => {
   const [utenti, setUtenti] = useState<Utente[]>([]);
   const [filtroRuolo, setFiltroRuolo] = useState<string>("Tutti");
   const [query, setQuery] = useState<string>("");
+  const [ruoliDisponibili, setRuoliDisponibili] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchUtenti = async () => {
       const querySnapshot = await getDocs(collection(db, "users"));
-      const users: Utente[] = querySnapshot.docs.map((docSnap) => {
+      const users: Utente[] = [];
+
+      for (const docSnap of querySnapshot.docs) {
         const data = docSnap.data();
-        return {
+
+        // Se manca il ruolo, aggiorna Firestore
+        if (!data.ruolo) {
+          await updateDoc(doc(db, "users", docSnap.id), { ruolo: "PublicUser" });
+        }
+
+        users.push({
           id: docSnap.id,
           displayName: data.displayName,
           cognome: data.cognome,
@@ -34,11 +43,20 @@ const UtentiGestionale: React.FC = () => {
           ruolo: data.ruolo || "PublicUser",
           corsoLaurea: data.corsoLaurea || "",
           annoAccademico: data.annoAccademico || "",
-        };
-      });
+        });
+      }
+
       setUtenti(users);
     };
+
+    const fetchRuoli = async () => {
+      const snapshot = await getDocs(collection(db, "ruoliPagineAccesso"));
+      const ruoli = snapshot.docs.map(doc => doc.id);
+      setRuoliDisponibili(ruoli);
+    };
+
     fetchUtenti();
+    fetchRuoli();
   }, []);
 
   const handleDelete = async (id: string) => {
@@ -91,14 +109,14 @@ const UtentiGestionale: React.FC = () => {
   };
 
   const utentiFiltrati = utenti.filter((u) => {
-  const matchRuolo = filtroRuolo === "Tutti" || u.ruolo === filtroRuolo;
-  const lowerQuery = query.toLowerCase();
-  const matchTesto =
-    (u.displayName?.toLowerCase().includes(lowerQuery) || "") ||
-    (u.cognome?.toLowerCase().includes(lowerQuery) || "") ||
-    (u.email?.toLowerCase().includes(lowerQuery) || "");
-  return matchRuolo && matchTesto;
-});
+    const matchRuolo = filtroRuolo === "Tutti" || u.ruolo === filtroRuolo;
+    const lowerQuery = query.toLowerCase();
+    const matchTesto =
+      (u.displayName?.toLowerCase().includes(lowerQuery) || "") ||
+      (u.cognome?.toLowerCase().includes(lowerQuery) || "") ||
+      (u.email?.toLowerCase().includes(lowerQuery) || "");
+    return matchRuolo && matchTesto;
+  });
 
   return (
     <div>
@@ -113,8 +131,9 @@ const UtentiGestionale: React.FC = () => {
             className={styles.input}
           >
             <option value="Tutti">🔎 Tutti i ruoli</option>
-            <option value="amministratore">🔐 Admin</option>
-            <option value="PublicUser">👤 PublicUser</option>
+            {ruoliDisponibili.map((ruolo) => (
+              <option key={ruolo} value={ruolo}>{ruolo}</option>
+            ))}
           </select>
 
           <input
@@ -145,8 +164,11 @@ const UtentiGestionale: React.FC = () => {
                   onChange={(e) => handleRoleChange(user.id, e.target.value)}
                   className={styles.input}
                 >
-                  <option value="PublicUser">PublicUser</option>
-                  <option value="amministratore">Admin</option>
+                  {ruoliDisponibili.map((ruolo) => (
+                    <option key={ruolo} value={ruolo}>
+                      {ruolo}
+                    </option>
+                  ))}
                 </select>
               </div>
               <button onClick={() => handleDelete(user.id)} className={styles.deleteButton}>
