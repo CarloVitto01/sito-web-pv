@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { db } from '../backend/firebase';
-import { collection, doc, getDoc, getDocs, setDoc } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, getDocs, setDoc } from 'firebase/firestore';
 import Header from '../components/HeaderComponents/Header';
 import styles from './GestioneAccessi.module.css';
 
@@ -19,6 +19,10 @@ const GestioneAccessi: React.FC = () => {
   const [accessi, setAccessi] = useState<string[]>([]);
   const [nuovoRuolo, setNuovoRuolo] = useState<string>('');
   const [salvato, setSalvato] = useState<boolean>(false);
+  const [ruoliUsati, setRuoliUsati] = useState<Set<string>>(new Set());
+  const [ruoloEliminato, setRuoloEliminato] = useState<string | null>(null);
+
+
 
   useEffect(() => {
     const fetchRuoli = async () => {
@@ -28,6 +32,8 @@ const GestioneAccessi: React.FC = () => {
         const data = docSnap.data();
         if (data.ruolo) ruoliUtenti.add(data.ruolo);
       });
+
+      setRuoliUsati(ruoliUtenti); // 👈 Salva i ruoli usati realmente
 
       const ruoliAccessi = new Set<string>();
       const snapshotAccessi = await getDocs(collection(db, "ruoliPagineAccesso"));
@@ -84,13 +90,24 @@ const GestioneAccessi: React.FC = () => {
     }
   };
 
+
+  const eliminaRuolo = async (ruolo: string) => {
+    await deleteDoc(doc(db, "ruoliPagineAccesso", ruolo));
+    setRuoli(prev => prev.filter(r => r !== ruolo));
+
+    if (ruolo === ruoloSelezionato) setRuoloSelezionato('');
+
+    setRuoloEliminato(ruolo);
+    setTimeout(() => setRuoloEliminato(null), 2000); // ✔️ sparisce dopo 2 secondi
+  };
+
   return (
     <div>
       <Header />
       <div className={styles.container}>
         <h2 className={styles.title}>🔐 Gestione Accessi per Ruolo</h2>
 
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '20px' }}>
           <select
             value={ruoloSelezionato}
             onChange={(e) => setRuoloSelezionato(e.target.value)}
@@ -104,6 +121,7 @@ const GestioneAccessi: React.FC = () => {
             ))}
           </select>
 
+
           <input
             type="text"
             placeholder="Crea nuovo ruolo..."
@@ -115,7 +133,22 @@ const GestioneAccessi: React.FC = () => {
           <button onClick={creaNuovoRuolo} className={styles.button}>
             ➕ Aggiungi ruolo
           </button>
+          {!ruoliUsati.has(ruoloSelezionato) && ruoloSelezionato && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <button
+                onClick={() => eliminaRuolo(ruoloSelezionato)}
+                className={styles.button}
+                style={{ backgroundColor: '#a00', color: '#fff' }}
+              >
+                🗑 Elimina ruolo
+              </button>
+              {ruoloEliminato === ruoloSelezionato && (
+                <span style={{ color: 'limegreen' }}>✔️</span>
+              )}
+            </div>
+          )}
         </div>
+
 
         {ruoloSelezionato && (
           <div className={styles.box}>
