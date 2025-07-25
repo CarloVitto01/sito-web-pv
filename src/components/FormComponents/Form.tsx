@@ -11,9 +11,10 @@ interface propsContainer {
   onSendData: (value: FormData) => void;
   defaultValues?: FormData;
   disabled?: boolean;
+   readOnlyFields?: boolean; 
 }
 
-const Form: React.FC<propsContainer> = ({ onSendData, defaultValues, disabled }) => {
+const Form: React.FC<propsContainer> = ({ onSendData, defaultValues, disabled, readOnlyFields }) => {
   const [enteredName, setEnteredName] = useState<string>("");
   const [nameIsValid, setNameIsValid] = useState<boolean>();
   const [enteredSurname, setEnteredSurname] = useState<string>("");
@@ -108,27 +109,27 @@ const Form: React.FC<propsContainer> = ({ onSendData, defaultValues, disabled })
             {/* Tutti gli input come ora */}
             <div className={`${classes.credential} ${nameIsValid === false ? classes.invalid : ""}`}>
               <label htmlFor="name" className={classes.voice}>Nome:</label>
-              <input type="text" id="name" value={enteredName} onChange={nameChangeHandler} onBlur={() => validateNameHandler(enteredName)} />
+              <input type="text" id="name" value={enteredName} onChange={nameChangeHandler} onBlur={() => validateNameHandler(enteredName)} readOnly={readOnlyFields} />
             </div>
             <div className={`${classes.credential} ${surnameIsValid === false ? classes.invalid : ""}`}>
               <label htmlFor="surname" className={classes.voice}>Cognome:</label>
-              <input type="text" id="surname" value={enteredSurname} onChange={surnameChangeHandler} onBlur={() => validateSurnameHandler(enteredSurname)} />
+              <input type="text" id="surname" value={enteredSurname} onChange={surnameChangeHandler} onBlur={() => validateSurnameHandler(enteredSurname)} readOnly={readOnlyFields} />
             </div>
             <div className={`${classes.credential} ${emailIsValid === false ? classes.invalid : ""}`}>
               <label htmlFor="email" className={classes.voice}>Email:</label>
-              <input type="text" id="email" value={enteredEmail} onChange={emailChangeHandler} onBlur={() => validateEmailHandler(enteredEmail)} />
+              <input type="text" id="email" value={enteredEmail} onChange={emailChangeHandler} onBlur={() => validateEmailHandler(enteredEmail)} readOnly={readOnlyFields} />
             </div>
             <div className={`${classes.credential} ${telephoneNumberIsValid === false ? classes.invalid : ""}`}>
               <label htmlFor="telephoneNumber" className={classes.voice}>Telefono:</label>
-              <input type="text" id="telephoneNumber" value={enteredTelephoneNumber} onChange={telephoneNumberChangeHandler} onBlur={() => validateTelephoneNumber(enteredTelephoneNumber)} />
+              <input type="text" id="telephoneNumber" value={enteredTelephoneNumber} onChange={telephoneNumberChangeHandler} onBlur={() => validateTelephoneNumber(enteredTelephoneNumber)} readOnly={readOnlyFields}/>
             </div>
             <div className={classes.credential}>
               <label htmlFor="corsoLaurea" className={classes.voice}>Corso (opzionale):</label>
-              <input type="text" id="corsoLaurea" value={enteredCorsoLaurea} onChange={corsoLaureaChangeHandler} />
+              <input type="text" id="corsoLaurea" value={enteredCorsoLaurea} onChange={corsoLaureaChangeHandler} readOnly={readOnlyFields}/>
             </div>
             <div className={classes.credential}>
               <label htmlFor="annoAccademico" className={classes.voice}>Anno (opzionale):</label>
-              <input type="text" id="annoAccademico" value={enteredAnnoAccademico} onChange={annoAccademicoChangeHandler} />
+              <input type="text" id="annoAccademico" value={enteredAnnoAccademico} onChange={annoAccademicoChangeHandler} readOnly={readOnlyFields}/>
             </div>
           </div>
         </div>

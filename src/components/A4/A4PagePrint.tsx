@@ -524,6 +524,7 @@ ${fileLinks}
         onSendData={setDataHandler}
         defaultValues={data}
         disabled={!isLoggedIn}
+        readOnlyFields={isLoggedIn}
       />
 
 
