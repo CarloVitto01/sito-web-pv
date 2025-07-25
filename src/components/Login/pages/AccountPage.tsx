@@ -196,10 +196,10 @@ const AccountPage: React.FC = () => {
 
                         <div className="button-row">
                             <button type="submit" className="home-button">
-                                Aggiorna Dati
+                            Aggiorna Dati
                             </button>
                             <button type="button" className="home-button" onClick={() => navigate("/")}>
-                                Torna alla Home
+                            Torna in Home
                             </button>
 
 
