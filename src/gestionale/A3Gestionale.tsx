@@ -10,6 +10,8 @@ import {
 } from "firebase/firestore";
 import styles from "./A3Gestionale.module.css";
 import Header from "../components/HeaderComponents/Header";
+import { getStorage, ref, deleteObject } from "firebase/storage";
+
 
 type CostiA3 = {
     grammaturaNormale: number;
@@ -97,9 +99,32 @@ const A3Gestionale: React.FC = () => {
     };
 
     const handleDelete = async (id: string) => {
+        const ordine = ordini.find((o) => o.id === id);
+        const storage = getStorage();
+
+        // Elimina tutti i file associati dal Firebase Storage
+        if (ordine?.files && ordine.files.length > 0) {
+            for (const fileUrl of ordine.files) {
+                try {
+                    const decodedUrl = decodeURIComponent(fileUrl.split("?")[0]);
+                    const pathStart = decodedUrl.indexOf("/o/") + 3;
+                    const pathEnd = decodedUrl.indexOf(".pdf", pathStart) + 4; // ".pdf" incluso
+                    const fullPath = decodedUrl.substring(pathStart, pathEnd).replace(/%2F/g, "/");
+
+                    const fileRef = ref(storage, fullPath);
+                    await deleteObject(fileRef);
+                    console.log("✅ File eliminato da Storage:", fullPath);
+                } catch (err) {
+                    console.error("❌ Errore eliminazione file:", fileUrl, err);
+                }
+            }
+        }
+
+        // Elimina il documento Firestore
         await deleteDoc(doc(db, "StampePDFA3", id));
         setOrdini((prev) => prev.filter((o) => o.id !== id));
     };
+
 
     return (
         <div>

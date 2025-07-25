@@ -193,15 +193,13 @@ const AccountPage: React.FC = () => {
                             </>
                         )}
 
-
                         <div className="button-row">
                             <button type="submit" className="home-button">
                             Aggiorna Dati
                             </button>
                             <button type="button" className="home-button" onClick={() => navigate("/")}>
-                            Torna in Home
+                            Vai in Home
                             </button>
-
 
                         </div>
                         {success && <p className="success-message">{success}</p>}
