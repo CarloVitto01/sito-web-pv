@@ -10,6 +10,7 @@ const containsOnlyNumbers = (number: string) => /^[0-9\s]+$/.test(number);
 interface propsContainer {
   onSendData: (value: FormData) => void;
   defaultValues?: FormData;
+  disabled?: boolean;
 }
 
 const Form: React.FC<propsContainer> = ({ onSendData, defaultValues }) => {
