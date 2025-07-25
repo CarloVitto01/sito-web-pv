@@ -29,6 +29,7 @@ import StoricoDati from './gestionale/StoricoDati';
 import ContattiServiziFotoVideo from './components/Foto_e_Video/ContattiServiziFotoVideo';
 import FotoVideoGestionale from './gestionale/FotoVideoGestionale';
 import GestioneAccessi from './gestionale/GestioneAccessi';
+import RecoverEmail from './components/Login/pages/RecoverEmail';
 
 const ScrollToTop: React.FC = () => {
   const navigationType = useNavigationType();
@@ -100,7 +101,7 @@ const App: React.FC = () => {
           <Route path="/storicoDati" element={<ProtectedRoute page="storicoDati" element={<StoricoDati />} />} />
           <Route path="/foto-video-gestionale" element={<ProtectedRoute page="foto-video-gestionale" element={<FotoVideoGestionale />} />} />
           <Route path="/gestione-accessi" element={<ProtectedRoute page="gestione-accessi" element={<GestioneAccessi />} />} />
-
+          <Route path="/recoveremail" element={<RecoverEmail />} />
 
           <Route path="/account" element={<AccountPage />} />
           <Route path="/recoverpassword" element={<RecoverPassword />} />

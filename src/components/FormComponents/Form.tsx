@@ -13,7 +13,7 @@ interface propsContainer {
   disabled?: boolean;
 }
 
-const Form: React.FC<propsContainer> = ({ onSendData, defaultValues }) => {
+const Form: React.FC<propsContainer> = ({ onSendData, defaultValues, disabled }) => {
   const [enteredName, setEnteredName] = useState<string>("");
   const [nameIsValid, setNameIsValid] = useState<boolean>();
   const [enteredSurname, setEnteredSurname] = useState<string>("");
@@ -102,34 +102,45 @@ const Form: React.FC<propsContainer> = ({ onSendData, defaultValues }) => {
       transition={{ duration: 0.8 }}
       viewport={{ once: true }}
     >
-      <div className={classes["container-form"]}>
-        <div className={classes.credentials}>
-          <div className={`${classes.credential} ${nameIsValid === false ? classes.invalid : ""}`}>
-            <label htmlFor="name" className={classes.voice}>Nome:</label>
-            <input type="text" id="name" value={enteredName} onChange={nameChangeHandler} onBlur={() => validateNameHandler(enteredName)} />
-          </div>
-          <div className={`${classes.credential} ${surnameIsValid === false ? classes.invalid : ""}`}>
-            <label htmlFor="surname" className={classes.voice}>Cognome:</label>
-            <input type="text" id="surname" value={enteredSurname} onChange={surnameChangeHandler} onBlur={() => validateSurnameHandler(enteredSurname)} />
-          </div>
-          <div className={`${classes.credential} ${emailIsValid === false ? classes.invalid : ""}`}>
-            <label htmlFor="email" className={classes.voice}>Email:</label>
-            <input type="text" id="email" value={enteredEmail} onChange={emailChangeHandler} onBlur={() => validateEmailHandler(enteredEmail)} />
-          </div>
-          <div className={`${classes.credential} ${telephoneNumberIsValid === false ? classes.invalid : ""}`}>
-            <label htmlFor="telephoneNumber" className={classes.voice}>Telefono:</label>
-            <input type="text" id="telephoneNumber" value={enteredTelephoneNumber} onChange={telephoneNumberChangeHandler} onBlur={() => validateTelephoneNumber(enteredTelephoneNumber)} />
-          </div>
-          <div className={classes.credential}>
-            <label htmlFor="corsoLaurea" className={classes.voice}>Corso (opzionale):</label>
-            <input type="text" id="corsoLaurea" value={enteredCorsoLaurea} onChange={corsoLaureaChangeHandler} />
-          </div>
-          <div className={classes.credential}>
-            <label htmlFor="annoAccademico" className={classes.voice}>Anno (opzionale):</label>
-            <input type="text" id="annoAccademico" value={enteredAnnoAccademico} onChange={annoAccademicoChangeHandler} />
+      {!disabled ? (
+        <div className={classes["container-form"]}>
+          <div className={classes.credentials}>
+            {/* Tutti gli input come ora */}
+            <div className={`${classes.credential} ${nameIsValid === false ? classes.invalid : ""}`}>
+              <label htmlFor="name" className={classes.voice}>Nome:</label>
+              <input type="text" id="name" value={enteredName} onChange={nameChangeHandler} onBlur={() => validateNameHandler(enteredName)} />
+            </div>
+            <div className={`${classes.credential} ${surnameIsValid === false ? classes.invalid : ""}`}>
+              <label htmlFor="surname" className={classes.voice}>Cognome:</label>
+              <input type="text" id="surname" value={enteredSurname} onChange={surnameChangeHandler} onBlur={() => validateSurnameHandler(enteredSurname)} />
+            </div>
+            <div className={`${classes.credential} ${emailIsValid === false ? classes.invalid : ""}`}>
+              <label htmlFor="email" className={classes.voice}>Email:</label>
+              <input type="text" id="email" value={enteredEmail} onChange={emailChangeHandler} onBlur={() => validateEmailHandler(enteredEmail)} />
+            </div>
+            <div className={`${classes.credential} ${telephoneNumberIsValid === false ? classes.invalid : ""}`}>
+              <label htmlFor="telephoneNumber" className={classes.voice}>Telefono:</label>
+              <input type="text" id="telephoneNumber" value={enteredTelephoneNumber} onChange={telephoneNumberChangeHandler} onBlur={() => validateTelephoneNumber(enteredTelephoneNumber)} />
+            </div>
+            <div className={classes.credential}>
+              <label htmlFor="corsoLaurea" className={classes.voice}>Corso (opzionale):</label>
+              <input type="text" id="corsoLaurea" value={enteredCorsoLaurea} onChange={corsoLaureaChangeHandler} />
+            </div>
+            <div className={classes.credential}>
+              <label htmlFor="annoAccademico" className={classes.voice}>Anno (opzionale):</label>
+              <input type="text" id="annoAccademico" value={enteredAnnoAccademico} onChange={annoAccademicoChangeHandler} />
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <p style={{ color: "gray", textAlign: "center", padding: "20px" }}>
+          🔒 Per effettuare un ordine è necessario il{" "}
+          <a href="/login" style={{ color: "#d4af37", textDecoration: "underline", fontWeight: "bold" }}>
+            login
+          </a>
+          . 🔒
+        </p>
+      )}
     </motion.form>
   );
 };
