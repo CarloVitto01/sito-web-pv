@@ -56,7 +56,6 @@ const Header: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [sideMenuOpen]);
 
-  const goHome = () => navigate("/");
 
   const linkAccessibili = [
     { path: "/gestionaleA4", label: "Gestionale A4" },
