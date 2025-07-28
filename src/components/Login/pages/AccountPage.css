@@ -21,18 +21,17 @@
 
 .account-container input {
   width: 100%;
-  padding: 8px;
+  padding: 8px 12px;
   margin-bottom: 15px;
   border: 1px solid #ccc;
+  box-sizing: border-box; 
 }
-
 
 .account-container input[readonly] {
   background-color: #111;
   color: white;
   cursor: default;
 }
-
 
 .account-container .button-row {
   display: flex;
@@ -47,8 +46,6 @@
 .account-container .error-message {
   color: red;
 }
-
-
 
 .orders-summary {
   margin-top: 30px;
@@ -74,14 +71,12 @@
   border-bottom: 1px solid #444;
 }
 
-
-
 .account-checkbox-wrapper {
  display: flex;
     justify-content: center;
     align-items: center;
     gap: 5px;
-    margin-top: -20px;
+   
 }
 
 .account-checkbox-wrapper label {

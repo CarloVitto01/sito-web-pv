@@ -57,6 +57,13 @@
   border-color: var(--color-error);
 }
 
+input[readonly] {
+  background-color: #111;
+  color: gold;
+  cursor: not-allowed;
+}
+
+
 /* su mobile ogni campo occuperà l’intera larghezza */
 @media screen and (max-width: 768px) {
   .credentials {

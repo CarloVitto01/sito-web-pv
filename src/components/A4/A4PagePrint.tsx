@@ -96,7 +96,7 @@ const A4PagePrint = () => {
   const [formSubmitting, setFormSubmitting] = useState<boolean>(false);
   const [formError, setFormError] = useState<boolean>(false);
   const [numeroPDF, setNumeroPDF] = useState<number>(0); // Stato per il conteggio dei PDF
-  console.log(numeroPDF, "numero pdf")
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [costi, setCosti] = useState({
     foglio: 0.03,
     biancoNero: 0.015,
@@ -310,6 +310,12 @@ const A4PagePrint = () => {
 
   const submitFormHandler = useCallback(async (event?: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     event?.preventDefault();
+
+    if (!auth.currentUser) {
+      alert("Per effettuare un ordine è necessario effettuare il login.");
+      window.location.href = "/login";
+      return;
+    }
     setFormSubmitting(true);
 
     if (fileData.length === 0 || !data.isValid) {
@@ -482,12 +488,12 @@ ${fileLinks}
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
+        setIsLoggedIn(true); // 👈 AGGIUNTO
         const docRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(docRef);
 
         if (userSnap.exists()) {
           const userData = userSnap.data();
-
           setData({
             name: userData.displayName || "",
             surname: userData.cognome || "",
@@ -495,15 +501,16 @@ ${fileLinks}
             telephoneNumber: userData.telefono || "",
             corsoLaurea: userData.corsoLaurea || "",
             annoAccademico: userData.annoAccademico || "",
-            isValid: false // Validazione verrà fatta normalmente da Form
+            isValid: false
           });
         }
+      } else {
+        setIsLoggedIn(false); // 👈 AGGIUNTO
       }
     });
 
     return () => unsubscribe();
   }, []);
-
 
   return (
     <div className="">
@@ -513,7 +520,13 @@ ${fileLinks}
         text={"In questa pagina potrai ordinare la stampa del tuo documento, inserisci le caratteristiche disponibili nelle varie sezioni per poter avere dei documenti cartacei di qualità."}
       />
       <SingleDelimiter />
-      <Form onSendData={setDataHandler} defaultValues={data} />
+      <Form
+        onSendData={setDataHandler}
+        defaultValues={data}
+        disabled={!isLoggedIn}
+        readOnlyFields={isLoggedIn}
+      />
+
 
       <SingleDelimiter />
       <MultiInput onSendData={setPDFHandler} />

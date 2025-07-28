@@ -10,6 +10,8 @@ import {
 } from "firebase/firestore";
 import styles from "./A4Gestionale.module.css";
 import Header from '../components/HeaderComponents/Header';
+import { getStorage, ref, deleteObject } from "firebase/storage";
+
 
 type Costi = {
   foglio: number;
@@ -104,10 +106,34 @@ const A4Gestionale: React.FC = () => {
     alert("Costi aggiornati!");
   };
 
-  const handleDelete = async (id: string) => {
-    await deleteDoc(doc(db, "StampePDFA4", id));
-    setOrdini((prev) => prev.filter((o) => o.id !== id));
-  };
+const handleDelete = async (id: string) => {
+  const ordine = ordini.find((o) => o.id === id);
+  const storage = getStorage();
+
+  // Elimina tutti i file PDF dallo storage
+  if (ordine?.file && ordine.file.length > 0) {
+    for (const fileUrl of ordine.file) {
+      try {
+        // Estrai il path relativo dallo storage bucket
+        const decodedUrl = decodeURIComponent(fileUrl.split("?")[0]);
+        const pathStart = decodedUrl.indexOf("/o/") + 3;
+        const pathEnd = decodedUrl.indexOf(".pdf", pathStart) + 4; // Include '.pdf'
+        const fullPath = decodedUrl.substring(pathStart, pathEnd).replace(/%2F/g, "/");
+
+        const fileRef = ref(storage, fullPath);
+        await deleteObject(fileRef);
+        console.log("✅ File eliminato:", fullPath);
+      } catch (err) {
+        console.error("❌ Errore durante l'eliminazione del file:", fileUrl, err);
+      }
+    }
+  }
+
+  // Elimina il documento Firestore
+  await deleteDoc(doc(db, "StampePDFA4", id));
+  setOrdini((prev) => prev.filter((o) => o.id !== id));
+};
+
 
   return (
     <div>

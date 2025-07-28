@@ -82,6 +82,10 @@ const Login: React.FC = () => {
           <p className="forgot-password" onClick={() => navigate("/recoverpassword")}>
             Hai dimenticato la password?
           </p>
+          <p className="forgot-email" onClick={() => navigate("/recoveremail")}>
+            Hai dimenticato l'email?
+          </p>
+
           <div className="button-row">
             <button type="submit">Login</button>
             <button

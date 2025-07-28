@@ -48,6 +48,7 @@ const A3PagePrint = () => {
     const [formSubmitting, setFormSubmitting] = useState<boolean>(false);
     const [formError, setFormError] = useState<boolean>(false);
     const [numeroPDF, setNumeroPDF] = useState<number>(0);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [costi, setCosti] = useState({
         grammaturaNormale: 0.12,
         grammaturaCartoncino: 0.17,
@@ -321,12 +322,12 @@ ${fileLinks}
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (user) {
+                setIsLoggedIn(true); // 👈 AGGIUNTO
                 const docRef = doc(db, "users", user.uid);
                 const userSnap = await getDoc(docRef);
 
                 if (userSnap.exists()) {
                     const userData = userSnap.data();
-
                     setData({
                         name: userData.displayName || "",
                         surname: userData.cognome || "",
@@ -334,9 +335,11 @@ ${fileLinks}
                         telephoneNumber: userData.telefono || "",
                         corsoLaurea: userData.corsoLaurea || "",
                         annoAccademico: userData.annoAccademico || "",
-                        isValid: false // Validazione verrà fatta normalmente da Form
+                        isValid: false
                     });
                 }
+            } else {
+                setIsLoggedIn(false); // 👈 AGGIUNTO
             }
         });
 
@@ -351,7 +354,8 @@ ${fileLinks}
                 text={"In questa pagina potrai ordinare la stampa del tuo documento, inserisci le caratteristiche disponibili nelle varie sezioni per poter avere dei documenti cartacei di qualità."}
             />
             <SingleDelimiter />
-            <Form onSendData={setDataHandler} defaultValues={data} />
+            <Form onSendData={setDataHandler} defaultValues={data} disabled={!isLoggedIn}
+                readOnlyFields={isLoggedIn} />
             <SingleDelimiter />
             <MultiInput onSendData={setPDFHandler} />
             <SingleDelimiter />

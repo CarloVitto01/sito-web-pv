@@ -1,35 +1,43 @@
 .header {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  display: flex;
   align-items: center;
-  background-color: var(--color-background);
-  border-bottom: 2px solid var(--color-gold);
+  justify-content: space-between;
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
+  background-color: var(--color-background);
+  border-bottom: 2px solid var(--color-gold);
   border-bottom-left-radius: var(--radius);
   border-bottom-right-radius: var(--radius);
   z-index: 100;
   box-shadow: 0 4px 15px rgba(199, 171, 43, 0.2);
-  padding: 10px 0;
+  padding: 10px 20px;
+}
+/* 👈 colonna sinistra vuota */
+.left-spacer {
+  flex: 1;
 }
 
-.menu-section {
-  display: flex;
-  justify-content: flex-start;
-  padding-left: 20px;
-}
 
 .logo-section {
+  flex: 1;
   display: flex;
   justify-content: center;
+  align-items: center;
 }
 
+.logo-section a {
+  pointer-events: auto; /* abilita clic sul logo */
+}
+
+
 .placeholder-section {
+  flex: 1;
   display: flex;
   justify-content: flex-end;
-  padding-right: 20px;
+  align-items: center;
+  padding-right: 40px;
 }
 
 .Logo {
@@ -39,19 +47,7 @@
   filter: drop-shadow(0 0 6px rgba(199, 171, 43, 0.7));
 }
 
-/* Button: Home */
-.menu-button-home {
-  background-color: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 101;
-  color: var(--color-gold);
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 15px;
-}
+
 
 /* Button: Login/Logout gold */
 .menu-button-gold {
@@ -169,20 +165,5 @@
   margin-bottom: 10px;
 }
 
-.menu-section,
-.placeholder-section {
-  display: none;
-}
 
-.logo-section {
-  grid-column: 1 / -1;
-  justify-content: center;
-}
 
-.Logo {
-  max-width: 180px;
-  /* leggermente più piccolo se vuoi equilibrio */
-  width: 100%;
-  margin: 8px auto;
-  filter: drop-shadow(0 0 6px rgba(199, 171, 43, 0.7));
-}

@@ -115,9 +115,29 @@ const AccountPage: React.FC = () => {
                         <label>Email:</label>
                         <input value={auth.currentUser?.email || ""} readOnly />
 
-
+                        <button
+                            type="button"
+                            className="home-button"
+                            onClick={() => {
+                                const user = auth.currentUser;
+                                if (user?.email) {
+                                    import("firebase/auth").then(({ sendPasswordResetEmail }) => {
+                                        sendPasswordResetEmail(auth, user.email!)
+                                            .then(() => {
+                                                setSuccess("Email per il cambio password inviata!");
+                                            })
+                                            .catch(() => {
+                                                setError("Errore durante l'invio dell'email.");
+                                            });
+                                    });
+                                }
+                            }}
+                        >
+                            Cambia Password
+                        </button> 
+                        <br />
                         <label>Telefono:</label>
-                        <input name="telefono" value={userData.telefono || ""} onChange={handleChange} required />
+                        <input name="telefono" value={userData.telefono || ""} onChange={handleChange} required /> 
 
                         <div className="account-checkbox-wrapper">
                             <label htmlFor="isStudente">
@@ -145,9 +165,9 @@ const AccountPage: React.FC = () => {
                                                     corsoLaurea: "",
                                                     annoAccademico: "",
                                                 });
-                                            
+
                                             } catch (err) {
-                        
+
                                             }
                                         }
                                     }
@@ -173,18 +193,19 @@ const AccountPage: React.FC = () => {
                             </>
                         )}
 
-
                         <div className="button-row">
                             <button type="submit" className="home-button">
-                                Aggiorna Dati
+                            Aggiorna Dati
                             </button>
                             <button type="button" className="home-button" onClick={() => navigate("/")}>
-                                Torna alla Home
+                            Vai in Home
                             </button>
+
                         </div>
                         {success && <p className="success-message">{success}</p>}
                         {error && <p className="error-message">{error}</p>}
                     </form>
+
                     <div className="orders-summary">
                         <h3>Ordini Effettuati: {orders.length}</h3>
                         {orders.length === 0 ? (

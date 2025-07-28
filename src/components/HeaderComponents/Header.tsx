@@ -73,16 +73,39 @@ const Header: React.FC = () => {
         <FiMenu className={classes["burger-icon"]} onClick={toggleSideMenu} aria-label="Apri menu" />
       </div>
 
-      <div className={classes["menu-section"]}>
-        {location.pathname !== "/" && (
-          <button className={classes["menu-button-home"]} onClick={goHome}>HOME</button>
-        )}
-      </div>
+     <div className={classes["left-spacer"]} /> {/* 👈 colonna sinistra vuota */}
 
       <div className={classes["logo-section"]}>
         <Link to="/">
           <img src={logo} alt="Logo" className={classes.Logo} />
         </Link>
+      </div>
+
+      <div className={classes["placeholder-section"]}>
+        {user ? (
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <button
+              className={classes["menu-button-gold"]}
+              onClick={() => {
+                signOut(auth).then(() => {
+                  setUser(null);
+                  setDisplayName("");
+                  navigate("/");
+                });
+              }}
+            >
+              Logout
+            </button>
+          </div>
+        ) : (
+          <button
+            className={classes["menu-button-gold"]}
+            onClick={() => navigate("/login")}
+          >
+            Login
+          </button>
+        )}
+
       </div>
 
       {sideMenuOpen && (
