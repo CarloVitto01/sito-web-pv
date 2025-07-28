@@ -527,13 +527,13 @@ ${fileLinks}
                 () => [
                   {
                     title: "Bianco e nero",
-                    imageSrc: require("../../assets/images/Bianco_Nero_Ruota.png"),
+                    imageSrc: require("../../assets/images/Bianco_nero.png"),
                     disabled: false,
                     errorMessage: "",
                   },
                   {
                     title: "Colore",
-                    imageSrc: require("../../assets/images/Colori_ruota.png"),
+                    imageSrc: require("../../assets/images/Colore.png"),
                     disabled: false,
                     errorMessage: "",
                   },
@@ -549,25 +549,25 @@ ${fileLinks}
                 () => [
                   {
                     title: "Verticale",
-                    imageSrc: require("../../assets/images/Verticale.jpg"),
+                    imageSrc: require("../../assets/images/Verticale.png"),
                     disabled: false,
                     errorMessage: "",
                   },
                   {
                     title: "Orizzontale",
-                    imageSrc: require("../../assets/images/Orizzontale.jpg"),
+                    imageSrc: require("../../assets/images/Orizzontale.png"),
                     disabled: false,
                     errorMessage: "",
                   },
                   {
                     title: "2 in 1 orizzontale",
-                    imageSrc: require("../../assets/images/2in1Orizzontale.jpg"),
+                    imageSrc: require("../../assets/images/2in1_orizzontale.png"),
                     disabled: false,
                     errorMessage: "",
                   },
                   {
                     title: "2 in 1 verticale",
-                    imageSrc: require("../../assets/images/2in1Verticale.jpg"),
+                    imageSrc: require("../../assets/images/2in1_verticale.png"),
                     disabled: false,
                     errorMessage: "",
                   },
@@ -627,7 +627,7 @@ ${fileLinks}
                 () => [
                   {
                     title: "Anelli",
-                    imageSrc: require("../../assets/images/Anelli.jpg"),
+                    imageSrc: require("../../assets/images/Anelli.png"),
                     disabled: numeroPaginePDF > 670 && intervalloPagine > 670, // Aggiungi la proprietà disabled
                     errorMessage: "Limite di 670 pagine",
                   },
@@ -639,19 +639,19 @@ ${fileLinks}
                   },
                   {
                     title: "Fascetta",
-                    imageSrc: require("../../assets/images/Fascetta.jpg"),
+                    imageSrc: require("../../assets/images/Fascetta.png"),
                     disabled: numeroPaginePDF > 80 && intervalloPagine > 80, // Aggiungi la proprietà disabled
                     errorMessage: "Limite di 80 pagine",
                   },
                   {
                     title: "Ciappatura",
-                    imageSrc: require("../../assets/images/Ciappatura.jpg"),
+                    imageSrc: require("../../assets/images/Ciappatura.png"),
                     disabled: numeroPaginePDF > 35 && intervalloPagine > 35, // Mantieni la logica di disabilitazione
                     errorMessage: "Limite di 40 pagine"
                   },
                   {
                     title: "Nessuna",
-                    imageSrc: require("../../assets/images/Nessuna.jpg"),
+                    imageSrc: require("../../assets/images/No_rilegatura.png"),
                     disabled: false, // Aggiungi la proprietà disabled
                     errorMessage: "",
                   },

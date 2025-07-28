@@ -365,13 +365,13 @@ ${fileLinks}
                             () => [
                                 {
                                     title: "Normale",
-                                    imageSrc: require("../../assets/images/Colore.jpg"),
+                                    imageSrc: require("../../assets/images/Colore.png"),
                                     disabled: false,
                                     errorMessage: ""
                                 },
                                 {
                                     title: "Cartoncino",
-                                    imageSrc: require("../../assets/images/Bianco_e_nero.jpg"),
+                                    imageSrc: require("../../assets/images/Bianco_nero.png"),
                                     disabled: false,
                                     errorMessage: ""
                                 },
@@ -387,13 +387,13 @@ ${fileLinks}
                             () => [
                                 {
                                     title: "Colore",
-                                    imageSrc: require("../../assets/images/Colori_ruota.png"),
+                                    imageSrc: require("../../assets/images/Colore.png"),
                                     disabled: false,
                                     errorMessage: ""
                                 },
                                 {
                                     title: "Bianco e nero",
-                                    imageSrc: require("../../assets/images/Bianco_Nero_Ruota.png"),
+                                    imageSrc: require("../../assets/images/Bianco_nero.png"),
                                     disabled: false,
                                     errorMessage: ""
                                 },
@@ -431,13 +431,13 @@ ${fileLinks}
                             () => [
                                 {
                                     title: "Si",
-                                    imageSrc: require("../../assets/images/Anelli.jpg"),
+                                    imageSrc: require("../../assets/images/Anelli.png"),
                                     disabled: false,
                                     errorMessage: ""
                                 },
                                 {
                                     title: "No",
-                                    imageSrc: require("../../assets/images/Nessuna.jpg"),
+                                    imageSrc: require("../../assets/images/No_rilegatura.png"),
                                     disabled: false,
                                     errorMessage: ""
                                 },
@@ -453,19 +453,19 @@ ${fileLinks}
                             () => [
                                 {
                                     title: "Auto",
-                                    imageSrc: require("../../assets/images/2in1Orizzontale.jpg"),
+                                    imageSrc: require("../../assets/images/2in1_orizzontale.png"),
                                     disabled: false,
                                     errorMessage: "",
                                 },
                                 {
                                     title: "Orizzontale",
-                                    imageSrc: require("../../assets/images/Orizzontale.jpg"),
+                                    imageSrc: require("../../assets/images/Orizzontale.png"),
                                     disabled: false,
                                     errorMessage: "",
                                 },
                                 {
                                     title: "Verticale",
-                                    imageSrc: require("../../assets/images/Verticale.jpg"),
+                                    imageSrc: require("../../assets/images/Verticale.png"),
                                     disabled: false,
                                     errorMessage: "",
                                 },
