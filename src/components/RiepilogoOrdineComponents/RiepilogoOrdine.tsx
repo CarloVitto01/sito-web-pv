@@ -90,7 +90,7 @@ const RiepilogoOrdine = ({
 
       {loading && (
         <>
-          <p className={styles.loadingText}>Invio in corso...</p>
+          <p className={styles.loadingText}>Invio in corso: attendere il completamento della barra.</p>
           <div className={styles.loader}>
             <div
               className={styles.loaderBar}
