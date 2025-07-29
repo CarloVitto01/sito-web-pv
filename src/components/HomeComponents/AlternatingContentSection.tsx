@@ -1,8 +1,8 @@
 import React from 'react';
 import styles from './AlternatingContentSection.module.css';
-import stampante from '../../assets/images/stampante.jpg';
+import stampante from '../../assets/images/stampante.png';
 import grafica from '../../assets/images/grafica.png';
-import fotografia from '../../assets/images/fotografia.jpeg';
+import fotografia from '../../assets/images/fotografia.png';
 
 const rows = [
   {

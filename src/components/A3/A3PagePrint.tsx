@@ -369,13 +369,13 @@ ${fileLinks}
                             () => [
                                 {
                                     title: "Normale",
-                                    imageSrc: require("../../assets/images/Colore.png"),
+                                    imageSrc: require("../../assets/images/Grammatura_normale_A3.png"),
                                     disabled: false,
                                     errorMessage: ""
                                 },
                                 {
                                     title: "Cartoncino",
-                                    imageSrc: require("../../assets/images/Bianco_nero.png"),
+                                    imageSrc: require("../../assets/images/Grammatura_Cartoncino_A3.png"),
                                     disabled: false,
                                     errorMessage: ""
                                 },
@@ -435,13 +435,13 @@ ${fileLinks}
                             () => [
                                 {
                                     title: "Si",
-                                    imageSrc: require("../../assets/images/Anelli.png"),
+                                    imageSrc: require("../../assets/images/Plastificatrice_si.png"),
                                     disabled: false,
                                     errorMessage: ""
                                 },
                                 {
                                     title: "No",
-                                    imageSrc: require("../../assets/images/No_rilegatura.png"),
+                                    imageSrc: require("../../assets/images/Plastificatrice_no.png"),
                                     disabled: false,
                                     errorMessage: ""
                                 },
@@ -457,7 +457,7 @@ ${fileLinks}
                             () => [
                                 {
                                     title: "Auto",
-                                    imageSrc: require("../../assets/images/2in1_orizzontale.png"),
+                                    imageSrc: require("../../assets/images/Layout_auto.png"),
                                     disabled: false,
                                     errorMessage: "",
                                 },
