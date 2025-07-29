@@ -13,7 +13,7 @@ const Home: React.FC = () => {
     <div className="home-container">
       <Header />
       <DescriptionSection />
-      <ImageCarousel />
+      {/*<ImageCarousel />*/}
       <CardsSection />
       <AlternatingContentSection />
       <Footer />
