@@ -47,42 +47,45 @@ const ResetPassword: React.FC = () => {
       <div className="reset-password-container">
         <h2>Reimposta la tua password</h2>
         <form onSubmit={handleReset}>
-          <label>Nuova Password:</label>
-          <div className="password-input-wrapper">
+          <label className="reset-label">Nuova Password:</label>
+          <div className="reset-password-input-wrapper">
             <input
+              className="reset-password-input"
               type={showNewPassword ? "text" : "password"}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               required
             />
             <span
-              className="password-toggle-icon"
+              className="reset-password-toggle-icon"
               onClick={() => setShowNewPassword((prev) => !prev)}
             >
               {showNewPassword ? <FiEyeOff /> : <FiEye />}
             </span>
           </div>
 
-          <label>Conferma Password:</label>
-          <div className="password-input-wrapper">
+          <label className="reset-label">Conferma Password:</label>
+          <div className="reset-password-input-wrapper">
             <input
+              className="reset-password-input"
               type={showConfirmPassword ? "text" : "password"}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
             />
             <span
-              className="password-toggle-icon"
+              className="reset-password-toggle-icon"
               onClick={() => setShowConfirmPassword((prev) => !prev)}
             >
               {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
             </span>
           </div>
 
-          <button type="submit">Aggiorna Password</button>
-          {error && <p className="error-message">{error}</p>}
-          {success && <p className="success-message">{success}</p>}
+          <button className="reset-password-button" type="submit">Aggiorna Password</button>
+          {error && <p className="reset-error-message">{error}</p>}
+          {success && <p className="reset-success-message">{success}</p>}
         </form>
+
       </div>
     </div>
   );
