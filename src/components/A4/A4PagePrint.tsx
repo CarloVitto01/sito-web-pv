@@ -618,13 +618,13 @@ ${fileLinks}
                 () => [
                   {
                     title: "Si",
-                    imageSrc: require("../../assets/images/Fronte_retro.png"),
+                    imageSrc: require("../../assets/images/SI.png"),
                     disabled: numeroPDF === 1,
                     errorMessage: "Disponibile Soltanto per 2 o più PDF",
                   },
                   {
                     title: "No",
-                    imageSrc: require("../../assets/images/Fronte.png"),
+                    imageSrc: require("../../assets/images/NO.png"),
                     disabled: numeroPDF === 1,
                     errorMessage: "Disponibile Soltanto per 2 o più PDF",
                   },
