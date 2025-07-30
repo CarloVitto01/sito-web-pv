@@ -6,8 +6,6 @@ import CardsSection from './CardsSection';
 import AlternatingContentSection from './AlternatingContentSection';
 import './Home.module.css';
 
-import ImageCarousel from './ImageCarousel';
-
 const Home: React.FC = () => {
   return (
     <div className="home-container">

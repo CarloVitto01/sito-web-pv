@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
+import { useDropzone } from "react-dropzone"; // <-- IMPORTANTE
 import { db, storage } from "../backend/firebase";
 import {
   collection,
@@ -27,6 +28,16 @@ const FotoVideoGestionale: React.FC = () => {
     });
     return () => unsub();
   }, []);
+
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    setFiles((prev) => [...prev, ...acceptedFiles]);
+  }, []);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    accept: { "image/*": [], "video/*": [] },
+    multiple: true,
+    onDrop,
+  });
 
   const handleUpload = async () => {
     if (!files.length) return;
@@ -70,12 +81,28 @@ const FotoVideoGestionale: React.FC = () => {
         <h2 className={styles.title}>🎬 Gestionale Foto & Video</h2>
 
         <div className={styles.uploadSection}>
-          <input
-            type="file"
-            accept="image/*,video/*"
-            multiple
-            onChange={(e) => setFiles(Array.from(e.target.files || []))}
-          />
+          <div
+            {...getRootProps()}
+            style={{
+              border: "2px dashed var(--color-gold)",
+              padding: "20px",
+              borderRadius: "10px",
+              backgroundColor: "#111",
+              textAlign: "center",
+              color: "white",
+              cursor: "pointer",
+              width: "100%",
+              maxWidth: 600,
+            }}
+          >
+            <input {...getInputProps()} />
+            {isDragActive ? (
+              <p>📂 Rilascia i file qui...</p>
+            ) : (
+              <p>📂 Trascina i file qui o clicca per selezionare</p>
+            )}
+          </div>
+
           <button onClick={handleUpload} disabled={uploading || !files.length}>
             {uploading ? "Caricamento..." : "📤 Carica"}
           </button>

@@ -16,19 +16,14 @@
 .uploadSection {
   margin-bottom: 40px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
+  flex-direction: column;
+  gap: 20px;
   align-items: center;
   justify-content: center;
 }
 
 .uploadSection input[type="file"] {
-  padding: 8px;
-  font-size: 1rem;
-  background: #222;
-  border: 1px solid var(--color-gold);
-  color: white;
-  border-radius: 6px;
+  display: none;
 }
 
 .uploadSection button {
@@ -45,6 +40,7 @@
 .uploadSection button:hover {
   background-color: #e6c100;
 }
+
 .mediaGrid {
   column-count: 3;
   column-gap: 25px;
@@ -107,3 +103,32 @@
 .card button:hover {
   background: darkred;
 }
+
+/* 🔄 Pulsante rotazione */
+.rotateButton {
+  background: #222;
+  color: var(--color-gold);
+  border: 1px solid var(--color-gold);
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-left: 8px;
+  font-size: 0.85rem;
+}
+
+.rotateButton:hover {
+  background: #333;
+}
+
+.rotationBadge {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(255, 215, 0, 0.8);
+  color: #000;
+  font-weight: bold;
+  font-size: 0.8rem;
+  padding: 3px 6px;
+  border-radius: 6px;
+}
+
