@@ -469,13 +469,6 @@ ${fileLinks}
       });
   }, [data, fileData, numeroPDF, preventivo, pagina, layout, inchiostro, numeroCopie, rilegatura, rilegaturaUnica, daA]);
 
-  // const closeFinalModalHandler = useCallback(() => {
-  //   setFormSubmitted(false);
-  //   setFormSubmitting(false);
-  //   setFormError(false);
-  //   window.location.reload(); // Ricarica la pagina
-  // }, []);
-
   useEffect(() => {
     if (formSubmitted) {
       const timeout = setTimeout(() => {
@@ -488,7 +481,7 @@ ${fileLinks}
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        setIsLoggedIn(true); // 👈 AGGIUNTO
+        setIsLoggedIn(true); 
         const docRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(docRef);
 
@@ -505,7 +498,7 @@ ${fileLinks}
           });
         }
       } else {
-        setIsLoggedIn(false); // 👈 AGGIUNTO
+        setIsLoggedIn(false); 
       }
     });
 
@@ -723,23 +716,7 @@ ${fileLinks}
           />
         </div>
       </div>
-
-      {/*<Modal
-       totalOrder={preventivo}
-       onSubmit={submitFormHandler}
-       disabled={!data.isValid || file.length === 0 || !intervalloPagineIsValid}
-     />*/}
-
       <Footer />
-      {/*(formSubmitted || formSubmitting) && (
-        <FinalModal
-          onConfirm={closeFinalModalHandler}
-          loading={formSubmitting ? "submitting" : "submitted"}
-        />
-      )}
-      {formError && (
-        <FinalModal onConfirm={closeFinalModalHandler} loading={"error"} />
-      )*/}
     </div>
   );
 };

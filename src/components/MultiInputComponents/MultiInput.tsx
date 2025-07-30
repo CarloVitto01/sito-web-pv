@@ -8,7 +8,6 @@ import 'react-pdf/dist/esm/Page/TextLayer.css';
 import Loading from "../LoadingComponents/Loading";
 import { GrCaretNext, GrCaretPrevious } from "react-icons/gr";
 import { AiOutlineClose } from "react-icons/ai";
-import { MdDelete, MdOutlinePreview } from "react-icons/md";
 import { pdfjs } from "react-pdf";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
@@ -117,12 +116,12 @@ const MultiInput: React.FC<PropsContainer> = ({ onSendData }) => {
                         <div className={classes.pdfContainerButton}>
                             <div className={classes["button-container"]}>
                                 <div className={classes["artButton"]} onClick={() => openPopup(file, index)}>
-                                    <MdOutlinePreview />
+                                    <p>Visualizza</p>
                                 </div>
                             </div>
                             <div className={classes["button-container"]}>
                                 <div className={classes["artButton"]} onClick={() => removeFile(index)}>
-                                    <MdDelete />
+                                    <p>Elimina</p>
                                 </div>
                             </div>
                         </div>
@@ -132,10 +131,6 @@ const MultiInput: React.FC<PropsContainer> = ({ onSendData }) => {
                     </div>
                 ))}
             </div>
-            {/*<div className={classes["totalPages"]}>
-                <p><strong>Totale Pagine: {totalNumPages}</strong></p>
-                <p><strong>Totale PDF: {files.length}</strong></p>
-            </div>*/}
             {isOpen && currentFile && currentFileIndex !== null && (
                 <div className={classes["popup"]}>
                     <div className={classes["popupContent"]}>
