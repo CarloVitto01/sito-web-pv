@@ -110,6 +110,7 @@
 .loading {
   color: gray;
 }
+
 .clickable {
   cursor: pointer;
   transition: transform 0.2s ease;
@@ -134,15 +135,21 @@
 }
 
 .modalContent {
-  max-width: 50%;
-  max-height: 80%;
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
   position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
+
 
 .modalContent img,
 .modalContent video {
-  max-width: 100%;
-  max-height: 100%;
+  width: 100%;
+  height: auto;
+  max-height: 80vh;
   border-radius: 8px;
   border: 2px solid var(--color-gold);
 }
@@ -158,4 +165,38 @@
   border-radius: 50%;
   padding: 4px 10px;
   cursor: pointer;
+}
+
+
+@media (max-width: 480px) {
+  .modalOverlay {
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modalContent {
+    width: 90%;
+    max-height: 90vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: -20px;
+  }
+
+  .modalContent img,
+  .modalContent video {
+    width: 100%;
+    height: auto;
+    max-height: 80vh;
+    border-radius: 10px;
+  }
+
+  .modalClose {
+    top: 5px;
+    right: 5px;
+    font-size: 1.2rem;
+    padding: 6px 10px;
+  }
 }
