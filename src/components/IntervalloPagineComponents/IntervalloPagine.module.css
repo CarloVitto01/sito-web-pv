@@ -1,78 +1,84 @@
 .page-range {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
 }
 
 .title {
   font-size: 1.5rem;
   color: var(--color-gold);
-  margin: 0;
-  margin-right: 1vw;
+  margin-bottom: 1rem;
+  text-align: center;
 }
 
 .error-message {
   color: var(--color-error);
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.options-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-bottom: 1rem;
 }
 
 .options {
   display: flex;
-  justify-content: flex-start;
-  margin: 0;
+  align-items: center;
+  margin-bottom: 0.5rem;
 }
 
 .container-text {
   display: flex;
   align-items: center;
-  margin: 0.5vh;
   cursor: pointer;
 }
 
 .text {
-  font-size: 1.5rem;
-  margin: 0;
+  font-size: 1.4rem;
   color: var(--color-text);
+  margin: 0;
 }
 
 .text-page {
-  font-size: 1.5rem;
-  margin: 0%;
-  text-align: center;
-  margin-left: 2vw;
+  font-size: 1.2rem;
   color: var(--color-text);
+  margin: 0 1vw 0 0;
 }
 
 .inputRowDivS {
   display: flex;
-  justify-content: flex-start;
   align-items: center;
-}
-
-.inputRowDivS input {
-  margin-right: 2vw;
-  width: 5vw;
+  margin-bottom: 0.8rem;
 }
 
 .inputRowDivS.invalid input {
   border-bottom: 2px solid var(--color-error);
-  background: rgba(255, 0, 0, 0.1);
+  background-color: rgba(255, 0, 0, 0.1);
+}
+
+.inputRowDivS input {
+  width: 6vw;
+  min-width: 50px;
+  font-size: 1rem;
+  padding: 0.3rem;
+  text-align: center;
+  border: none;
+  border-bottom: 1px solid var(--color-text);
+  background-color: transparent;
+  color: var(--color-text);
 }
 
 .invalid-input {
-  position: absolute;
-  color: var(--color-error);
-  left: 63vw;
+ color: var(--color-error);
+  font-size: 0.9rem;
+  margin: -0.5rem 0 0.8rem 0; /* avvicina e separa il messaggio */
+  padding-left: 1px; /* sposta sotto input, regola se serve */
 }
 
-.number {
-  width: 5vw;
-  border: transparent;
-  border-bottom: 1px solid var(--color-text);
-  background-color: transparent;
-  margin-left: 0.7vw;
-  font-size: 1.7vw;
-  text-align: center;
-  color: var(--color-text);
-}
 
 .options input[type="radio"] {
   display: none;
@@ -80,46 +86,33 @@
 
 .checkmark {
   display: inline-block;
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   border: 2px solid var(--color-gold);
   border-radius: 50%;
-  margin-right: 8px;
+  margin-right: 0.5rem;
 }
 
-.options input[type="radio"]:checked+label .checkmark {
+.options input[type="radio"]:checked + label .checkmark {
   background-color: var(--color-gold);
   border-color: var(--color-gold);
 }
 
+.disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
 @media screen and (max-width: 500px) {
-  .title {
-    font-size: 4.5vw;
-  }
-
-  .text {
-    font-size: 4vw;
-  }
-
-  .text-page {
-    font-size: 3.8vw;
-  }
-
-  .inputRowDivS {
-    width: 20vw;
-  }
-
   .inputRowDivS input {
-    margin-right: 2vw;
-    width: 12vw;
-  }
-
-  .number {
-    font-size: 5vw;
-    margin: 0;
+    width: 14vw;
+    font-size: 4.2vw;
   }
 
   .invalid-input {
-    left: 70vw;
+    font-size: 4vw;
+    padding-left: 2vw;
   }
+
+  
 }

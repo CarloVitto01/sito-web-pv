@@ -107,87 +107,82 @@ const IntervalloPagine: React.FC<propsContainer> = ({
 
   return (
     <div className={classes["page-range"]}>
-      <p className={classes["title"]}>Intervallo pagine:</p>
+      <p className={classes["title"]}>Intervallo Pagine:</p>
 
       {disable && (
         <p className={classes["error-message"]}>{errorMessage}</p>
       )}
 
       <div className={disable ? classes["disabled"] : ""}>
-        <div className={classes["options"]}>
-          <input
-            type="radio"
-            value="option1"
-            id="option1"
-            checked={option === "option1"}
-            onChange={handleOptionChange}
-            disabled={disable}
-          />
-          <label htmlFor="option1">
-            <div className={classes["container-text"]}>
-              <span className={classes["checkmark"]}></span>
-              <p className={classes["text"]}>Tutte</p>
-            </div>
-          </label>
-        </div>
-
-        <div className={classes["options"]}>
-          <input
-            type="radio"
-            value="option2"
-            id="option2"
-            checked={option === "option2"}
-            onChange={handleOptionChange}
-            disabled={disable}
-          />
-          <label htmlFor="option2">
-            <div className={classes["container-text"]}>
-              <span className={classes["checkmark"]}></span>
-              <p className={classes["text"]}>Personalizzato</p>
-            </div>
-          </label>
-        </div>
-
-        {option === "option2" && (
-          <div>
-            <div className={`${classes["inputRowDivS"]} ${fromIsValid === false ? classes.invalid : ""}`}>
-              <p className={classes["text-page"]}>Da:</p>
+        <div className={classes["options-wrapper"]}>
+          <div className={classes["options-group"]}>
+            <div className={classes["options"]}>
               <input
-                type="number"
-                id="from"
-                name="from"
-                inputMode="numeric"
-                value={from}
-                min={1}
-                max={maxValue >= 1 ? maxValue : 1}
-                onChange={handleFromChange}
-                className={classes["number"]}
+                type="radio"
+                value="option1"
+                id="option1"
+                checked={option === "option1"}
+                onChange={handleOptionChange}
                 disabled={disable}
               />
-              {!fromIsValid && (
-                <p className={classes["invalid-input"]}>Valore non valido!</p>
-              )}
+              <label htmlFor="option1">
+                <div className={classes["container-text"]}>
+                  <span className={classes["checkmark"]}></span>
+                  <p className={classes["text"]}>Tutte</p>
+                </div>
+              </label>
             </div>
 
-            <div className={`${classes["inputRowDivS"]} ${toIsValid === false ? classes.invalid : ""}`}>
-              <p className={classes["text-page"]}>A:</p>
+            <div className={classes["options"]}>
               <input
-                type="number"
-                id="to"
-                inputMode="numeric"
-                value={to}
-                min={1}
-                max={maxValue >= 1 ? maxValue : 1}
-                onChange={handleToChange}
-                className={classes["number"]}
+                type="radio"
+                value="option2"
+                id="option2"
+                checked={option === "option2"}
+                onChange={handleOptionChange}
                 disabled={disable}
               />
-              {!toIsValid && (
-                <p className={classes["invalid-input"]}>Valore non valido!</p>
-              )}
+              <label htmlFor="option2">
+                <div className={classes["container-text"]}>
+                  <span className={classes["checkmark"]}></span>
+                  <p className={classes["text"]}>Personalizzato</p>
+                </div>
+              </label>
             </div>
           </div>
-        )}
+
+          {option === "option2" && (
+            <div className={classes["floating-inputs"]}>
+              <div className={`${classes["inputRowDivS"]} ${!fromIsValid ? classes.invalid : ""}`}>
+                <p className={classes["text-page"]}>Da:</p>
+                <input
+                  type="number"
+                  value={from}
+                  min={1}
+                  max={maxValue >= 1 ? maxValue : 1}
+                  onChange={handleFromChange}
+                  disabled={disable}
+                />
+              </div>
+              {!fromIsValid && <p className={classes["invalid-input"]}>Valore non valido!</p>}
+
+              <div className={`${classes["inputRowDivS"]} ${!toIsValid ? classes.invalid : ""}`}>
+                <p className={classes["text-page"]}>A:</p>
+                <input
+                  type="number"
+                  value={to}
+                  min={1}
+                  max={maxValue >= 1 ? maxValue : 1}
+                  onChange={handleToChange}
+                  disabled={disable}
+                />
+              </div>
+              {!toIsValid && <p className={classes["invalid-input"]}>Valore non valido!</p>}
+
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   );
