@@ -1,0 +1,169 @@
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background-color: var(--color-background);
+  border-bottom: 2px solid var(--color-gold);
+  border-bottom-left-radius: var(--radius);
+  border-bottom-right-radius: var(--radius);
+  z-index: 100;
+  box-shadow: 0 4px 15px rgba(199, 171, 43, 0.2);
+  padding: 10px 20px;
+}
+/* 👈 colonna sinistra vuota */
+.left-spacer {
+  flex: 1;
+}
+
+
+.logo-section {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.logo-section a {
+  pointer-events: auto; /* abilita clic sul logo */
+}
+
+
+.placeholder-section {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding-right: 40px;
+}
+
+.Logo {
+  max-width: 200px;
+  width: 100%;
+  margin: 8px;
+  filter: drop-shadow(0 0 6px rgba(199, 171, 43, 0.7));
+}
+
+
+
+/* Button: Login/Logout gold */
+.menu-button-gold {
+  background-color: var(--color-gold);
+  color: var(--color-text);
+  border: 1px solid var(--color-gold);
+  padding: 5px 12px;
+  margin-left: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  transition: background-color 0.2s ease;
+}
+
+.menu-button-gold:hover {
+  background-color: rgba(222, 181, 0, 0.1);
+}
+
+.user-name {
+  color: var(--color-text);
+  font-weight: 500;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.burger-section {
+  display: block;
+  /* rimuovi display: none */
+  position: absolute;
+  left: 20px;
+  top: 15px;
+}
+
+
+.burger-icon {
+  font-size: 1.8rem;
+  color: var(--color-gold);
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+/* Side Menu - mobile */
+.side-menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 70%;
+  max-width: 260px;
+  background-color: rgba(15, 15, 15, 0.97);
+  box-shadow: 2px 0 10px rgba(199, 171, 43, 0.3);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  backdrop-filter: blur(5px);
+  transform: translateX(0);
+  transition: transform var(--transition-fast) ease;
+}
+
+.side-menu.hidden {
+  transform: translateX(-100%);
+}
+
+.side-menu a,
+.side-menu button {
+  color: var(--color-gold);
+  text-decoration: none;
+  background: none;
+  border: none;
+  margin: 10px 0;
+  font-size: 16px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.side-menu ul {
+  list-style: none;
+  padding: 0 20px;
+}
+
+.side-menu li {
+  margin: 1em 0;
+  border-bottom: 1px solid var(--color-gold);
+  /* fisso dorato */
+  padding-bottom: 0.5em;
+}
+
+.side-menu li:hover {
+  border-bottom: 1px solid var(--color-gold);
+  /* rimane dorata */
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 40%;
+  color: var(--color-gold);
+  cursor: pointer;
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  font-weight: bold;
+  text-shadow: 0 0 5px gold;
+}
+
+.welcome-user {
+  color: white;
+  font-size: 16px;
+  font-weight: 500;
+  padding: 0 20px;
+  margin-bottom: 10px;
+}
+
+
+

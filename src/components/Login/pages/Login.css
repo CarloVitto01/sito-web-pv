@@ -1,0 +1,257 @@
+.login-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #000000;
+  /* sfondo nero */
+}
+
+.login-page .login-container {
+  background-color: #000000;
+  /* fondo scuro */
+  padding: 25px 30px;
+  border-radius: 12px;
+  box-shadow: 0px 1px 15px 20px rgba(222, 181, 0, 0.2);
+  text-align: center;
+  width: 330px;
+  border: 1px solid var(--color-gold);
+}
+
+.login-page .login-container h2 {
+  margin-bottom: 20px;
+  font-size: 24px;
+  color: var(--color-gold);
+  text-shadow: 0 0 5px rgba(222, 181, 0, 0.3);
+}
+
+.login-page .login-container form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.login-page .login-container label {
+  align-self: flex-start;
+  margin: 10px 0 5px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.login-page .login-container input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 2px solid var(--color-gold);
+  border-radius: 6px;
+  background-color: #ffffff;
+  color: #000000;
+  font-size: 16px;
+  outline: none;
+  transition: border 0.2s ease;
+  box-sizing: border-box;
+}
+
+
+.login-page .login-container input:focus {
+  border: 2px solid #deb500;
+  box-shadow: 0 0 5px rgba(222, 181, 0, 0.4);
+}
+
+.login-page .button-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.login-page .login-container button,
+.login-page .register-button {
+  flex: 1;
+  padding: 10px;
+  background-color: transparent;
+  border: 1px solid var(--color-gold);
+  color: var(--color-gold);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.login-page .login-container button:hover,
+.login-page .register-button:hover {
+  background-color: rgba(222, 181, 0, 0.1);
+  color: #ffffff;
+}
+
+.login-page .error-message {
+  color: #ff4d4d;
+  font-size: 13px;
+  margin-top: -10px;
+  margin-bottom: 10px;
+}
+
+.auth-error-message {
+  color: red;
+  font-size: 0.9rem;
+  text-align: center;
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+
+.home-button-container {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.home-button {
+  background-color: var(--color-gold, #DEB500);
+  color: #000;
+  border: none;
+  margin-top: 15px;
+  padding: 6px 14px;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-bottom: 10px;
+  transition: background-color 0.3s ease;
+}
+
+.home-button:hover {
+  background-color: #caa700;
+}
+
+.login-email-wrapper {
+  width: 90%;
+  margin-bottom: 15px;
+}
+
+.login-email-input {
+  width: 100%;
+  padding: 10px;
+  box-sizing: border-box;
+  border: 2px solid var(--color-gold);
+  border-radius: 6px;
+  background-color: #ffffff;
+  color: #000000;
+  font-size: 16px;
+  outline: none;
+  transition: border 0.2s ease;
+}
+
+.login-email-input:focus {
+  border: 2px solid #deb500;
+  box-shadow: 0 0 5px rgba(222, 181, 0, 0.4);
+}
+
+.password-field {
+  width: 90%;
+  position: relative;
+
+}
+
+.login-password-wrapper {
+  position: relative;
+  width: 90%;
+  margin-bottom: 15px;
+}
+
+.login-password-input {
+  width: 100%;
+  padding: 10px;
+  padding-right: 40px;
+  box-sizing: border-box;
+  border: 2px solid var(--color-gold);
+  border-radius: 6px;
+  background-color: #ffffff;
+  color: #000000;
+  font-size: 16px;
+  outline: none;
+  transition: border 0.2s ease;
+}
+
+.login-password-input:focus {
+  border: 2px solid #deb500;
+  box-shadow: 0 0 5px rgba(222, 181, 0, 0.4);
+}
+
+.login-toggle-password {
+  position: absolute;
+  top: 58%;
+  right: 10px;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: var(--color-gold);
+  font-size: 20px;
+}
+
+
+.forgot-password {
+  color: var(--color-gold);
+  font-size: 14px;
+  text-align: center;
+  margin-top: 15px;
+  cursor: pointer;
+  text-decoration: underline;
+  transition: opacity 0.2s ease;
+}
+
+.forgot-password:hover {
+  opacity: 0.7;
+}
+
+.forgot-email{
+  color: var(--color-gold);
+  font-size: 14px;
+  text-align: center;
+  margin-top: 5px;
+  cursor: pointer;
+  text-decoration: underline;
+  transition: opacity 0.2s ease;
+}
+.forgot-email:hover {
+  opacity: 0.7;
+}
+
+
+@media screen and (max-width: 480px) {
+  .login-page .login-container {
+    width: 70%;
+  }
+
+  .login-page,
+  .login-page .login-container button,
+  .login-page .register-button,
+  .password-input-wrapper {
+    width: 100%;
+  }
+
+  .password-input-wrapper input {
+    width: 90%;
+    margin-left: 0;
+  }
+
+  .login-page .button-row {
+    flex-direction: column;
+  }
+
+  .toggle-password {
+    right: 25px;
+  }
+
+  .home-button-container {
+    justify-content: center;
+  }
+
+  .home-button {
+    width: 100%;
+    text-align: center;
+  }
+}

@@ -1,0 +1,65 @@
+.cardWrapper {
+  margin: 0.8rem;
+  width: 160px;
+}
+
+.pillButton {
+  background-color: #121212;
+  border: 2px solid var(--color-gold);
+  border-radius: 16px;
+  padding: 0.8rem;
+  width: 100%;
+  text-align: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(222, 181, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pillButton:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 20px rgba(222, 181, 0, 0.4);
+}
+
+.selected {
+  background: linear-gradient(to bottom, var(--color-gold), #b79600);
+  color: #000;
+  font-weight: 600;
+  box-shadow: 0 0 20px rgba(222, 181, 0, 0.6);
+}
+
+.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.imageWrapper {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.image {
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
+  filter: brightness(1.1);
+}
+
+.label {
+  font-size: 1rem;
+  color: var(--color-text);
+  text-align: center;
+}
+
+.error {
+  color: var(--color-error);
+  font-size: 0.75rem;
+  margin-top: 0.4rem;
+  text-align: center;
+}

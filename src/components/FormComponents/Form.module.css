@@ -1,0 +1,72 @@
+.credentials {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(200px, 1fr)); /* 3 colonne da almeno 200px */
+  gap: 20px;                       /* spazio tra le card */
+  max-width: 800px;                /* limita la larghezza totale */
+  margin: 0 auto 20px auto;       /* orizzontalmente centrato e 20px di margine in basso */
+  padding: 0 20px;                 /* un po’ di padding laterale */
+  box-sizing: border-box;
+}
+
+@media screen and (max-width: 1024px) {
+  .credentials {
+    grid-template-columns: repeat(2, minmax(200px, 1fr));
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .credentials {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+.credential {
+  display: flex;
+  flex-direction: column;
+}
+
+.voice {
+  font-size: 1.1rem;
+  color: var(--color-text);
+  margin-bottom: 5px;
+}
+
+.credential input {
+  color: black;
+  border: 1px solid var(--color-gold);
+  padding: 10px;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  transition: border var(--transition-fast), background-color var(--transition-fast);
+}
+
+.credential input:focus {
+  outline: none;
+  border-color: var(--color-gold);
+  background-color: grey;
+}
+
+.credential.invalid input {
+  border: 1px solid var(--color-error);
+  background-color: rgba(255, 255, 255, 0.747);
+  color: var(--color-background);
+}
+
+.credential.invalid input:focus {
+  border-color: var(--color-error);
+}
+
+input[readonly] {
+  background-color: #111;
+  color: gold;
+  cursor: not-allowed;
+}
+
+
+/* su mobile ogni campo occuperà l’intera larghezza */
+@media screen and (max-width: 768px) {
+  .credentials {
+    grid-template-columns: 1fr;
+  }
+}

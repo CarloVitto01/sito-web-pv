@@ -1,0 +1,260 @@
+/* MultiInput.module.css */
+@import '../../styles/variables.css';
+/* Stili generali */
+.containerMultiInput {
+    background-color: var(--color-background);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    margin: 1rem;
+}
+
+.dropzone {
+    background-color: var(--color-text);
+    /* se vuoi puoi aggiungere variabile */
+    border-radius: 10px;
+    padding: 5px 20px 5px 20px;
+    color: var(--color-background);
+    text-align: center;
+    cursor: pointer;
+}
+
+.title {
+    color: var(--color-text);
+}
+
+.textMultiInput {
+    font-size: 155%;
+    color: var(--color-white);
+}
+
+.sottotitoloMultiInput {
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: 100;
+    font-size: smaller;
+}
+
+.containerPDFMultiInput {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+}
+
+.pdfContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 10px;
+    width: 14rem;
+    height: 15rem;
+    color: var(--color-text);
+    border: 1px solid var(--color-gold);
+    border-radius: 5px;
+    background-color: var(--color-background);
+}
+
+.pdfContainerButton {
+    display: flex;
+}
+
+.pdfIcon {
+    width: 4em;
+    margin-right: 10px;
+}
+
+.pdfName {
+    font-size: 12px;
+    flex-grow: 1;
+    color: var(--color-text);
+}
+
+.previewButton {
+    background-color: var(--color-gold);
+    color: var(--color-text);
+    border: none;
+    border-radius: 5px;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+.previewButton:hover {
+    background-color: var(--color-gold-dark, rgb(170, 140, 36));
+}
+
+.popup {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.popupContent {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    background-color: var(--color-white);
+    padding: 20px;
+    border-radius: 10px;
+    position: relative;
+    max-width: 600px;
+    max-height: 90%;
+    overflow: auto;
+    border: 2px solid var(--color-gold);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.button-container {
+    perspective: 1000px;
+    position: relative;
+}
+
+.artButton,
+.closeButton {
+    margin: 5px;
+    cursor: pointer;
+    width: 100px;
+    height: 50px;
+    background-color: var(--color-gold);
+    border: none;
+    border-radius: 5px;
+    color: var(--color-white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.artButton:active,
+.closeButton:active {
+    transform: translateY(4px) scaleY(0.9);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.closeButton:hover,
+.artButton:hover {
+    background-color: var(--color-gold-dark, rgb(170, 140, 36));
+}
+
+.pagination {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+/* --- MEDIA QUERY --- */
+@media screen and (max-width: 768px) {
+    .containerMultiInput {
+        padding: 10px;
+    }
+
+    .dropzone {
+        padding: 15px;
+        font-size: 90%;
+    }
+
+    .textMultiInput {
+        font-size: 130%;
+    }
+
+    .containerPDFMultiInput {
+        gap: 8px;
+    }
+
+    .pdfContainer {
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+    }
+
+    .pdfIcon {
+        width: 3em;
+        margin-bottom: 10px;
+    }
+
+    .pdfName {
+        font-size: 14px;
+    }
+
+    .previewButton {
+        padding: 10px 20px;
+        width: 100%;
+    }
+
+    .popupContent {
+        width: 80%;
+        max-width: 90%;
+    }
+
+    .artButton,
+    .closeButton {
+        width: 80px;
+        height: 40px;
+    }
+
+    .pagination {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .pagination button {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .containerMultiInput {
+        padding: 5px;
+    }
+
+    .dropzone {
+        font-size: 80%;
+    }
+
+    .textMultiInput {
+        font-size: 110%;
+    }
+
+    .pdfContainer {
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+    }
+
+    .pdfName {
+        font-size: 12px;
+    }
+
+    .popupContent {
+        width: 80%;
+        height: 80%;
+    }
+
+    .artButton,
+    .closeButton {
+        width: 60px;
+        height: 30px;
+    }
+
+    .pagination {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .pagination button {
+        width: 100%;
+    }
+}

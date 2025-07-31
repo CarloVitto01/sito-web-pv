@@ -1,0 +1,134 @@
+.container {
+  max-width: 1100px;
+  margin: auto;
+  padding: 40px 20px;
+  color: white;
+  margin-top: 3vh;
+}
+
+.title {
+  font-size: 2rem;
+  color: var(--color-gold);
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.uploadSection {
+  margin-bottom: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+  justify-content: center;
+}
+
+.uploadSection input[type="file"] {
+  display: none;
+}
+
+.uploadSection button {
+  background-color: var(--color-gold);
+  color: #000;
+  font-weight: bold;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.uploadSection button:hover {
+  background-color: #e6c100;
+}
+
+.mediaGrid {
+  column-count: 3;
+  column-gap: 25px;
+}
+
+@media (max-width: 1000px) {
+  .mediaGrid {
+    column-count: 2;
+  }
+}
+
+@media (max-width: 600px) {
+  .mediaGrid {
+    column-count: 1;
+  }
+}
+
+.card {
+  background-color: #111;
+  border: 1px solid var(--color-gold);
+  border-radius: 12px;
+  margin-bottom: 25px;
+  display: inline-block;
+  width: 100%;
+  box-shadow: 0 0 10px rgba(222, 181, 0, 0.1);
+  transition: transform 0.2s ease;
+  overflow: hidden;
+  position: relative;
+  break-inside: avoid;
+}
+
+.card:hover {
+  transform: scale(1.01);
+}
+
+.card img,
+.card video {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  background-color: #000;
+  display: block;
+  border-bottom: 1px solid #333;
+}
+
+.card button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: crimson;
+  color: white;
+  border: none;
+  font-weight: bold;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.card button:hover {
+  background: darkred;
+}
+
+/* 🔄 Pulsante rotazione */
+.rotateButton {
+  background: #222;
+  color: var(--color-gold);
+  border: 1px solid var(--color-gold);
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-left: 8px;
+  font-size: 0.85rem;
+}
+
+.rotateButton:hover {
+  background: #333;
+}
+
+.rotationBadge {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(255, 215, 0, 0.8);
+  color: #000;
+  font-weight: bold;
+  font-size: 0.8rem;
+  padding: 3px 6px;
+  border-radius: 6px;
+}
+

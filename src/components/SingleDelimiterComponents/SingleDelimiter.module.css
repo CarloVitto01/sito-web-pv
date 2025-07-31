@@ -1,0 +1,13 @@
+.container-line {
+  background-color: var(--color-background);
+  display: flex;
+  justify-content: center;
+  margin-top: 3vh;
+  margin-bottom: 3vh;
+}
+
+.line-delimiter {
+  border: 1px solid var(--color-gold);
+  width: 80vw;
+  border-radius: 50px;
+}

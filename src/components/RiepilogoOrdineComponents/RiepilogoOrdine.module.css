@@ -1,0 +1,120 @@
+.riepilogo-container {
+  border: 2px solid var(--color-gold);
+  border-radius: 12px;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 90%;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  font-family: var(--font-main);
+  color: var(--color-white);
+}
+
+.riepilogo-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--color-gold);
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.riepilogo-item {
+  font-size: 1rem;
+  margin: 0.4rem 0;
+  color: var(--color-text);
+}
+
+.riepilogo-item strong {
+  color: var(--color-gold);
+}
+
+.confirm-button {
+  background-color: #4caf50;
+  color: var(--color-white);
+  border: none;
+  padding: 12px 16px;
+  margin-top: 20px;
+  font-size: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 100%;
+  transition: background-color 0.3s ease;
+}
+
+.confirm-button:hover:not(:disabled) {
+  background-color: #43a047;
+}
+
+.confirm-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.loadingText {
+  text-align: center;
+  color: var(--color-gold);
+  margin-top: 12px;
+  font-size: 1.05rem;
+  font-weight: 500;
+}
+
+.loaderBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-gold), #fff7cc);
+  border-radius: 8px;
+  opacity: 1;
+  transition: width 0.4s ease;
+}
+
+.fadeOut {
+  opacity: 0;
+}
+
+.loader {
+  position: relative;
+  height: 16px;
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 10px;
+  box-shadow: 0 0 5px var(--color-gold);
+}
+
+/* ✅ Messaggio di successo */
+.successMessage {
+  text-align: center;
+  font-size: 1.2rem;
+  color: var(--color-gold);
+  margin-top: 20px;
+  animation: fadeInScale 0.6s ease-in-out;
+}
+
+@keyframes fadeInScale {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ✅ Responsive */
+@media screen and (max-width: 500px) {
+  .riepilogo-container {
+    padding: 1rem;
+    max-width: 90%;
+  }
+
+  .riepilogo-title {
+    font-size: 1.2rem;
+  }
+
+  .riepilogo-item {
+    font-size: 0.95rem;
+  }
+}

@@ -3,5 +3,7 @@ export type FormData = {
   surname: string;
   email: string;
   telephoneNumber: string;
+  corsoLaurea: string;
+  annoAccademico: string;
   isValid?: boolean;
 };
