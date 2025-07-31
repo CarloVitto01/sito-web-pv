@@ -64,8 +64,24 @@ const FotoVideoGestionale: React.FC = () => {
   };
 
   const handleDelete = async (id: string, path: string) => {
-    await deleteDoc(doc(db, "mediaFotoVideo", id));
-    await deleteObject(ref(storage, path));
+    try {
+      // Conferma utente (opzionale)
+      const conferma = window.confirm("Sei sicuro di voler eliminare questo file?");
+      if (!conferma) return;
+
+      // Elimina da Firestore
+      await deleteDoc(doc(db, "mediaFotoVideo", id));
+
+      // Elimina da Firebase Storage
+      const storageRef = ref(storage, path);
+      await deleteObject(storageRef);
+
+      // Rimozione visiva immediata (ottimistica, opzionale)
+      setMediaList((prev) => prev.filter((item) => item.id !== id));
+    } catch (error) {
+      console.error("Errore eliminazione:", error);
+      alert("Si è verificato un errore durante l'eliminazione.");
+    }
   };
 
   const removeFile = (index: number) => {

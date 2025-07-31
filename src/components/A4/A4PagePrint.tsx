@@ -198,6 +198,9 @@ const A4PagePrint = () => {
   const setRangePagesHandler = useCallback(
     (value: RangePagesData) => {
       if (value.all) {
+        // ✅ Resetto il testo dell'intervallo
+        setDaA("Tutte");
+
         if (numeroPaginePDF) {
           setIntervalloPagine(numeroPaginePDF);
         } else {
@@ -210,10 +213,14 @@ const A4PagePrint = () => {
         }
         let from = value.from;
         let to = value.to;
-        setDaA("" + from + "-" + to);
+
         if (isNaN(from) || isNaN(to)) {
           return;
         }
+
+        // ✅ Aggiorno il testo Da-A
+        setDaA(`${from}-${to}`);
+
         let range = to - from + 1;
         if (from === 0 && to === 0) {
           range = 0;
@@ -223,6 +230,14 @@ const A4PagePrint = () => {
     },
     [numeroPaginePDF]
   );
+
+  useEffect(() => {
+    if (numeroPDF >= 2) {
+      setIntervalloPagine(numeroPaginePDF || 1);
+      setDaA("Tutte");
+    }
+  }, [numeroPDF, numeroPaginePDF]);
+
 
   const setCopiesHandler = useCallback((value: number) => {
     setNumeroCopie(value);
@@ -481,7 +496,7 @@ ${fileLinks}
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        setIsLoggedIn(true); 
+        setIsLoggedIn(true);
         const docRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(docRef);
 
@@ -498,7 +513,7 @@ ${fileLinks}
           });
         }
       } else {
-        setIsLoggedIn(false); 
+        setIsLoggedIn(false);
       }
     });
 

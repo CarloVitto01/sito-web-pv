@@ -69,16 +69,16 @@ const RiepilogoOrdineA3 = ({
 
   return (
     <div className={styles["riepilogo-container"]}>
-      <h3 className="riepilogo-title">📋 Riepilogo ordine A3</h3>
-      <p className="riepilogo-item"><strong>Numero PDF:</strong> {numeroPDF}</p>
-      <p className="riepilogo-item"><strong>Numero pagine totali:</strong> {numeroPagine}</p>
-      <p className="riepilogo-item"><strong>Grammatura:</strong> {grammatura}</p>
-      <p className="riepilogo-item"><strong>Colore:</strong> {inchiostro}</p>
-      <p className="riepilogo-item"><strong>Gestione pagina:</strong> {pagina}</p>
-      <p className="riepilogo-item"><strong>Layout:</strong> {layout}</p>
-      <p className="riepilogo-item"><strong>Plastificazione:</strong> {plastificazione}</p>
-      <p className="riepilogo-item"><strong>Numero copie:</strong> {numeroCopie}</p>
-      <p className="riepilogo-item"><strong>💰 Prezzo totale:</strong> {prezzo} €</p>
+      <h3 className={styles["riepilogo-title"]}>📋 Riepilogo ordine A3</h3>
+      <p className={styles["riepilogo-item"]}><strong>Numero PDF:</strong> {numeroPDF}</p>
+      <p className={styles["riepilogo-item"]}><strong>Numero pagine totali:</strong> {numeroPagine}</p>
+      <p className={styles["riepilogo-item"]}><strong>Grammatura:</strong> {grammatura}</p>
+      <p className={styles["riepilogo-item"]}><strong>Colore:</strong> {inchiostro}</p>
+      <p className={styles["riepilogo-item"]}><strong>Gestione pagina:</strong> {pagina}</p>
+      <p className={styles["riepilogo-item"]}><strong>Layout:</strong> {layout}</p>
+      <p className={styles["riepilogo-item"]}><strong>Plastificazione:</strong> {plastificazione}</p>
+      <p className={styles["riepilogo-item"]}><strong>Numero copie:</strong> {numeroCopie}</p>
+      <p className={styles["riepilogo-item"]}><strong>💰 Prezzo totale:</strong> {prezzo} €</p>
 
    {!loading && !submitted && (
         <button
@@ -92,7 +92,7 @@ const RiepilogoOrdineA3 = ({
 
       {loading && (
         <>
-          <p className={styles.loadingText}>Invio in corso...</p>
+          <p className={styles.loadingText}>Invio in corso: attendere il completamento della barra.</p>
           <div className={styles.loader}>
             <div
               className={styles.loaderBar}

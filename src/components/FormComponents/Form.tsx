@@ -124,11 +124,11 @@ const Form: React.FC<propsContainer> = ({ onSendData, defaultValues, disabled, r
               <input type="text" id="telephoneNumber" value={enteredTelephoneNumber} onChange={telephoneNumberChangeHandler} onBlur={() => validateTelephoneNumber(enteredTelephoneNumber)} readOnly={readOnlyFields}/>
             </div>
             <div className={classes.credential}>
-              <label htmlFor="corsoLaurea" className={classes.voice}>Corso (opzionale):</label>
+              <label htmlFor="corsoLaurea" className={classes.voice}>Corso Di Laurea (opzionale):</label>
               <input type="text" id="corsoLaurea" value={enteredCorsoLaurea} onChange={corsoLaureaChangeHandler} readOnly={readOnlyFields}/>
             </div>
             <div className={classes.credential}>
-              <label htmlFor="annoAccademico" className={classes.voice}>Anno (opzionale):</label>
+              <label htmlFor="annoAccademico" className={classes.voice}>Anno Accademico (opzionale):</label>
               <input type="text" id="annoAccademico" value={enteredAnnoAccademico} onChange={annoAccademicoChangeHandler} readOnly={readOnlyFields}/>
             </div>
           </div>

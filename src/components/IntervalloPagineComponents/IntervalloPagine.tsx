@@ -6,14 +6,14 @@ interface propsContainer {
   onSendData: (value: RangePagesData) => void;
   maxValue: number;
   disable: boolean;
-  errorMessage: string; // Aggiunto per il messaggio di errore
+  errorMessage: string;
 }
 
 const IntervalloPagine: React.FC<propsContainer> = ({
   onSendData,
   maxValue,
-  disable, // Aggiunto per la disattivazione
-  errorMessage // Messaggio di errore da mostrare
+  disable,
+  errorMessage
 }) => {
   const [option, setOption] = useState("option1");
   const [from, setFrom] = useState<number>(1);
@@ -47,17 +47,19 @@ const IntervalloPagine: React.FC<propsContainer> = ({
 
   useEffect(() => {
     if (option === "option1") {
-      setRangePages((prevState: RangePagesData) => ({
+      setRangePages((prevState) => ({
         ...prevState,
         all: true,
       }));
+      setFrom(1);
+      setTo(1);
     } else {
-      setRangePages((prevState: RangePagesData) => ({
+      setRangePages((prevState) => ({
         ...prevState,
         all: false,
       }));
     }
-  }, [setRangePages, option]);
+  }, [option]);
 
   const handleOptionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setOption(event.target.value);
@@ -68,7 +70,7 @@ const IntervalloPagine: React.FC<propsContainer> = ({
     setFrom((prevFrom) => {
       if (newFrom > to) {
         setTo(newFrom);
-        setRangePages((prevState: RangePagesData) => ({
+        setRangePages((prevState) => ({
           ...prevState,
           from: newFrom,
           to: newFrom,
@@ -77,7 +79,7 @@ const IntervalloPagine: React.FC<propsContainer> = ({
       }
       return newFrom;
     });
-    setRangePages((prevState: RangePagesData) => ({
+    setRangePages((prevState) => ({
       ...prevState,
       from: newFrom,
       all: false,
@@ -89,7 +91,7 @@ const IntervalloPagine: React.FC<propsContainer> = ({
     setTo((prevTo) => {
       if (newTo < from) {
         setFrom(newTo);
-        setRangePages((prevState: RangePagesData) => ({
+        setRangePages((prevState) => ({
           ...prevState,
           from: newTo,
           to: newTo,
@@ -98,7 +100,7 @@ const IntervalloPagine: React.FC<propsContainer> = ({
       }
       return newTo;
     });
-    setRangePages((prevState: RangePagesData) => ({
+    setRangePages((prevState) => ({
       ...prevState,
       to: newTo,
       all: false,
@@ -178,11 +180,9 @@ const IntervalloPagine: React.FC<propsContainer> = ({
                 />
               </div>
               {!toIsValid && <p className={classes["invalid-input"]}>Valore non valido!</p>}
-
             </div>
           )}
         </div>
-
       </div>
     </div>
   );

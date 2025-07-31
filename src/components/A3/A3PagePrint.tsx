@@ -140,17 +140,31 @@ const A3PagePrint = () => {
         const calcoloPreventivo = () => {
             let totale = 0;
             let pagine = numeroPaginePDF;
-            let fogli = pagina === paginaEnum.FRONTE_RETRO ? Math.ceil(pagine / 2) : pagine;
-            let costoFoglio = grammatura === grammaturaEnum.CARTONCINO ? costi.grammaturaCartoncino : costi.grammaturaNormale;
-            let costoInchiostro = inchiostro === inchiostroEnum.COLORE ? costi.colore : costi.biancoNero;
-            let inchiostroTotale = pagina === paginaEnum.FRONTE_RETRO ? 2 * costoInchiostro : costoInchiostro;
+            let fogli =
+                pagina === paginaEnum.FRONTE_RETRO ? Math.ceil(pagine / 2) : pagine;
+            let costoFoglio =
+                grammatura === grammaturaEnum.CARTONCINO
+                    ? costi.grammaturaCartoncino
+                    : costi.grammaturaNormale;
+            let costoInchiostro =
+                inchiostro === inchiostroEnum.COLORE ? costi.colore : costi.biancoNero;
+            let inchiostroTotale =
+                pagina === paginaEnum.FRONTE_RETRO ? 2 * costoInchiostro : costoInchiostro;
 
+            // ✅ Calcolo base per fogli e inchiostro
             totale += fogli * (costoFoglio + inchiostroTotale);
             totale *= numeroCopie;
-            if (plastificazione === plastificazioneEnum.SI) totale += costi.plastificazione * pagine;
+
+            // ✅ Plastificazione moltiplicata per pagine e copie
+            if (plastificazione === plastificazioneEnum.SI) {
+                totale += costi.plastificazione * pagine * numeroCopie;
+            }
+
             if (numeroCopie === 0) totale = 0;
+
             return totale.toFixed(2);
         };
+
 
         if (numeroPaginePDF > 0) setPreventivo(calcoloPreventivo());
         if (numeroPDF === 0) setPreventivo("0.00");
