@@ -64,6 +64,7 @@ const Header: React.FC = () => {
     { path: "/utentiGestionale", label: "Gestione Utenti" },
     { path: "/gestione-accessi", label: "Gestione Accessi Ruoli" },
     { path: "/storicoDati", label: "Storico Dati" },
+    { path: "/qrgenerator", label: "QR Generator" },
   ];
 
   return (

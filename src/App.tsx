@@ -30,6 +30,7 @@ import ContattiServiziFotoVideo from './components/Foto_e_Video/ContattiServiziF
 import FotoVideoGestionale from './gestionale/FotoVideoGestionale';
 import GestioneAccessi from './gestionale/GestioneAccessi';
 import RecoverEmail from './components/Login/pages/RecoverEmail';
+import QRCodeGenerator from './gestionale/QRCodeGenerator';
 
 const ScrollToTop: React.FC = () => {
   const navigationType = useNavigationType();
@@ -101,6 +102,7 @@ const App: React.FC = () => {
           <Route path="/storicoDati" element={<ProtectedRoute page="storicoDati" element={<StoricoDati />} />} />
           <Route path="/foto-video-gestionale" element={<ProtectedRoute page="foto-video-gestionale" element={<FotoVideoGestionale />} />} />
           <Route path="/gestione-accessi" element={<ProtectedRoute page="gestione-accessi" element={<GestioneAccessi />} />} />
+          <Route path="/qrgenerator" element={<ProtectedRoute page="qrgenerator" element={<QRCodeGenerator />} />} />
           <Route path="/recoveremail" element={<RecoverEmail />} />
 
           <Route path="/account" element={<AccountPage />} />
