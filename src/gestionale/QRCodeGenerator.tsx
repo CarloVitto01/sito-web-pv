@@ -1,8 +1,11 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import QRCode from "qrcode";
 import jsPDF from "jspdf";
 import "./QRCodeGenerator.css";
-import { useEffect } from "react";
+
+// ⬇️ Aggiunte PV
+import Header from "../components/HeaderComponents/Header";
+import Footer from "../components/FooterComponents/Footer";
 
 const QRCodeGenerator: React.FC = () => {
   const [url, setUrl] = useState("");
@@ -11,7 +14,6 @@ const QRCodeGenerator: React.FC = () => {
   const [bgColor, setBgColor] = useState("#ffffff");
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const qrPreviewRef = useRef<HTMLCanvasElement | null>(null);
-
 
   const generateCanvas = async (): Promise<HTMLCanvasElement> => {
     const canvas = document.createElement("canvas");
@@ -97,64 +99,71 @@ const QRCodeGenerator: React.FC = () => {
   }, [url, fgColor, bgColor, transparentBg, imageSrc]);
 
   return (
-    <div className="qr-container">
-      <h2 className="qr-title">Genera Codice QR</h2>
+    <>
+      <Header />
 
-      <input
-        type="text"
-        placeholder="Inserisci un URL"
-        value={url}
-        onChange={(e) => setUrl(e.target.value)}
-        className="qr-input"
-      />
+      <main className="pv-main">
+        <div className="qr-container">
+          <h2 className="qr-title">Genera Codice QR</h2>
 
-      <div className="qr-options">
-        <label className="qr-label">
-          🎨 Colore QR:
-          <input type="color" value={fgColor} onChange={(e) => setFgColor(e.target.value)} />
-        </label>
-        <label className="qr-label">
           <input
-            type="checkbox"
-            checked={transparentBg}
-            onChange={() => setTransparentBg((prev) => !prev)}
+            type="text"
+            placeholder="Inserisci un URL"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            className="qr-input"
           />
-          Sfondo trasparente
-        </label>
-        {!transparentBg && (
-          <label className="qr-label">
-            🧱 Sfondo:
-            <input type="color" value={bgColor} onChange={(e) => setBgColor(e.target.value)} />
-          </label>
-        )}
-      </div>
 
-      <div className="qr-upload">
-        <label>
-          📷 Immagine centrale:
-          <input type="file" accept="image/*" onChange={handleImageUpload} />
-        </label>
-        {imageSrc && (
-          <button onClick={() => setImageSrc(null)} className="qr-remove-button">
-            Elimina Foto
-          </button>
-        )}
-      </div>
+          <div className="qr-options">
+            <label className="qr-label">
+              🎨 Colore QR:
+              <input type="color" value={fgColor} onChange={(e) => setFgColor(e.target.value)} />
+            </label>
+            <label className="qr-label">
+              <input
+                type="checkbox"
+                checked={transparentBg}
+                onChange={() => setTransparentBg((prev) => !prev)}
+              />
+              Sfondo trasparente
+            </label>
+            {!transparentBg && (
+              <label className="qr-label">
+                🧱 Sfondo:
+                <input type="color" value={bgColor} onChange={(e) => setBgColor(e.target.value)} />
+              </label>
+            )}
+          </div>
 
-      {url && (
-        <div className="qr-preview">
-          <canvas ref={qrPreviewRef} width={256} height={256} />
+          <div className="qr-upload">
+            <label>
+              📷 Immagine centrale:
+              <input type="file" accept="image/*" onChange={handleImageUpload} />
+            </label>
+            {imageSrc && (
+              <button onClick={() => setImageSrc(null)} className="qr-remove-button">
+                Elimina Foto
+              </button>
+            )}
+          </div>
+
+          {url && (
+            <div className="qr-preview">
+              <canvas ref={qrPreviewRef} width={256} height={256} />
+            </div>
+          )}
+
+          {url && (
+            <div>
+              <button onClick={downloadPNG} className="qr-button">Scarica PNG</button>
+              <button onClick={downloadPDF} className="qr-button">Scarica PDF</button>
+            </div>
+          )}
         </div>
-      )}
+      </main>
 
-
-      {url && (
-        <div>
-          <button onClick={downloadPNG} className="qr-button">Scarica PNG</button>
-          <button onClick={downloadPDF} className="qr-button">Scarica PDF</button>
-        </div>
-      )}
-    </div>
+      <Footer />
+    </>
   );
 };
 

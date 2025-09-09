@@ -73,7 +73,7 @@ const Header: React.FC = () => {
         <FiMenu className={classes["burger-icon"]} onClick={toggleSideMenu} aria-label="Apri menu" />
       </div>
 
-     <div className={classes["left-spacer"]} /> {/* 👈 colonna sinistra vuota */}
+      <div className={classes["left-spacer"]} /> {/* 👈 colonna sinistra vuota */}
 
       <div className={classes["logo-section"]}>
         <Link to="/">
@@ -128,6 +128,12 @@ const Header: React.FC = () => {
               )}
 
               <li>
+                <Link to="/richiesta-sito-web" onClick={toggleSideMenu} className={classes["link-menu"]}>
+                  🖥️ Sviluppo Siti Web
+                </Link>
+              </li>
+
+              <li>
                 <Link to="/printA4" onClick={toggleSideMenu} className={classes["link-menu"]}>
                   🖨️ Stampa in A4
                 </Link>
@@ -137,11 +143,26 @@ const Header: React.FC = () => {
                   🖨️ Stampa in A3
                 </Link>
               </li>
+
+              <li>
+                <Link to="/3d" onClick={toggleSideMenu} className={classes["link-menu"]}>
+                  🖨️ Stampa 3D
+                </Link>
+              </li>
+
+              <li>
+                <Link to="/qrgenerator" onClick={toggleSideMenu} className={classes["link-menu"]}>
+                  📱 Generatore di QR Code
+                </Link>
+              </li>
+
               <li>
                 <Link to="/contatti-servizi-foto-video" onClick={toggleSideMenu} className={classes["link-menu"]}>
                   📸 Contatti Servizi Foto/Video
                 </Link>
               </li>
+
+
 
               {linkAccessibili
                 .filter(({ path }) => accessiblePages.includes(path.replace("/", "")))

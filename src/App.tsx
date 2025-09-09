@@ -31,6 +31,14 @@ import FotoVideoGestionale from './gestionale/FotoVideoGestionale';
 import GestioneAccessi from './gestionale/GestioneAccessi';
 import RecoverEmail from './components/Login/pages/RecoverEmail';
 import QRCodeGenerator from './gestionale/QRCodeGenerator';
+import RichiestaSitoWeb from './components/Siti/RichiestaSitoWeb';
+
+/* ⬇️ NUOVI IMPORT per le anteprime template */
+import TemplateFacciataElegante from './components/Templates/templateFacciataElegante/TemplateFacciataElegante';
+import TemplateEcommerceEssenziale from './components/Templates/templateEcommerceEssenziale/TemplateEcommerceEssenziale';
+import TemplatePortfolioCreativo from './components/Templates/templatePortfolioCreativo/TemplatePortfolioCreativo';
+import TemplateLandingConversione from './components/Templates/templateLandingConversione/TemplateLandingConversione';
+import RichiestaStampa3D from './components/3D/RichiestaStampa3D';
 
 const ScrollToTop: React.FC = () => {
   const navigationType = useNavigationType();
@@ -71,7 +79,6 @@ const ProtectedRoute: React.FC<{ element: JSX.Element; page: string }> = ({ elem
   return canAccess ? element : <Navigate to="/" replace />;
 };
 
-
 const App: React.FC = () => {
   const [showSplash, setShowSplash] = useState(true);
 
@@ -102,12 +109,25 @@ const App: React.FC = () => {
           <Route path="/storicoDati" element={<ProtectedRoute page="storicoDati" element={<StoricoDati />} />} />
           <Route path="/foto-video-gestionale" element={<ProtectedRoute page="foto-video-gestionale" element={<FotoVideoGestionale />} />} />
           <Route path="/gestione-accessi" element={<ProtectedRoute page="gestione-accessi" element={<GestioneAccessi />} />} />
-          <Route path="/qrgenerator" element={<ProtectedRoute page="qrgenerator" element={<QRCodeGenerator />} />} />
+          <Route path="/qrgenerator" element={<QRCodeGenerator/>} />
           <Route path="/recoveremail" element={<RecoverEmail />} />
+          <Route path="/web" element={<RichiestaSitoWeb />} />
+          {/* ⬇️ Alias più chiaro per la pagina richieste */}
+          <Route path="/richiesta-sito-web" element={<RichiestaSitoWeb />} />
+          <Route path="/3d" element={<RichiestaStampa3D />} />
+          
 
           <Route path="/account" element={<AccountPage />} />
           <Route path="/recoverpassword" element={<RecoverPassword />} />
           <Route path="/resetpassword" element={<ResetPassword />} />
+
+          {/* ⬇️ NUOVE ROTTE di anteprima template */}
+          <Route path="/template/facciata-elegante" element={<TemplateFacciataElegante />} />
+          <Route path="/template/ecommerce-essenziale" element={<TemplateEcommerceEssenziale />} />
+          <Route path="/template/portfolio-creativo" element={<TemplatePortfolioCreativo />} />
+          <Route path="/template/landing-conversione" element={<TemplateLandingConversione />} />
+       
+       
         </Routes>
       )}
     </Router>
