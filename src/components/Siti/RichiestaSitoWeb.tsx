@@ -74,6 +74,7 @@ const RichiestaSitoWeb: React.FC = () => {
   const [isSent, setIsSent] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateMeta | null>(null);
   const [category, setCategory] = useState<TemplateCategory | "tutte">("tutte");
+  const [livePreviewId, setLivePreviewId] = useState<string | null>(null);
 
   // Recupera utente
   useEffect(() => {
@@ -192,9 +193,7 @@ ${message || "(nessun messaggio)"}
                 <option value="portfolio">Portfolio</option>
                 <option value="blog">Blog</option>
                 <option value="booking">Booking</option>
-                <option value="landing">Landing</option>
                 <option value="catalogo">Catalogo</option>
-                <option value="istituzionale">Istituzionale</option>
               </select>
             </div>
             <div className={styles.field}>
@@ -219,8 +218,21 @@ ${message || "(nessun messaggio)"}
                 <div key={t.id} className={`${styles.card} ${active ? styles.cardActive : ""}`}>
                   {/* preview non cliccabile (modale rimossa) */}
                   <div className={styles.previewWrap}>
-                    <img src={t.preview} alt={t.title} />
+                    <div className={styles.previewInner}>
+                      {t.component ? (
+                        <React.Suspense fallback={<div className={styles.liveFallback}>Caricamento anteprima…</div>}>
+                          {(() => {
+                            const Demo = t.component;
+                            return <Demo />;
+                          })()}
+                        </React.Suspense>
+                      ) : (
+                        <img src={t.preview} alt={t.title} />
+                      )}
+                    </div>
                   </div>
+
+
 
                   <div className={styles.cardBody}>
                     <div className={styles.cardHead}>

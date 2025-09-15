@@ -37,8 +37,10 @@ import RichiestaSitoWeb from './components/Siti/RichiestaSitoWeb';
 import TemplateFacciataElegante from './components/Templates/templateFacciataElegante/TemplateFacciataElegante';
 import TemplateEcommerceEssenziale from './components/Templates/templateEcommerceEssenziale/TemplateEcommerceEssenziale';
 import TemplatePortfolioCreativo from './components/Templates/templatePortfolioCreativo/TemplatePortfolioCreativo';
-import TemplateLandingConversione from './components/Templates/templateLandingConversione/TemplateLandingConversione';
 import RichiestaStampa3D from './components/3D/RichiestaStampa3D';
+import TemplateBlogMagazine from './components/Templates/templateBlog/TemplateBlogMagazine';
+import TemplateCatalogoProdotti from './components/Templates/templateCatalogoProdotti/TemplateCatalogoProdotti';
+import TemplateBookingServizi from './components/Templates/templateBookingServizi/TemplateBookingServizi';
 
 const ScrollToTop: React.FC = () => {
   const navigationType = useNavigationType();
@@ -109,13 +111,13 @@ const App: React.FC = () => {
           <Route path="/storicoDati" element={<ProtectedRoute page="storicoDati" element={<StoricoDati />} />} />
           <Route path="/foto-video-gestionale" element={<ProtectedRoute page="foto-video-gestionale" element={<FotoVideoGestionale />} />} />
           <Route path="/gestione-accessi" element={<ProtectedRoute page="gestione-accessi" element={<GestioneAccessi />} />} />
-          <Route path="/qrgenerator" element={<QRCodeGenerator/>} />
+          <Route path="/qrgenerator" element={<QRCodeGenerator />} />
           <Route path="/recoveremail" element={<RecoverEmail />} />
           <Route path="/web" element={<RichiestaSitoWeb />} />
           {/* ⬇️ Alias più chiaro per la pagina richieste */}
           <Route path="/richiesta-sito-web" element={<RichiestaSitoWeb />} />
           <Route path="/3d" element={<RichiestaStampa3D />} />
-          
+
 
           <Route path="/account" element={<AccountPage />} />
           <Route path="/recoverpassword" element={<RecoverPassword />} />
@@ -125,9 +127,9 @@ const App: React.FC = () => {
           <Route path="/template/facciata-elegante" element={<TemplateFacciataElegante />} />
           <Route path="/template/ecommerce-essenziale" element={<TemplateEcommerceEssenziale />} />
           <Route path="/template/portfolio-creativo" element={<TemplatePortfolioCreativo />} />
-          <Route path="/template/landing-conversione" element={<TemplateLandingConversione />} />
-       
-       
+          <Route path="/template/blog-magazine" element={<TemplateBlogMagazine />} />
+          <Route path="/template/catalogo-prodotti" element={<TemplateCatalogoProdotti />} />
+          <Route path="/template/booking-servizi" element={<TemplateBookingServizi />} />
         </Routes>
       )}
     </Router>

@@ -9,20 +9,54 @@ import {
   ContactShadows,
 } from "@react-three/drei";
 import { STLLoader, OBJLoader, ThreeMFLoader } from "three-stdlib";
-import styles from "./ModelPreview.module.css"; // <-- CSS Module corretto
+import styles from "./ModelPreview.module.css";
 
-type Props = { file: File };
+type Props = { file: File; colorHex?: string };
+
+/* Normalizza hex in #RRGGBB (se arriva #RRGGBBAA taglia l’alpha) */
+function normalizeHex(hex?: string): string | undefined {
+  if (!hex) return undefined;
+  const h = hex.trim();
+  if (/^#([0-9a-f]{6})$/i.test(h)) return h;
+  if (/^#([0-9a-f]{8})$/i.test(h)) return `#${h.slice(1, 7)}`;
+  return undefined;
+}
+
+/* Applica un colore unico a tutte le mesh dell’oggetto */
+function tintObject(obj: THREE.Object3D, hex: string) {
+  const color = new THREE.Color(hex);
+  obj.traverse((n: any) => {
+    if (n?.isMesh) {
+      if (Array.isArray(n.material)) {
+        n.material.forEach((m: any) => {
+          if (m?.color) m.color.set(color);
+        });
+      } else if (n.material?.color) {
+        n.material.color.set(color);
+      } else {
+        n.material = new THREE.MeshStandardMaterial({
+          color,
+          roughness: 0.55,
+          metalness: 0.05,
+        });
+      }
+      if (n.material) n.material.needsUpdate = true;
+      n.castShadow = true;
+      n.receiveShadow = true;
+    }
+  });
+}
 
 // Inquadra automaticamente l’oggetto dentro la camera
 function AutoFit({ children }: { children: React.ReactNode }) {
   return (
-    <Bounds clip observe margin={1.25}>
+    <Bounds clip observe margin={2.0} fit>
       {children}
     </Bounds>
   );
 }
 
-const LoadedModel: React.FC<{ file: File }> = ({ file }) => {
+const LoadedModel: React.FC<{ file: File; colorHex?: string }> = ({ file, colorHex }) => {
   const [object, setObject] = useState<THREE.Group | null>(null);
 
   useEffect(() => {
@@ -35,6 +69,8 @@ const LoadedModel: React.FC<{ file: File }> = ({ file }) => {
     if (ext === "obj") loader = new OBJLoader();
     if (ext === "3mf") loader = new ThreeMFLoader();
     if (!loader) return;
+
+    const defaultColor = normalizeHex(colorHex) || "#b0c4ff";
 
     if (ext === "stl") {
       // STL: leggiamo in ArrayBuffer e calcoliamo le normali per smoothing
@@ -49,7 +85,7 @@ const LoadedModel: React.FC<{ file: File }> = ({ file }) => {
         const mesh = new THREE.Mesh(
           geom,
           new THREE.MeshStandardMaterial({
-            color: "#b0c4ff",
+            color: defaultColor,
             roughness: 0.55,
             metalness: 0.05,
           })
@@ -69,37 +105,48 @@ const LoadedModel: React.FC<{ file: File }> = ({ file }) => {
         (obj: THREE.Group) => {
           obj.traverse((c: any) => {
             if (c.isMesh) {
-              c.castShadow = true;
-              c.receiveShadow = true;
               if (c.geometry && !c.geometry.getAttribute("normal")) {
                 c.geometry.computeVertexNormals();
               }
+              c.castShadow = true;
+              c.receiveShadow = true;
               if (!c.material || Array.isArray(c.material)) {
                 c.material = new THREE.MeshStandardMaterial({
-                  color: "#b0c4ff",
+                  color: defaultColor,
                   roughness: 0.55,
                   metalness: 0.05,
                 });
               }
             }
           });
+          // Applica colore uniforme
+          tintObject(obj, defaultColor);
           setObject(obj);
         },
         undefined,
         () => {
-          setObject(new THREE.Group());
+          const g = new THREE.Group();
+          setObject(g);
         }
       );
     }
 
     return () => URL.revokeObjectURL(url);
-  }, [file]);
+  }, [file, colorHex]);
+
+  // Se l’utente cambia colore dopo il load, aggiorna i materiali
+  useEffect(() => {
+    if (!object) return;
+    const hex = normalizeHex(colorHex);
+    if (!hex) return;
+    tintObject(object, hex);
+  }, [colorHex, object]);
 
   if (!object) return null;
   return <primitive object={object} />;
 };
 
-const ModelPreview: React.FC<Props> = ({ file }) => {
+const ModelPreview: React.FC<Props> = ({ file, colorHex }) => {
   const ext = file.name.split(".").pop()?.toLowerCase();
   const supported = ["stl", "obj", "3mf"].includes(ext || "");
   if (!supported) {
@@ -147,7 +194,8 @@ const ModelPreview: React.FC<Props> = ({ file }) => {
 
         <Suspense fallback={null}>
           <AutoFit>
-            <LoadedModel file={file} />
+            {/* Passiamo il colore selezionato (opzionale) */}
+            <LoadedModel file={file} colorHex={colorHex} />
           </AutoFit>
 
           {/* Ambiente “studio” per riflessioni morbide */}

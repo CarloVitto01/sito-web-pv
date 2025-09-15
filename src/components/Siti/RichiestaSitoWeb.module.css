@@ -67,6 +67,47 @@
   color: var(--color-gold, #c9b458);
 }
 
+/* l’area anteprima mantiene il 16:9 e fa da “cornice” */
+.previewWrap {
+  aspect-ratio: 16 / 9;
+  background: #111;
+  border: 1px solid #252525;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;   /* centratura verticale */
+  justify-content: center; /* centratura orizzontale */
+}
+
+/* wrapper interno ridotto e centrato */
+.previewInner {
+  transform: scale(1);      /* 👈 regola qui lo zoom */
+  transform-origin: center center; /* 👈 centro come punto di scala */
+  pointer-events: none;       /* evita click interni, se vuoi tenerlo “solo anteprima” */
+}
+
+/* qualunque cosa montiamo dentro (img o componente) si adatta all’area */
+.previewWrap > * {
+  width: 100%;
+  height: 100%;
+}
+
+/* disattivo i click dentro la preview per evitare interazioni involontarie */
+.previewWrap * {
+  pointer-events: none;
+}
+
+/* fallback mentre carica il componente lazy */
+.liveFallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: #ddd;
+  opacity: .9;
+}
+
 .grid {
   display: grid;
   gap: 18px;

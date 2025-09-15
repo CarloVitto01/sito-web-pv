@@ -5,7 +5,9 @@ import { placeholderSVG } from "./utils";
 const FacciataEleganteDemo = React.lazy(() => import("./templateFacciataElegante/TemplateFacciataElegante"));
 const EcommerceEssenzialeDemo = React.lazy(() => import("./templateEcommerceEssenziale/TemplateEcommerceEssenziale"));
 const PortfolioCreativoDemo = React.lazy(() => import("./templatePortfolioCreativo/TemplatePortfolioCreativo"));
-const LandingConversioneDemo = React.lazy(() => import("./templateLandingConversione/TemplateLandingConversione"));
+const BlogMagazineDemo = React.lazy(() => import("./templateBlog/TemplateBlogMagazine"));
+const CatalogoProdottiDemo = React.lazy(() => import("./templateCatalogoProdotti/TemplateCatalogoProdotti"));
+const BookingServiziDemo = React.lazy(() => import("./templateBookingServizi/TemplateBookingServizi"));
 
 export const TEMPLATE_LIST: TemplateMeta[] = [
   {
@@ -41,15 +43,39 @@ export const TEMPLATE_LIST: TemplateMeta[] = [
     path: "/template/portfolio-creativo",
     component: PortfolioCreativoDemo,
   },
-  {
-    id: "tpl-landing-01",
-    title: "Landing ad Alta Conversione",
-    category: "landing",
-    short: "Hero forte, social proof e call-to-action evidenti.",
-    features: ["Hero", "Testimonianze", "FAQ", "Lead form"],
-    preview: placeholderSVG("Template • Landing Conversione"),
-    pagesIncluded: ["Landing", "Privacy", "Contatti"],
-    path: "/template/landing-conversione",
-    component: LandingConversioneDemo,
+
+    {
+    id: "tpl-blog-01",
+    title: "Blog Magazine",
+    category: "blog",
+    short: "Articoli, categorie, ricerca e newsletter.",
+    features: ["Categorie", "Ricerca", "Newsletter", "SEO"],
+    preview: placeholderSVG("Template • Blog Magazine"),
+    pagesIncluded: ["Home", "Blog", "Articolo", "Categorie", "Contatti"],
+    path: "/template/blog-magazine",
+    component: BlogMagazineDemo,
   },
+  {
+    id: "tpl-catalogo-01",
+    title: "Catalogo Prodotti",
+    category: "catalogo",
+    short: "Vetrina prodotti con richiesta preventivo (senza checkout).",
+    features: ["Schede prodotto", "Filtri", "Richiesta preventivo", "SEO"],
+    preview: placeholderSVG("Template • Catalogo Prodotti"),
+    pagesIncluded: ["Home", "Catalogo", "Scheda Prodotto", "Contatti"],
+    path: "/template/catalogo-prodotti",
+    component: CatalogoProdottiDemo,
+  },
+  {
+    id: "tpl-booking-01",
+    title: "Booking / Prenotazioni",
+    category: "booking",
+    short: "Calendario, slot e conferme email.",
+    features: ["Calendario", "Slot", "Email", "Gestione richieste"],
+    preview: placeholderSVG("Template • Booking Servizi"),
+    pagesIncluded: ["Home", "Servizi", "Prenota", "Conferma", "Contatti"],
+    path: "/template/booking-servizi",
+    component: BookingServiziDemo,
+  },
+  
 ];
