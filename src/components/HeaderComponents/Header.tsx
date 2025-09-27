@@ -64,7 +64,9 @@ const Header: React.FC = () => {
     { path: "/utentiGestionale", label: "Gestione Utenti" },
     { path: "/gestione-accessi", label: "Gestione Accessi Ruoli" },
     { path: "/storicoDati", label: "Storico Dati" },
-    { path: "/qrgenerator", label: "QR Generator" },
+    { path: "/qr-generator", label: "QR Gestionale" },
+    { path: "/bobine", label: "Bobine Gestionale" },
+
   ];
 
   return (
@@ -151,7 +153,7 @@ const Header: React.FC = () => {
               </li>
 
               <li>
-                <Link to="/qrgenerator" onClick={toggleSideMenu} className={classes["link-menu"]}>
+                <Link to="/qrgen" onClick={toggleSideMenu} className={classes["link-menu"]}>
                   📱 Generatore di QR Code
                 </Link>
               </li>

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { auth, db } from "../../backend/firebase";
-import { doc, getDoc } from "firebase/firestore";
-import { TOKENSVILUPPO, CHAT_IDSVILUPPO } from "../../backend/telegram";
+import { doc, getDoc, collection, onSnapshot, query, where, orderBy } from "firebase/firestore"; // ⬅️ import lasciato com’era
+import { TOKEN3D, CHAT_ID3D } from "../../backend/telegram";
 
 import styles from "./RichiestaStampa3D.module.css";
 import Header from "../HeaderComponents/Header";
@@ -15,14 +15,15 @@ interface UserShape {
   telefono?: string;
 }
 
-/** Catalogo bobine disponibili (esempio) */
-const SPOOL_OPTIONS = [
-  { id: "pla-nero",   label: "PLA Nero (1.75mm)",   material: "PLA",  hex: "#151515" },
-  { id: "pla-bianco", label: "PLA Bianco (1.75mm)", material: "PLA",  hex: "#ffffff" },
-  { id: "pla-grigio", label: "PLA Grigio (1.75mm)", material: "PLA",  hex: "#9aa0a6" },
-  { id: "pla-blu",    label: "PLA Blu (1.75mm)",    material: "PLA",  hex: "#1976d2" },
-  { id: "pla-oro",    label: "PLA Oro (1.75mm)",    material: "PLA",  hex: "#fffb00" },
-];
+// ⬅️ NEW: tipo bobina come da gestionale/Firestore
+type Spool = {
+  id: string;
+  label: string;
+  material: string;
+  hex: string;
+  available: boolean;
+  order?: number;
+};
 
 // opzionale: normalizza hex in formato #RRGGBB
 function normalizeHex(hex?: string) {
@@ -48,7 +49,8 @@ const RichiestaStampa3D: React.FC = () => {
   const [notes, setNotes] = useState("");
   const [privacyOk, setPrivacyOk] = useState(false);
 
-  // bobina colore: **selezione singola**
+  // ⬅️ NEW: bobine dal gestionale + selezione
+  const [spools, setSpools] = useState<Spool[]>([]);
   const [selectedSpoolId, setSelectedSpoolId] = useState<string | null>(null);
 
   // ui
@@ -67,6 +69,36 @@ const RichiestaStampa3D: React.FC = () => {
     run();
   }, []);
 
+  // ⬅️ UPDATED: subscribe alle bobine dal gestionale (senza where/orderBy multipli → niente indice composito)
+  useEffect(() => {
+    const qRef = query(collection(db, "pla_spools"));
+    const unsub = onSnapshot(
+      qRef,
+      (snap) => {
+        const rows: Spool[] = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Spool, "id">) }));
+        setSpools(rows);
+
+        // se la selezione non è più valida -> reset; oppure auto-seleziona la prima disponibile
+        setSelectedSpoolId((prev) => {
+          const onlyAvail = rows.filter((r) => r.available);
+          if (prev && onlyAvail.some((r) => r.id === prev)) return prev;
+          return onlyAvail[0]?.id ?? null;
+        });
+      },
+      (err) => {
+        console.error("Errore snapshot bobine:", err);
+      }
+    );
+    return () => unsub();
+  }, []);
+
+  // Filtra a client: solo disponibili, ordinati per order poi label
+  const visibleSpools = useMemo(() => {
+    return [...spools]
+      .filter((s) => s.available)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.label.localeCompare(b.label));
+  }, [spools]);
+
   // upload
   const onFilesChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     const list = e.target.files ? Array.from(e.target.files) : [];
@@ -74,18 +106,18 @@ const RichiestaStampa3D: React.FC = () => {
     setPreviewIndex(0);
   };
 
-  // toggle singolo: clic → seleziona quella; riclic → deseleziona
+  // toggle singolo: clic → seleziona quella; riclic → deseleziona (ma qui manteniamo sempre singola)
   const toggleSpool = (id: string) => {
-    setSelectedSpoolId(prev => (prev === id ? null : id));
+    setSelectedSpoolId((prev) => (prev === id ? null : id));
   };
 
   const canSubmit = privacyOk && !isSending && (files.length > 0 || notes.trim().length > 0);
 
-  // colore da passare alla preview
+  // ⬅️ UPDATED: colore preso dalla bobina selezionata tra le visibili
   const selectedColorHex = useMemo(() => {
-    const hex = SPOOL_OPTIONS.find(s => s.id === selectedSpoolId)?.hex;
+    const hex = visibleSpools.find((s) => s.id === selectedSpoolId)?.hex;
     return normalizeHex(hex);
-  }, [selectedSpoolId]);
+  }, [selectedSpoolId, visibleSpools]);
 
   // invio Telegram
   const sendTelegram = async () => {
@@ -97,8 +129,9 @@ const RichiestaStampa3D: React.FC = () => {
       ? files.map((f) => `• ${f.name} (${Math.round(f.size / 1024)} KB)`).join("\n")
       : "(nessun file allegato)";
 
+    // ⬅️ CHANGED: label ricavata dalle bobine del gestionale
     const spoolLabel = selectedSpoolId
-      ? (SPOOL_OPTIONS.find(s => s.id === selectedSpoolId)?.label || selectedSpoolId)
+      ? (visibleSpools.find((s) => s.id === selectedSpoolId)?.label || selectedSpoolId)
       : "(non specificato)";
 
     const msg = `
@@ -124,11 +157,11 @@ ${notes || "(nessuna nota)"}
 `.trim();
 
     try {
-      await fetch(`https://api.telegram.org/bot${TOKENSVILUPPO}/sendMessage`, {
+      await fetch(`https://api.telegram.org/bot${TOKEN3D}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          chat_id: CHAT_IDSVILUPPO,
+          chat_id: CHAT_ID3D,
           text: msg,
           parse_mode: "Markdown",
         }),
@@ -223,7 +256,7 @@ ${notes || "(nessuna nota)"}
                       </div>
                     )}
 
-                    {/* Passo il colore selezionato alla preview */}
+                    {/* ⬅️ CHANGED: passo il colore selezionato (dal gestionale) alla preview */}
                     <ModelPreview file={files[previewIndex]} colorHex={selectedColorHex} />
 
                     <div className={styles.preview3dFooter}>
@@ -236,26 +269,32 @@ ${notes || "(nessuna nota)"}
               {/* BOBINA COLORE (selezione singola) */}
               <div className={styles.field}>
                 <label>Bobina colore</label>
-                <div className={styles.spoolGrid}>
-                  {SPOOL_OPTIONS.map((s) => {
-                    const active = selectedSpoolId === s.id;
-                    return (
-                      <button
-                        key={s.id}
-                        type="button"
-                        className={`${styles.spool} ${active ? styles.spoolActive : ""}`}
-                        onClick={() => toggleSpool(s.id)}
-                        title={`${s.label} — ${s.material}`}
-                      >
-                        <span
-                          className={styles.swatch}
-                          style={{ background: normalizeHex(s.hex) || s.hex }}
-                        />
-                        <span className={styles.spoolLabel}>{s.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
+
+                {visibleSpools.length === 0 ? (
+                  <p className={styles.userHintDim}>Nessuna bobina disponibile al momento.</p>
+                ) : (
+                  <div className={styles.spoolGrid}>
+                    {visibleSpools.map((s) => {
+                      const active = selectedSpoolId === s.id;
+                      return (
+                        <button
+                          key={s.id}
+                          type="button"
+                          className={`${styles.spool} ${active ? styles.spoolActive : ""}`}
+                          onClick={() => toggleSpool(s.id)}
+                          title={`${s.label} — ${s.material}`}
+                        >
+                          <span
+                            className={styles.swatch}
+                            style={{ background: normalizeHex(s.hex) || s.hex }}
+                          />
+                          <span className={styles.spoolLabel}>{s.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
                 <small className={styles.hint}>
                   Puoi selezionare un solo colore. La preview lo applica al modello.
                 </small>
@@ -288,49 +327,54 @@ ${notes || "(nessuna nota)"}
 
             {/* Colonna DX */}
             <div className={styles.formCol}>
-              <div className={styles.fieldRow}>
-                <label className={styles.checkLine}>
+              <div className={styles.sideCard}>
+                <div className={styles.privacyRow}>
                   <input
+                    id="privacyOk"
                     type="checkbox"
+                    className={styles.checkboxInput}
                     checked={privacyOk}
                     onChange={(e) => setPrivacyOk(e.target.checked)}
                   />
-                  <span>
-                    Ho letto l’informativa privacy e acconsento al trattamento dei dati per
-                    essere ricontattato.
-                  </span>
-                </label>
-              </div>
+                  <label htmlFor="privacyOk" className={styles.privacyText}>
+                    Ho letto l’<a href="/privacy" target="_blank" rel="noopener noreferrer">informativa privacy</a> e acconsento al trattamento dei dati per essere ricontattato.
+                  </label>
+                </div>
 
-              <div className={styles.submitRow}>
-                <button
-                  className={styles.buttonPrimary}
-                  disabled={!canSubmit}
-                  onClick={sendTelegram}
-                >
-                  {isSending ? "Invio in corso…" : "Invia richiesta"}
-                </button>
-                {isSent && (
-                  <span className={styles.success}>Richiesta inviata con successo! 📩</span>
-                )}
-              </div>
+                <div className={styles.ctaRow}>
+                  <button
+                    className={styles.buttonPrimary}
+                    disabled={!canSubmit}
+                    onClick={sendTelegram}
+                  >
+                    {isSending ? "Invio in corso…" : "Invia richiesta"}
+                  </button>
 
-              {userData ? (
-                <p className={styles.userHint}>
-                  Inviamo i tuoi dati precompilati:{" "}
-                  <strong>
-                    {userData.displayName} {userData.cognome}
-                  </strong>{" "}
-                  • <strong>{userData.email}</strong> •{" "}
-                  <strong>{userData.telefono}</strong>
-                </p>
-              ) : (
-                <p className={styles.userHintDim}>
-                  Accedi per precompilare automaticamente i tuoi dati.
-                </p>
-              )}
+                  {isSent ? (
+                    <span className={styles.success}>Richiesta inviata con successo! 📩</span>
+                  ) : (
+                    <span className={styles.ctaHint}>Riceverai una conferma e verrai ricontattato.</span>
+                  )}
+                </div>
+
+                <div className={styles.userInfoBox}>
+                  {userData ? (
+                    <p>
+                      Inviamo i tuoi dati precompilati:{" "}
+                      <strong>{userData.displayName} {userData.cognome}</strong> •{" "}
+                      <a href={`mailto:${userData.email}`}>{userData.email}</a> •{" "}
+                      <a href={`tel:${userData.telefono}`}>{userData.telefono}</a>
+                    </p>
+                  ) : (
+                    <p className={styles.userHintDim}>
+                      Accedi per precompilare automaticamente i tuoi dati.
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
+
         </section>
       </div>
 

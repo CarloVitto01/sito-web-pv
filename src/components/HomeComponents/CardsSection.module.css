@@ -10,6 +10,7 @@
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
+  
 }
 
 .card {
@@ -22,6 +23,8 @@
   width: 200px;
   text-align: center;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 2px solid var(--color-gold, #caa700);
+  
 }
 
 .card:hover {

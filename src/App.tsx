@@ -41,6 +41,10 @@ import RichiestaStampa3D from './components/3D/RichiestaStampa3D';
 import TemplateBlogMagazine from './components/Templates/templateBlog/TemplateBlogMagazine';
 import TemplateCatalogoProdotti from './components/Templates/templateCatalogoProdotti/TemplateCatalogoProdotti';
 import TemplateBookingServizi from './components/Templates/templateBookingServizi/TemplateBookingServizi';
+import QRgen from './components/QR/QRgen';
+import BobinePLAGestionale from './gestionale/BobineGestionale';
+import PrivacyPolicy from './components/Privacy/Privacy';
+import Privacy from './components/Privacy/Privacy';
 
 const ScrollToTop: React.FC = () => {
   const navigationType = useNavigationType();
@@ -111,7 +115,13 @@ const App: React.FC = () => {
           <Route path="/storicoDati" element={<ProtectedRoute page="storicoDati" element={<StoricoDati />} />} />
           <Route path="/foto-video-gestionale" element={<ProtectedRoute page="foto-video-gestionale" element={<FotoVideoGestionale />} />} />
           <Route path="/gestione-accessi" element={<ProtectedRoute page="gestione-accessi" element={<GestioneAccessi />} />} />
-          <Route path="/qrgenerator" element={<QRCodeGenerator />} />
+          <Route path="/qr-generator" element={<ProtectedRoute page="qr-generator" element={<QRCodeGenerator />} />} />
+          <Route path="/bobine" element={<ProtectedRoute page="bobine" element={<BobinePLAGestionale />} />} />
+
+          <Route path="/qrgen" element={<QRgen />} />
+          <Route path="/privacy" element={<Privacy/>} />
+         
+
           <Route path="/recoveremail" element={<RecoverEmail />} />
           <Route path="/web" element={<RichiestaSitoWeb />} />
           {/* ⬇️ Alias più chiaro per la pagina richieste */}

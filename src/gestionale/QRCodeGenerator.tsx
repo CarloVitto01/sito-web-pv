@@ -104,7 +104,7 @@ const QRCodeGenerator: React.FC = () => {
 
       <main className="pv-main">
         <div className="qr-container">
-          <h2 className="qr-title">Genera Codice QR</h2>
+          <h2 className="qr-title">Crea Codice QR</h2>
 
           <input
             type="text"
