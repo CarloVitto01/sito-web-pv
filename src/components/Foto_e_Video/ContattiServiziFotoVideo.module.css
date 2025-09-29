@@ -22,7 +22,6 @@
   padding: 24px 16px 60px;
   color: var(--pv-text);
   background: transparent;
-  margin-top: 6vh;
 }
 
 /* ---------- Page title ---------- */
@@ -78,7 +77,11 @@
 
 .userLine {
   margin: 0 0 10px;
-  color: #e8e8e8;
+}
+
+.strongUser {
+  color: var(--pv-gold);
+  font-weight: 600;
 }
 
 .textarea {
@@ -389,18 +392,12 @@
 /* ---------- Reduced motion ---------- */
 /* ===== Mobile fix: titolo non nascosto + logo centrato sopra ===== */
 @media (max-width: 640px) {
-  /* spingi il contenuto sotto l'header fisso */
-  .container {
-    /* 24px (padding esistente) + 64px (header) + safe-area iOS */
-    padding-top: calc(24px + 64px + env(safe-area-inset-top, 0px));
-  }
-
+  
   .pageTitle {
     position: relative;
     z-index: 1;
     padding-top: 4px;
     text-align: center;
-    margin-top: -5vh;
   }
 
   /* logo sopra, centrato */
@@ -421,8 +418,8 @@
     display: block;
     margin: 0 auto;
     max-width: clamp(160px, 60vw, 260px);
-    width: 30%;
-    height: auto;
+    width: 20%;
+    margin-bottom: 30px;
   }
 
   /* textarea a tutta larghezza su mobile */

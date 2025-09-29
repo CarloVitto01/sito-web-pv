@@ -66,6 +66,7 @@ const Header: React.FC = () => {
     { path: "/storicoDati", label: "Storico Dati" },
     { path: "/qr-generator", label: "QR Gestionale" },
     { path: "/bobine", label: "Bobine Gestionale" },
+    { path: "/link", label: "Gestione Link" },
 
   ];
 

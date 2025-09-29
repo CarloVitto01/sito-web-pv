@@ -11,8 +11,9 @@ const PAGINE = [
   'storicoDati',
   'foto-video-gestionale',
   'gestione-accessi',
-  'qr-generator', 
-   'bobine'// Aggiungi qui le pagine che vuoi gestire
+  'qr-generator',
+  'bobine',
+  'link' // Aggiungi la pagina link
 ];
 
 const GestioneAccessi: React.FC = () => {

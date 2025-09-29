@@ -3,7 +3,7 @@
 // Effect: on card click → centers with shared-layout animation, rotates, then reveals the grid.
 // Clicking a media opens a lightbox modal.
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { auth, db } from "../../backend/firebase";
 import { doc, getDoc, collection, getDocs, onSnapshot, query, orderBy } from "firebase/firestore";
 import { TOKENFOTOVIDEO, CHAT_IDFOTOVIDEO } from "../../backend/telegram";
@@ -12,9 +12,10 @@ import Header from "../HeaderComponents/Header";
 import Footer from "../FooterComponents/Footer";
 import collabs from "../../assets/images/logo_b.png";
 import { motion, AnimatePresence } from "framer-motion";
+import Intro from "../IntroComponents/Intro";
 
 /* ===== Types ===== */
-interface Album { id: string; title: string; coverUrl?: string }
+interface Album { id: string; title: string; coverUrl?: string; order?: number }
 interface MediaItem { id: string; url: string; type: "image" | "video" }
 
 const ContattiServiziFotoVideo: React.FC = () => {
@@ -49,6 +50,24 @@ const ContattiServiziFotoVideo: React.FC = () => {
     });
     return () => unsub();
   }, []);
+
+  // ===== Ordinamento identico al gestionale =====
+  const albumsSorted = useMemo(() => {
+    const copy = [...albums];
+    copy.sort((a, b) => {
+      const ao = a.order;
+      const bo = b.order;
+      if (ao == null && bo == null) {
+        const at = (a as any)?.createdAt?.seconds || 0;
+        const bt = (b as any)?.createdAt?.seconds || 0;
+        return bt - at; // createdAt desc
+      }
+      if (ao == null) return 1;  // senza order → in fondo
+      if (bo == null) return -1;
+      return ao - bo;            // order asc
+    });
+    return copy;
+  }, [albums]);
 
   // ===== Open album (fetch items) =====
   async function openAlbum(a: Album) {
@@ -93,7 +112,8 @@ const ContattiServiziFotoVideo: React.FC = () => {
 
       <div className={styles.container}>
         {/* Title */}
-        <h1 className={styles.pageTitle}>Servizi Professionali di Foto e Video</h1>
+        <Intro 
+          title={"SERVIZI FOTOGRAFICI E VIDEO"} text={""}        />    
 
         {/* HERO row */}
         <section className={styles.heroRow}>
@@ -105,8 +125,10 @@ const ContattiServiziFotoVideo: React.FC = () => {
             {userData ? (
               <div className={styles.box}>
                 <p className={styles.userLine}>
-                  <strong>Nome:</strong> {userData.displayName} <strong>Cognome:</strong> {userData.cognome}<br />
-                  <strong>Email:</strong> {userData.email} <strong>Telefono:</strong> {userData.telefono}
+                  <strong className={styles.strongUser}>Nome:</strong> {userData.displayName} <br />
+                  <strong className={styles.strongUser}>Cognome:</strong> {userData.cognome}<br />
+                  <strong className={styles.strongUser}>Email:</strong> {userData.email} <br />
+                  <strong className={styles.strongUser}>Telefono:</strong> {userData.telefono}
                 </p>
                 <textarea
                   className={styles.textarea}
@@ -128,9 +150,9 @@ const ContattiServiziFotoVideo: React.FC = () => {
 
         {/* Albums */}
         <section className={styles.albumsSection}>
-          <h2 className={styles.sectionTitle}>I nostri lavori</h2>
+          <h2 className={styles.sectionTitle}>Le Nostre Collaborazioni</h2>
           <div className={styles.albumGrid}>
-            {albums.map((a) => (
+            {albumsSorted.map((a) => (
               <motion.article key={a.id} className={styles.albumCard} layoutId={`album-${a.id}`}>
                 <motion.button className={styles.albumBody} onClick={() => openAlbum(a)} layoutId={`album-body-${a.id}`}>
                   {a.coverUrl ? (
@@ -189,9 +211,34 @@ const ContattiServiziFotoVideo: React.FC = () => {
                           {albumItems.map((m) => (
                             <motion.div key={m.id} className={styles.itemCard} whileHover={{ scale: 1.02 }}>
                               {m.type === "image" ? (
-                                <img className={styles.itemMedia} src={m.url} alt="media" onClick={() => setLightbox({ type: "image", url: m.url })} />
+                                <img
+                                  className={styles.itemMedia}
+                                  src={m.url}
+                                  alt="media"
+                                  onClick={() => setLightbox({ type: "image", url: m.url })}
+                                  style={{
+                                    objectFit: "contain",
+                                    width: "100%",
+                                    height: "auto",
+                                    maxHeight: "64vh",
+                                    background: "#0a0a0a"
+                                  }}
+                                />
                               ) : (
-                                <video className={styles.itemMedia} src={m.url} onClick={() => setLightbox({ type: "video", url: m.url })} controls playsInline />
+                                <video
+                                  className={styles.itemMedia}
+                                  src={m.url}
+                                  onClick={() => setLightbox({ type: "video", url: m.url })}
+                                  controls
+                                  playsInline
+                                  style={{
+                                    objectFit: "contain",
+                                    width: "100%",
+                                    height: "auto",
+                                    maxHeight: "64vh",
+                                    background: "#000"
+                                  }}
+                                />
                               )}
                             </motion.div>
                           ))}

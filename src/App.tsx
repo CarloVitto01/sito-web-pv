@@ -43,8 +43,8 @@ import TemplateCatalogoProdotti from './components/Templates/templateCatalogoPro
 import TemplateBookingServizi from './components/Templates/templateBookingServizi/TemplateBookingServizi';
 import QRgen from './components/QR/QRgen';
 import BobinePLAGestionale from './gestionale/BobineGestionale';
-import PrivacyPolicy from './components/Privacy/Privacy';
 import Privacy from './components/Privacy/Privacy';
+import LinkGestionale from './gestionale/LinkGestionale';
 
 const ScrollToTop: React.FC = () => {
   const navigationType = useNavigationType();
@@ -117,6 +117,9 @@ const App: React.FC = () => {
           <Route path="/gestione-accessi" element={<ProtectedRoute page="gestione-accessi" element={<GestioneAccessi />} />} />
           <Route path="/qr-generator" element={<ProtectedRoute page="qr-generator" element={<QRCodeGenerator />} />} />
           <Route path="/bobine" element={<ProtectedRoute page="bobine" element={<BobinePLAGestionale />} />} />
+          <Route path="/link" element={<ProtectedRoute page="link" element={<LinkGestionale />} />} />
+          
+
 
           <Route path="/qrgen" element={<QRgen />} />
           <Route path="/privacy" element={<Privacy/>} />

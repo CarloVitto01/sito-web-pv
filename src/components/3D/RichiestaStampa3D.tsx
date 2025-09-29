@@ -7,6 +7,7 @@ import styles from "./RichiestaStampa3D.module.css";
 import Header from "../HeaderComponents/Header";
 import Footer from "../FooterComponents/Footer";
 import ModelPreview from "../3D/ModelPreview";
+import Intro from "../IntroComponents/Intro";
 
 interface UserShape {
   displayName?: string;
@@ -186,14 +187,10 @@ ${notes || "(nessuna nota)"}
     <>
       <Header />
       <div className={styles.container}>
-        <section className={styles.intro}>
-          <h1>Richiesta stampa 3D</h1>
-          <p className={styles.subtitle}>
-            Carica il modello, scegli la bobina colore e descrivi brevemente cosa ti serve.
-            Ti ricontatteremo con un preventivo.
-          </p>
-        </section>
-
+        <Intro
+          title={"STAMPA I TUOI PROGETTI 3D"}
+          text={"Carica il modello, scegli la bobina colore e descrivi brevemente cosa ti serve. Ti ricontatteremo con un preventivo."}
+        />
         <section className={styles.config}>
           <div className={styles.formGrid}>
             {/* Colonna SX */}

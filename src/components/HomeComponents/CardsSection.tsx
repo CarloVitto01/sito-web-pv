@@ -9,6 +9,7 @@ const CardsSection: React.FC = () => (
       <Link to="/3d" className={styles.card}>3D</Link>
       <Link to="/richiesta-sito-web" className={styles.card}>Richiesta Sito Web</Link>
       <Link to="/contatti-servizi-foto-video" className={styles.card}>Contatti Servizi Foto/Video</Link>
+       <Link to="/qrgen" className={styles.card}>Genera il tuo QR</Link>
       <Link to="/comingSoon" className={styles.card}>Coming Soon...</Link>
     </div>
   </section>

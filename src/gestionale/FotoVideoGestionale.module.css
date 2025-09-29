@@ -1,9 +1,4 @@
-/* =============================================================
-   FotoVideoGestionale.module.css — Simplified (albums + private cover)
-   Gold/Black theme • Clean • Responsive
-   ============================================================= */
 
-/* ---------- Theme tokens ---------- */
 :root {
   --pv-bg: #0a0a0a;
   --pv-surface: #101010;
@@ -26,6 +21,7 @@
     var(--pv-bg);
   color: var(--pv-text);
   padding: 18px 20px 56px;
+  margin-top: 8vh;
 }
 
 /* ---------- Admin bar ---------- */
@@ -330,3 +326,153 @@
   box-shadow: 0 0 0 3px rgba(202,167,0,0.22);
 }
 .albumBody:focus-visible { outline: 2px solid var(--pv-gold); outline-offset: 2px; }
+
+/* -------- New Album Card (card vuota per creare) -------- */
+.newAlbumCard {
+  /* sovrascrive la base .albumCard */
+  border-style: dashed;
+  border-color: var(--pv-border);
+  background: var(--pv-surface-2);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
+}
+
+.newAlbumCard:hover {
+  border-color: var(--pv-gold);
+  box-shadow: var(--pv-shadow);
+  transform: translateY(-2px);
+}
+
+.newAlbumBody {
+  padding: 16px;
+  display: grid;
+  grid-template-rows: auto auto auto;
+  gap: 12px;
+  align-items: center;
+  justify-items: center;
+  text-align: center;
+  min-height: 240px; /* allineata alle altre card */
+}
+
+.newAlbumPlaceholder {
+  width: 100%;
+  aspect-ratio: 16/10;
+  border: 1px dashed var(--pv-border);
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 40px;
+  color: var(--pv-muted);
+  user-select: none;
+  background: #121212;
+}
+
+.newAlbumTitleInput {
+  width: 100%;
+  max-width: 260px;
+  background: #0f0f0f;
+  color: var(--pv-text);
+  border: 1px solid var(--pv-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.newAlbumTitleInput::placeholder { color: #8d8d8d; }
+
+.newAlbumTitleInput:focus-visible {
+  border-color: var(--pv-gold);
+  box-shadow: 0 0 0 3px rgba(202,167,0,0.22);
+}
+
+.circlePlusBtn {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid var(--pv-border);
+  background: var(--pv-surface);
+  color: var(--pv-text);
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.2s ease, border-color 0.2s ease, opacity 0.18s ease;
+}
+
+.circlePlusBtn:hover:not([disabled]) {
+  border-color: var(--pv-gold);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+  transform: translateY(-1px);
+}
+
+.circlePlusBtn:focus-visible {
+  outline: none;
+  border-color: var(--pv-gold);
+  box-shadow: 0 0 0 3px rgba(202,167,0,0.22);
+}
+
+.circlePlusBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.dragHandle {
+  border: 1px solid var(--pv-border);
+  background: var(--pv-surface-2);
+  color: var(--pv-text);
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: grab;
+  line-height: 1;
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.08s ease;
+}
+.dragHandle:hover { border-color: var(--pv-gold); }
+.dragHandle:active { cursor: grabbing; transform: scale(0.98); }
+
+.draggingCard {
+  opacity: 0.85;
+  outline: 2px dashed rgba(202,167,0,0.35);
+  outline-offset: -6px;
+}
+
+.dropTargetCard {
+  border-color: var(--pv-gold);
+  box-shadow: 0 0 0 3px rgba(202,167,0,0.2);
+}
+
+/* Copertine card: centrate, non tagliate */
+.albumCover {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;        /* non taglia mai */
+  object-position: center;    /* centrata */
+  background: #0a0a0a;        /* letterboxing elegante */
+  display: block;
+}
+
+/* Disabilita click/open quando si rinomina inline */
+.albumBodyDisabled {
+  cursor: default;
+}
+
+/* Input titolo inline dentro la card */
+.albumTitleInput {
+  width: 100%;
+  background: #0f0f0f;
+  color: var(--pv-text);
+  border: 1px solid var(--pv-border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.albumTitleInput:focus-visible {
+  border-color: var(--pv-gold);
+  box-shadow: 0 0 0 3px rgba(202,167,0,0.22);
+}

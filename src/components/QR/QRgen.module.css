@@ -27,6 +27,21 @@
   color: white;
 }
 
+/* prima avevi :global(.qr-hint) */
+.qr-hint {
+  margin-top: 6px;
+  font-size: 0.9rem;
+  line-height: 1.35;
+  color: #cfcfcf;
+  display: block;
+}
+
+.qr-hint::before {
+  content: "ℹ️ ";
+  margin-right: 4px;
+  opacity: 0.9;
+}
+
 .qr-options {
   margin-bottom: 20px;
   display: flex;
@@ -60,12 +75,14 @@
 .qr-box {
   position: relative;
   padding: 16px;
-  background-color: transparent;
+  background: var(--qr-panel, transparent); /* ⬅️ qui il colore dinamico */
   border-radius: 32px;
   overflow: hidden;
   margin: 0 auto 20px auto;
   width: fit-content;
+  display: inline-block; /* così “abbraccia” il canvas */
 }
+
 
 .qr-image {
   position: absolute;
@@ -113,3 +130,4 @@
 .paywall-cta { display:flex; gap:.5rem; }
 .qr-button.primary { background: #111; color:#ffd36e; border-color:#111; }
 .paywall-note { display:block; margin-top:.75rem; color:#555; }
+

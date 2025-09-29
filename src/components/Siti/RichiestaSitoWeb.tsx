@@ -9,6 +9,7 @@ import Footer from "../FooterComponents/Footer";
 
 import { TEMPLATE_LIST } from "../Templates";
 import type { TemplateMeta, TemplateCategory } from "../Templates/types";
+import Intro from "../IntroComponents/Intro";
 
 interface UserShape {
   displayName?: string;
@@ -254,11 +255,9 @@ ${message || "(nessun messaggio)"}
       <Header />
       <div className={styles.container}>
         <section className={styles.intro}>
-          <h1>Richiesta sviluppo siti internet</h1>
-          <p className={styles.subtitle}>
-            Scegli un template di partenza, seleziona le funzionalità e inviaci la tua richiesta: ti
-            risponderemo con una proposta su misura.
-          </p>
+          <Intro title="RICHIESTA SVILUPPO SITO WEB"
+            text="Scegli un template di partenza, seleziona le funzionalità e inviaci la tua richiesta: ti risponderemo con una proposta su misura." />
+
         </section>
 
         {/* Filtro & ricerca */}
