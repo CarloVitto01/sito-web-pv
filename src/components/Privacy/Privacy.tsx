@@ -14,10 +14,10 @@ export default function PrivacyPolicy() {
         <section className={styles.section}>
           <h2>Titolare del trattamento</h2>
           <p>
-            <strong>Photo & Vision</strong> — di <strong>[Nome e Cognome/Denominazione]</strong><br />
-            <strong>Sede:</strong> [Indirizzo completo] — [CAP, Città (Provincia), Italia]<br />
-            <strong>Email:</strong> [email ufficiale privacy/assistenza]<br />
-            <strong>P.IVA / CF:</strong> [inserisci se presente]
+            <strong>Photo & Vision</strong><br />
+            <strong>Sede:</strong> [Via Colonello Gino Chiriatti, 19] — [73025, Martano (Le), Italia]<br />
+            <strong>Email:</strong> [pv.photoandvision@gmail.com]<br />
+            <strong>P.IVA / CF:</strong> [05433670758]
           </p>
         </section>
 

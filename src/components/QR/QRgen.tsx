@@ -10,6 +10,22 @@ import Footer from "../FooterComponents/Footer";
 // Base API (proxy o nginx a /api → :8080)
 const API_BASE = "/api";
 
+// ======= PayPal config (ENV) =======
+const PAYPAL_CLIENT_ID = process.env.REACT_APP_PAYPAL_CLIENT_ID as string;
+
+// prezzo PRO (EUR) per sbloccare le funzioni del QR
+const PRO_PRICE_EUR = Number(process.env.REACT_APP_QR_PRO_PRICE_EUR ?? "9.99");
+
+// opzionale: sovrapprezzo PayPal (disattivo di default)
+const PAYPAL_SURCHARGE_ENABLED =
+  (process.env.REACT_APP_PAYPAL_SURCHARGE_ENABLED ?? "false") === "true";
+const PAYPAL_FEE_PCT = Number(process.env.REACT_APP_PAYPAL_FEE_PCT ?? "0.034");
+const PAYPAL_FEE_FIXED = Number(process.env.REACT_APP_PAYPAL_FEE_FIXED ?? "0.35");
+function grossWithPayPalFee(net: number) {
+  const gross = (net + PAYPAL_FEE_FIXED) / (1 - PAYPAL_FEE_PCT);
+  return Math.max(0, Number(gross.toFixed(2)));
+}
+
 // Helpers
 const normalizeHex = (hex: string) => hex.trim().toLowerCase();
 const isPureBlack = (hex: string) => normalizeHex(hex) === "#000000";
@@ -44,6 +60,8 @@ const pickHighContrastBW = (hex: string) => {
 const QR_SIZE = 256;    // lato del QR (come ora)
 const PANEL_PAD = 16;   // padding del riquadro in preview
 
+declare global { interface Window { paypal?: any } }
+
 const QRCodeGenerator: React.FC = () => {
   const [url, setUrl] = useState("");
   const [fgColor, setFgColor] = useState("#000000");
@@ -54,7 +72,12 @@ const QRCodeGenerator: React.FC = () => {
   // Stato paywall
   const [isPaid, setIsPaid] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
-  const [loadingCheckout, setLoadingCheckout] = useState(false); // NEW
+
+  // PayPal
+  const [paypalReady, setPaypalReady] = useState(false);
+  const paypalButtonsRef = useRef<HTMLDivElement | null>(null);
+  const [paypalError, setPaypalError] = useState<string | null>(null);
+
   const qrPreviewRef = useRef<HTMLCanvasElement | null>(null);
 
   // Regole PRO
@@ -72,46 +95,32 @@ const QRCodeGenerator: React.FC = () => {
     return pickHighContrastBW(fgColor);         // altri colori → bianco/nero con più contrasto
   }, [fgColor]);
 
-  // Disegna filigrana
   const drawWatermark = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
     ctx.save();
-
-    // 1) Strisce diagonali opache (bianco quasi pieno)
-    //   - abbastanza spesse da rompere i moduli
-    //   - spazi ravvicinati per coprire la matrice
     const stripeThickness = 18;
-    const stripeGap = 26; // distanza tra strisce
+    const stripeGap = 26;
     ctx.translate(w / 2, h / 2);
     ctx.rotate((-25 * Math.PI) / 180);
     ctx.translate(-w / 2, -h / 2);
-    ctx.fillStyle = "rgba(255,255,255,0.95)"; // quasi pieno
+    ctx.fillStyle = "rgba(255,255,255,0.95)";
     for (let y = -h; y <= h * 2; y += stripeThickness + stripeGap) {
       ctx.fillRect(-w, y, w * 3, stripeThickness);
     }
-
-    // 2) Copri i finder pattern (angoli) — blocca la decodifica
-    //    Con canvas 256x256 e margin:0, 72px coprono bene i marcatori 7x7.
     ctx.fillStyle = "rgba(255,255,255,0.98)";
     const fpSize = 72;
-    // top-left
     ctx.fillRect(0, 0, fpSize, fpSize);
-    // top-right
     ctx.fillRect(w - fpSize, 0, fpSize, fpSize);
-    // bottom-left
     ctx.fillRect(0, h - fpSize, fpSize, fpSize);
 
-    // 3) Scritta centrale (decorativa)
     ctx.translate(w / 2, h / 2);
-    ctx.rotate((25 * Math.PI) / 180); // torna all’orientamento originale
+    ctx.rotate((25 * Math.PI) / 180);
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.font = "700 22px sans-serif";
-    // bordo per leggibilità
     ctx.strokeStyle = "rgba(0,0,0,0.75)";
     ctx.lineWidth = 3;
     ctx.fillStyle = "#070404ff";
     ctx.fillText("PASSA A PRO", 0, 0);
-
     ctx.restore();
   };
 
@@ -194,19 +203,16 @@ const QRCodeGenerator: React.FC = () => {
     const updatePreview = async () => {
       if (!qrPreviewRef.current || !url) return;
 
-      // Canvas di preview più grande (riquadro visibile)
       const preview = qrPreviewRef.current;
       preview.width = QR_SIZE + PANEL_PAD * 2;
       preview.height = QR_SIZE + PANEL_PAD * 2;
       const pctx = preview.getContext("2d");
       if (!pctx) return;
 
-      // Riquadro pieno bianco/nero a contrasto col colore QR
       pctx.clearRect(0, 0, preview.width, preview.height);
       pctx.fillStyle = panelColor;
       pctx.fillRect(0, 0, preview.width, preview.height);
 
-      // Genera il QR su canvas intermedio 256x256
       const qrCanvas = document.createElement("canvas");
       qrCanvas.width = QR_SIZE;
       qrCanvas.height = QR_SIZE;
@@ -215,12 +221,11 @@ const QRCodeGenerator: React.FC = () => {
         margin: 0,
         color: {
           dark: fgColor,
-          light: transparentBg ? "#00000000" : bgColor, // se trasparente, si vede il riquadro sotto
+          light: transparentBg ? "#00000000" : bgColor,
         },
         width: QR_SIZE,
       });
 
-      // Logo centrale (se presente)
       if (imageSrc) {
         const img = new Image();
         img.src = imageSrc;
@@ -232,10 +237,8 @@ const QRCodeGenerator: React.FC = () => {
         qctx?.drawImage(img, logoX, logoY, logoSize, logoSize);
       }
 
-      // Disegna il QR centrato dentro il riquadro
       pctx.drawImage(qrCanvas, PANEL_PAD, PANEL_PAD);
 
-      // Filigrana se PRO non pagato (solo la preview deve mostrarla)
       if (isPremium && !isPaid) {
         drawWatermark(pctx, preview.width, preview.height);
       }
@@ -250,72 +253,125 @@ const QRCodeGenerator: React.FC = () => {
     window.__pvOpenPaywall = () => setShowPaywall(true);
   }, []);
 
-  // Verifica pagamento al ritorno da Stripe (?session_id=...)
+  // ===== PayPal SDK lazy-load quando apro la modale =====
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const sessionId = params.get("session_id");
-    if (sessionId) {
-      (async () => {
+    if (!showPaywall || !isPremium || isPaid) return;
+
+    setPaypalError(null);
+
+    if (!PAYPAL_CLIENT_ID) {
+      console.error("REACT_APP_PAYPAL_CLIENT_ID mancante.");
+      setPaypalError("Configurazione PayPal mancante.");
+      return;
+    }
+
+    // se già presente
+    if (window.paypal) {
+      setPaypalReady(true);
+      return;
+    }
+
+    const existing = document.querySelector<HTMLScriptElement>('script[data-pp-sdk="true"]');
+    if (existing) {
+      existing.addEventListener("load", () => setPaypalReady(true));
+      existing.addEventListener("error", () => setPaypalError("Impossibile caricare PayPal SDK."));
+      return;
+    }
+
+    const s = document.createElement("script");
+    s.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(
+      PAYPAL_CLIENT_ID
+    )}&components=buttons&currency=EUR&intent=capture`;
+    s.async = true;
+    (s as any).dataset.ppSdk = "true";
+    s.onload = () => setPaypalReady(true);
+    s.onerror = () => setPaypalError("Impossibile caricare PayPal SDK.");
+    document.head.appendChild(s);
+  }, [showPaywall, isPremium, isPaid]);
+
+  // ===== Render dei PayPal Buttons nella modale =====
+  const amountNet = PRO_PRICE_EUR;
+  const amountForPayPal = PAYPAL_SURCHARGE_ENABLED
+    ? grossWithPayPalFee(amountNet)
+    : amountNet;
+  const paypalFeeEstimate = Math.max(0, Number((amountForPayPal - amountNet).toFixed(2)));
+
+  useEffect(() => {
+    if (!showPaywall || !isPremium || isPaid) return;
+    if (!paypalReady || !paypalButtonsRef.current) return;
+
+    // pulizia container
+    paypalButtonsRef.current.innerHTML = "";
+    const Buttons = window.paypal?.Buttons;
+    if (!Buttons) return;
+
+    const instance = Buttons({
+      style: { layout: "vertical" },
+
+      createOrder: async () => {
+        const res = await fetch(`${API_BASE}/paypal/create-order`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            amount: amountForPayPal.toFixed(2),
+            currency: "EUR",
+            method: "PAYPAL",
+            product: "qr-pro"
+          }),
+        });
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          throw new Error(`Errore create-order (${res.status}): ${text}`);
+        }
+        const data = await res.json();
+        if (!data?.orderId) throw new Error("orderId assente");
+        return data.orderId;
+      },
+
+      onApprove: async (data: any) => {
         try {
-          const res = await fetch(
-            `${API_BASE}/payments/verify?session_id=${encodeURIComponent(sessionId)}`
-          );
-          const data: { paid: boolean; error?: string } = await res.json();
-          if (data.paid) {
+          const res = await fetch(`${API_BASE}/paypal/capture-order`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ orderId: data.orderID }),
+          });
+          if (!res.ok) {
+            const text = await res.text().catch(() => "");
+            throw new Error(`Errore capture-order (${res.status}): ${text}`);
+          }
+          const cap = await res.json();
+          if (cap.status === "COMPLETED") {
             setIsPaid(true);
             sessionStorage.setItem("qr-paid", "1");
             setShowPaywall(false);
+          } else {
+            alert("Pagamento non completato: " + cap.status);
           }
         } catch (e) {
-          console.error("Verifica pagamento fallita:", e);
-        } finally {
-          const clean = window.location.origin + window.location.pathname;
-          window.history.replaceState({}, "", clean);
+          console.error(e);
+          alert("Si è verificato un errore durante il pagamento.");
         }
-      })();
-    } else if (sessionStorage.getItem("qr-paid") === "1") {
+      },
+
+      onError: (err: any) => {
+        console.error("PayPal Buttons error:", err);
+        alert("Errore PayPal. Riprova.");
+      },
+    });
+
+    instance.render(paypalButtonsRef.current);
+
+    return () => {
+      try { instance.close(); } catch {}
+    };
+  }, [paypalReady, showPaywall, isPremium, isPaid, amountForPayPal]);
+
+  // ripristina stato PRO se già pagato in sessione
+  useEffect(() => {
+    if (sessionStorage.getItem("qr-paid") === "1") {
       setIsPaid(true);
     }
   }, []);
-
-  // Checkout → chiama backend e reindirizza a Stripe
-  const startCheckout = async () => {
-    try {
-      setLoadingCheckout(true);
-      const payload = {
-        product: "qr-pro",
-        returnUrl: window.location.origin + window.location.pathname,
-        features: {
-          colored: !isPureBlack(fgColor),
-          bgChanged: !transparentBg && !isPureWhite(bgColor),
-          hasImage: !!imageSrc,
-        },
-      };
-
-      const res = await fetch(`${API_BASE}/payments/checkout`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`Checkout HTTP ${res.status}: ${errText}`);
-      }
-
-      const data: { url?: string; error?: string } = await res.json();
-      if (data.url) {
-        window.location.href = data.url; // redirect a Stripe
-      } else {
-        throw new Error(data.error || "URL di Checkout mancante");
-      }
-    } catch (e) {
-      console.error(e);
-      alert("Pagamento non avviato. Controlla connessione/CORS o riprova.");
-    } finally {
-      setLoadingCheckout(false);
-    }
-  };
 
   return (
     <>
@@ -326,7 +382,6 @@ const QRCodeGenerator: React.FC = () => {
           <h2 className="qr-title">
             Genera Codice QR {isPremium ? <span className="badge-pro">PRO</span> : <span className="badge-free">FREE</span>}
           </h2>
-
 
           <input
             type="text"
@@ -348,8 +403,6 @@ const QRCodeGenerator: React.FC = () => {
                   onChange={(e) => setFgColor(e.target.value)}
                   title="Cambiare colore attiva la modalità PRO"
                 />
-    
-        
                 <span style={{ fontSize: "0.85rem", opacity: 0.85 }}>
                   PRO se diverso da nero
                 </span>
@@ -360,7 +413,6 @@ const QRCodeGenerator: React.FC = () => {
             <div style={{ display: "grid", gap: 8 }}>
               <label className="qr-label">Sfondo</label>
 
-              {/* Segmented control */}
               <div
                 style={{
                   display: "inline-flex",
@@ -403,7 +455,6 @@ const QRCodeGenerator: React.FC = () => {
                 </label>
               </div>
 
-              {/* Picker / Anteprima */}
               {transparentBg ? (
                 <div
                   style={{
@@ -440,21 +491,8 @@ const QRCodeGenerator: React.FC = () => {
           {/* Upload logo con anteprima */}
           <div className="qr-upload" style={{ display: "grid", gap: 10, marginTop: 12 }}>
             Immagine Centrale
-            <label
-              title="Aggiungere un'immagine centrale attiva la modalità PRO"
-            >
-              
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) =>
-                  setImageSrc(
-                    e.target.files?.[0]
-                      ? URL.createObjectURL(e.target.files[0])
-                      : null
-                  )
-                }
-              />
+            <label title="Aggiungere un'immagine centrale attiva la modalità PRO">
+              <input type="file" accept="image/*" onChange={handleImageUpload} />
             </label>
 
             {imageSrc ? (
@@ -492,10 +530,7 @@ const QRCodeGenerator: React.FC = () => {
                   Suggerito <strong>296×296 px</strong> (PNG con sfondo trasparente).
                 </small>
 
-                <button
-                  onClick={() => setImageSrc(null)}
-                  className="qr-remove-button"
-                >
+                <button onClick={() => setImageSrc(null)} className="qr-remove-button">
                   Elimina Foto
                 </button>
               </div>
@@ -546,7 +581,6 @@ const QRCodeGenerator: React.FC = () => {
         <div
           className="paywall-backdrop"
           onClick={() => setShowPaywall(false)}
-          // Fallback per garantire visibilità sopra tutto
           style={{
             position: "fixed",
             inset: 0,
@@ -574,19 +608,31 @@ const QRCodeGenerator: React.FC = () => {
               <li>Immagine centrale</li>
               <li>Download senza filigrana</li>
             </ul>
-            <div className="paywall-cta" style={{ display: "grid", gap: 8 }}>
-              <button
-                className="qr-button primary"
-                onClick={startCheckout}
-                disabled={loadingCheckout}
-                title="Paga con carta (Stripe)"
-              >
-                {loadingCheckout ? "Reindirizzamento..." : "Procedi al pagamento"}
-              </button>
+
+            <div style={{ margin: "8px 0 12px", lineHeight: 1.4 }}>
+              Totale: <strong>{amountNet.toFixed(2)} €</strong><br/>
+              {PAYPAL_SURCHARGE_ENABLED && (
+                <>Commissione PayPal stimata: <strong>{paypalFeeEstimate.toFixed(2)} €</strong><br/></>
+              )}
+              Da pagare con PayPal: <strong>{amountForPayPal.toFixed(2)} €</strong>
+            </div>
+
+            {/* PayPal Buttons */}
+            {paypalError ? (
+              <p style={{ color: "#b00020" }}>{paypalError}</p>
+            ) : (
+              <div
+                ref={paypalButtonsRef}
+                style={{ display: "grid", placeItems: "center", minHeight: 45 }}
+              />
+            )}
+
+            <div className="paywall-cta" style={{ display: "grid", gap: 8, marginTop: 12 }}>
               <button className="qr-button" onClick={() => setShowPaywall(false)}>
                 Annulla
               </button>
             </div>
+
             <small className="paywall-note">
               Il pagamento è richiesto solo quando utilizzi funzioni PRO. La versione base (nero su
               sfondo bianco, senza immagine) resta gratuita.

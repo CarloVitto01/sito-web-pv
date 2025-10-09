@@ -1,29 +1,32 @@
 package it.pv.payments.config;
 
-import org.springframework.beans.factory.annotation.Value;
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
-import java.util.List;
-
 @Configuration
 public class CorsConfig {
-
-  @Value("${qr.allow-dev-origin:false}")
-  private boolean allowDev;
 
   @Bean
   public CorsFilter corsFilter() {
     CorsConfiguration cfg = new CorsConfiguration();
-    if (allowDev) {
-      cfg.setAllowedOrigins(List.of("http://localhost:3000", "http://127.0.0.1:3000"));
-    }
+    // ✅ Produzione (dominio tuo)
+    cfg.setAllowedOriginPatterns(List.of(
+      "https://photoandvision.it",
+      "https://www.photoandvision.it",
+      "https://*.photoandvision.it",
+      // ✅ Sviluppo (localhost)
+      "http://localhost:*",
+      "http://127.0.0.1:*"
+    ));
     cfg.setAllowedMethods(List.of("GET","POST","OPTIONS"));
     cfg.setAllowedHeaders(List.of("*"));
     cfg.setAllowCredentials(true);
+    cfg.setMaxAge(3600L);
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/api/**", cfg);

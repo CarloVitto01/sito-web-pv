@@ -14,6 +14,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../backend/firebase";
 import styles from "./LinkGestionale.module.css";
+import Header from "../components/HeaderComponents/Header";
 
 /** ---------- Tipi ---------- */
 type LinkItem = {
@@ -148,7 +149,9 @@ const LinkGestionale: React.FC = () => {
   }
 
   return (
+    
     <div className={styles.container}>
+      <Header />
       <h1 className={styles.title}>Collegamenti rapidi</h1>
 
       {error && <p className={styles.error}>Errore Firestore: {error}</p>}

@@ -6,6 +6,7 @@ import {
   onSnapshot, query, orderBy, serverTimestamp
 } from "firebase/firestore";
 import styles from "./BobineGestionale.module.css";
+import Header from "../components/HeaderComponents/Header";
 
 type Spool = {
   id: string;
@@ -152,6 +153,7 @@ const BobinePLAGestionale: React.FC = () => {
 
   return (
     <div className={styles.container}>
+      <Header />
       <h1>Gestionale Bobine PLA</h1>
       <p className={styles.subtitle}>
         Crea/aggiorna le bobine disponibili per la richiesta stampa 3D. Le bobine con

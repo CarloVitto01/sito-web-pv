@@ -26,17 +26,7 @@ import { onAuthStateChanged } from "firebase/auth";
 
 //Constants
 
-
-//const foglio = 0.03;
-//const biancoNero: number = 0.015;
-//const colore: number = 0.075;
-//const anelli = 1.5;
-//const fascetta = 1;
-//const ciappatura = 0.1;
-//const spirale = 2;
-
 //Enum
-
 const inchiostroEnum = {
   BIANCOENERO: 0,
   COLORE: 1,
@@ -323,7 +313,14 @@ const A4PagePrint = () => {
 
   //Send data to the Firebase server
 
-  const submitFormHandler = useCallback(async (event?: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+  // 🆕 accetta sia (event) sia (paymentPayload, event)
+  const submitFormHandler = useCallback(async (arg1?: any, arg2?: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    // 🆕 normalizza parametri senza rompere l’esistente
+    const isPaymentPayload = (o: any) => o && typeof o === "object" && ("method" in o);
+    const payment: { method: "CASH" | "PAYPAL"; confirmed: boolean } | undefined =
+      isPaymentPayload(arg1) ? arg1 : undefined;
+    const event = isPaymentPayload(arg1) ? arg2 : (arg1 as React.MouseEvent<HTMLButtonElement, MouseEvent> | undefined);
+
     event?.preventDefault();
 
     if (!auth.currentUser) {
@@ -357,6 +354,21 @@ const A4PagePrint = () => {
       const pages = fileData[index].pages;
       return `- [File ${index + 1} - ${pages} pagine](${url.replace(/\(/g, "[").replace(/\)/g, "]")})`;
     }).join("\n");
+
+    // 🆕 calcolo descrizioni pagamento (fallback se non passato)
+    const metodoPagamento =
+      payment?.method === "PAYPAL"
+        ? "PayPal"
+        : payment?.method === "CASH"
+          ? "Contanti (alla consegna)"
+          : "Non specificato";
+
+    const statoPagamento =
+      payment?.method === "PAYPAL"
+        ? (payment.confirmed ? "Pagato (conferma utente)" : "Non verificato")
+        : payment?.method === "CASH"
+          ? "Da saldare alla consegna"
+          : "Non specificato";
 
     const dataToUpload = {
       id: id,
@@ -396,6 +408,9 @@ const A4PagePrint = () => {
       timestamp: serverTimestamp(),
       tipo: "A4", // ✅ aggiunto per filtro gestionale
       uid: auth.currentUser?.uid,
+      // (facoltativo) potresti anche salvare questi due campi:
+      // metodoPagamento,
+      // statoPagamento,
     };
 
     const collectionRef = collection(db, "StampePDFA4");
@@ -428,8 +443,7 @@ const A4PagePrint = () => {
 
         await setDoc(doc(db, "ArchivioOrdini", id), datiSnelliti);
 
-
-
+        // 🆕 Aggiungo al messaggio Telegram il metodo di pagamento selezionato
         const messageText = `
 =====================
   *NUOVO ORDINE A4*
@@ -454,6 +468,9 @@ ${fileLinks}
 *Pagine*: ${dataToUpload.pagine}
 🔢 *Copie*: ${dataToUpload.copie}
 💰💰 *Prezzo*: ${preventivo}€ 💰💰
+
+💳 *Metodo di pagamento*: ${metodoPagamento}
+✅ *Stato pagamento*: ${statoPagamento}
 `;
 
         const apiUrl = `https://api.telegram.org/bot${TOKENA4}/sendMessage`;

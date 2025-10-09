@@ -12,7 +12,7 @@
   --pv-pad: 14px;
 
   --z-overlay: 2100;
-  --z-lightbox: 2200;
+  --z-viewer: 3000;
 }
 
 /* ---------- Page container ---------- */
@@ -22,14 +22,6 @@
   padding: 24px 16px 60px;
   color: var(--pv-text);
   background: transparent;
-}
-
-/* ---------- Page title ---------- */
-.pageTitle {
-  font-size: 2rem;
-  color: var(--pv-gold);
-  text-align: center;
-  margin: 8px 0 22px;
 }
 
 /* ---------- Hero row: logo (left) + form (right) ---------- */
@@ -50,7 +42,8 @@
 .logoCol {
   display: grid;
   place-items: center;
-  width: 40%;
+  width: 50%;
+  margin: 0 auto;
   margin-top: 10%;
 }
 
@@ -58,6 +51,8 @@
   max-width: 320px;
   width: 100%;
   height: auto;
+  display: block;
+  margin: 0 auto;
   filter: drop-shadow(0 6px 18px rgba(0, 0, 0, .35));
 }
 
@@ -187,6 +182,15 @@
   outline-offset: 2px;
 }
 
+/* Card cover (centrata, non tagliata) */
+.albumCover {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: contain;
+  object-position: center;
+  background: #0a0a0a;
+}
 
 .albumCoverPlaceholder {
   display: grid;
@@ -218,11 +222,10 @@
   place-items: center;
   backdrop-filter: saturate(120%) blur(3px);
   overscroll-behavior: contain;
-  /* evita scroll della pagina sottostante */
 }
 
 .flyStage {
-  width: min(500px, 94vw);
+  width: min(1024px, 96vw);
   perspective: 1400px;
 }
 
@@ -232,48 +235,44 @@
   border-radius: var(--pv-radius);
   box-shadow: 0 18px 50px rgba(0, 0, 0, .55);
   overflow: hidden;
-  /* nasconde sbordi durante animazioni */
   transform-style: preserve-3d;
   will-change: transform;
-
-  /* ==== layout per scroll interno ==== */
   display: flex;
   flex-direction: column;
   max-height: 78vh;
-  /* limite verticale totale della card */
 }
 
+/* Header con copertina più bassa */
 .flyHeader {
   position: relative;
   flex: 0 0 auto;
-  /* header non si ridimensiona */
 }
 
-.albumCover,
 .flyCover {
   display: block;
   width: 100%;
-  aspect-ratio: 16 / 9;
-
-  /* il logo sta tutto dentro, niente tagli */
+  height: clamp(140px, 24vh, 220px);
   object-fit: contain;
-
-  /* “tappetino” scuro + alone dorato molto soft per dare stacco */
   background:
-    radial-gradient(80% 60% at 50% 50%, rgba(202,167,0,.08), transparent 65%),
+    radial-gradient(80% 60% at 50% 50%, rgba(202, 167, 0, .08), transparent 65%),
     #0b0b0b;
-
-  /* respiro interno per non schiacciare il logo ai bordi */
   box-sizing: border-box;
-  padding: 14px;
-
-  /* piccolo drop shadow per farlo emergere sul fondo scuro */
-  filter: drop-shadow(0 2px 8px rgba(0,0,0,.35));
-
-  /* migliora resa dei png/svg sottili */
+  padding: 12px;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, .35));
   image-rendering: -webkit-optimize-contrast;
   image-rendering: optimizeQuality;
 }
+
+.flyHeader .albumCoverPlaceholder {
+  aspect-ratio: auto;
+  height: clamp(140px, 24vh, 220px);
+  display: grid;
+  place-items: center;
+  background: #101010;
+  border-bottom: 1px solid var(--pv-border);
+  color: var(--pv-muted);
+}
+
 .flyTitle {
   position: absolute;
   left: 14px;
@@ -299,41 +298,66 @@
   cursor: pointer;
 }
 
-/* ==== corpo scrollabile ==== */
+/* Corpo scrollabile */
 .flyBody {
   flex: 1 1 auto;
-  /* occupa lo spazio restante */
   min-height: 0;
-  /* sblocca l'overflow nei flex container */
-  padding: 14px;
+  padding: 12px;
   overflow: auto;
-  /* SCROLL INTERNO */
   -webkit-overflow-scrolling: touch;
-  /* inerzia su iOS */
 }
 
+/* Griglia stile Instagram: 3 colonne */
 .flyGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
 }
 
 .itemCard {
-  background: #131313;
-  border: 1px solid var(--pv-border);
-  border-radius: 12px;
+  position: relative;
+  aspect-ratio: 1 / 1;
   overflow: hidden;
+  background: #000;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, .04);
+  transition: transform .15s ease;
+  cursor: zoom-in;
+  /* fa capire che si apre */
+}
+
+.itemCard:hover {
+  transform: translateY(-2px);
 }
 
 .itemMedia {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  aspect-ratio: 16 / 10;
+  height: 100%;
   object-fit: cover;
-  background: #0a0a0a;
-  cursor: pointer;
+  background: #000;
+  transition: transform .25s ease, opacity .25s ease;
 }
 
-/* (Opzionale) stile scrollbar del corpo */
+.itemCard:hover .itemMedia {
+  transform: scale(1.02);
+}
+
+.itemCard::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(60% 60% at 50% 50%, rgba(0, 0, 0, .0), rgba(0, 0, 0, .18));
+  opacity: 0;
+  transition: opacity .25s ease;
+}
+
+.itemCard:hover::after {
+  opacity: 1;
+}
+
+/* Scrollbar del body del popup album */
 .flyBody {
   scrollbar-width: thin;
   scrollbar-color: rgba(202, 167, 0, .6) transparent;
@@ -354,74 +378,198 @@
   border: 2px solid rgba(0, 0, 0, .25);
 }
 
-/* ---------- Lightbox ---------- */
-.lightbox {
+/* ===== Instagram-like Pure Viewer (solo media) ===== */
+:root {
+  --viewer-feed-h: 74vh;
+  /* altezza del riquadro scrollabile */
+  --viewer-peek: 10vh;
+  /* quanto far intravedere sopra/sotto */
+}
+
+.viewer {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, .85);
-  z-index: var(--z-lightbox);
+  background: rgba(0, 0, 0, .92);
+  z-index: var(--z-viewer);
   display: grid;
   place-items: center;
+  padding: 24px;
 }
 
-.lightboxInner {
+/* layout desktop/tablet: media singolo */
+.viewerSolo {
+  width: min(96vw, 1200px);
+  height: min(92vh, 860px);
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: stretch;
+}
+
+.viewerCanvas {
   position: relative;
-  max-width: min(92vw, 1200px);
-  max-height: 90vh;
-}
-
-.lightboxInner img,
-.lightboxInner video {
-  max-width: 100%;
-  max-height: 90vh;
-  display: block;
+  background: #000;
   border-radius: 12px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  min-height: 0;
 }
 
-.lightboxClose {
+.viewerFeed{
+  width: 100%;
+  max-width: 700px;
+  height: var(--viewer-feed-h);
+  background: #000;
+  border-radius: 12px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: y mandatory;
+
+  /* il trucco: questa imbottitura lascia intravedere sopra/sotto */
+  padding-block: var(--viewer-peek);
+
+  /* così quando centri una slide, resta allineata al centro */
+  scroll-padding-block: var(--viewer-peek);
+
+  overscroll-behavior: contain;
+}
+
+/* ogni slide è più bassa del feed, così si vedono le adiacenti */
+.viewerSlide{
+  height: calc(var(--viewer-feed-h) - (var(--viewer-peek) * 2));
+  display: grid;
+  place-items: center;
+  scroll-snap-align: center;
+  /* margine sottile (facoltativo) per separare leggermente le slide */
+  margin-block: 0.5vh;
+}
+
+/* media sempre centrato e contenuto */
+.viewerMedia {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.viewerNav {
   position: absolute;
-  top: -44px;
-  right: 0;
-  background: transparent;
-  color: #fff;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
   border: none;
-  font-size: 1.6rem;
+  background: rgba(255, 255, 255, .92);
+  color: #000;
+  font-size: 28px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .35);
+}
+
+.viewerNav.left {
+  left: 10px;
+}
+
+.viewerNav.right {
+  right: 10px;
+}
+
+.viewerNav:hover {
+  background: #fff;
+}
+
+.viewerCounter {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, .55);
+  border: 1px solid rgba(255, 255, 255, .15);
+  color: #fff;
+  font-size: .9rem;
+}
+
+/* bottone chiudi */
+.viewerClose {
+  position: fixed;
+  top: 18px;
+  right: 24px;
+  z-index: 1;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .92);
+  color: #000;
+  border: none;
+  font-size: 20px;
   cursor: pointer;
 }
 
-/* ---------- Reduced motion ---------- */
-/* ===== Mobile fix: titolo non nascosto + logo centrato sopra ===== */
-@media (max-width: 640px) {
-  
-  .pageTitle {
-    position: relative;
-    z-index: 1;
-    padding-top: 4px;
-    text-align: center;
+
+
+/* switch tra layout */
+@media (max-width: 700px) {
+  .viewerSolo {
+    display: none;
   }
 
-  /* logo sopra, centrato */
-  .heroRow {
-    grid-template-columns: 1fr;   /* una colonna */
-    gap: 14px;
-    justify-items: center;        /* centra gli elementi */
+  /* nasconde layout desktop */
+  .viewerNav {
+    display: none;
   }
+
+  /* nasconde frecce su mobile */
+}
+
+@media (min-width: 701px) {
+  .viewerFeed {
+    display: none;
+  }
+
+  /* feed solo su mobile */
+}
+
+/* ===== Mobile: logo sopra centrato ===== */
+@media (max-width: 640px) {
+  .heroRow {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    justify-items: center;
+  }
+
   .logoCol {
-    width: 100% !important;
+    width: 30% !important;
     margin: 0 !important;
     display: grid;
-    place-items: center;          /* centra il contenuto */
+    place-items: center;
     text-align: center;
     justify-self: center;
   }
+
   .heroLogo {
     display: block;
-    margin: 0 auto;
+    margin: 0 auto 30px;
     max-width: clamp(160px, 60vw, 260px);
-    width: 20%;
-    margin-bottom: 30px;
   }
 
-  /* textarea a tutta larghezza su mobile */
-  .textarea { width: 93%; }
+  .textarea {
+    width: 93%;
+  }
+}
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+
+  .albumCard,
+  .button,
+  .overlay,
+  .flyCard {
+    transition: none !important;
+  }
 }

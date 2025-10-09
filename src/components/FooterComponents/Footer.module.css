@@ -135,6 +135,14 @@
 .dot { opacity: .6; }
 .copy { margin-left: 6px; opacity: .85; }
 
+.piva {
+  margin: 0 8px;
+  opacity: 0.9;
+  white-space: nowrap;
+}
+
+
+
 /* Piccoli ritocchi responsive */
 @media (max-width: 600px) {
   .inlineTel { margin-left: 0; }

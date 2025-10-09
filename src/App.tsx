@@ -32,19 +32,16 @@ import GestioneAccessi from './gestionale/GestioneAccessi';
 import RecoverEmail from './components/Login/pages/RecoverEmail';
 import QRCodeGenerator from './gestionale/QRCodeGenerator';
 import RichiestaSitoWeb from './components/Siti/RichiestaSitoWeb';
-
-/* ⬇️ NUOVI IMPORT per le anteprime template */
-import TemplateFacciataElegante from './components/Templates/templateFacciataElegante/TemplateFacciataElegante';
-import TemplateEcommerceEssenziale from './components/Templates/templateEcommerceEssenziale/TemplateEcommerceEssenziale';
-import TemplatePortfolioCreativo from './components/Templates/templatePortfolioCreativo/TemplatePortfolioCreativo';
-import RichiestaStampa3D from './components/3D/RichiestaStampa3D';
-import TemplateBlogMagazine from './components/Templates/templateBlog/TemplateBlogMagazine';
-import TemplateCatalogoProdotti from './components/Templates/templateCatalogoProdotti/TemplateCatalogoProdotti';
-import TemplateBookingServizi from './components/Templates/templateBookingServizi/TemplateBookingServizi';
 import QRgen from './components/QR/QRgen';
 import BobinePLAGestionale from './gestionale/BobineGestionale';
 import Privacy from './components/Privacy/Privacy';
 import LinkGestionale from './gestionale/LinkGestionale';
+import CookieInfoBar from './components/Privacy/CookieInfoBar';
+import Terms from './components/Privacy/Terms';
+import Cookie from './components/Privacy/Cookie';
+import WebGestionale from './gestionale/WebGestionale';
+import RichiestaStampa3D from './components/3D/RichiestaStampa3D';
+
 
 const ScrollToTop: React.FC = () => {
   const navigationType = useNavigationType();
@@ -95,12 +92,14 @@ const App: React.FC = () => {
     return () => clearTimeout(timer);
   }, []);
 
+
   return (
     <Router>
       <ScrollToTop />
       {showSplash ? (
         <SplashScreen onEnd={() => setShowSplash(false)} />
       ) : (
+        <>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
@@ -118,11 +117,14 @@ const App: React.FC = () => {
           <Route path="/qr-generator" element={<ProtectedRoute page="qr-generator" element={<QRCodeGenerator />} />} />
           <Route path="/bobine" element={<ProtectedRoute page="bobine" element={<BobinePLAGestionale />} />} />
           <Route path="/link" element={<ProtectedRoute page="link" element={<LinkGestionale />} />} />
-          
+          <Route path="/gestionale-web" element={<ProtectedRoute page="gestionale-web" element={<WebGestionale />} />} />
+  
 
 
           <Route path="/qrgen" element={<QRgen />} />
           <Route path="/privacy" element={<Privacy/>} />
+          <Route path="/termini" element={<Terms />} />
+          <Route path="/cookie-policy" element={<Cookie />} />
          
 
           <Route path="/recoveremail" element={<RecoverEmail />} />
@@ -137,15 +139,12 @@ const App: React.FC = () => {
           <Route path="/resetpassword" element={<ResetPassword />} />
 
           {/* ⬇️ NUOVE ROTTE di anteprima template */}
-          <Route path="/template/facciata-elegante" element={<TemplateFacciataElegante />} />
-          <Route path="/template/ecommerce-essenziale" element={<TemplateEcommerceEssenziale />} />
-          <Route path="/template/portfolio-creativo" element={<TemplatePortfolioCreativo />} />
-          <Route path="/template/blog-magazine" element={<TemplateBlogMagazine />} />
-          <Route path="/template/catalogo-prodotti" element={<TemplateCatalogoProdotti />} />
-          <Route path="/template/booking-servizi" element={<TemplateBookingServizi />} />
         </Routes>
+          <CookieInfoBar policyUrl="/cookie-policy" />
+        </> 
       )}
     </Router>
+    
   );
 };
 

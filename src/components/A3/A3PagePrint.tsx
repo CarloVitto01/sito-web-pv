@@ -57,8 +57,6 @@ const A3PagePrint = () => {
         plastificazione: 0.30
     });
 
-
-
     useEffect(() => {
         const costiRef = doc(db, "configA3", "costi");
         const unsub = onSnapshot(costiRef, (snap) => {
@@ -134,7 +132,6 @@ const A3PagePrint = () => {
         setNumeroPaginePDF(totalPages);
     }, []);
 
-
     // Calculate total order
     useEffect(() => {
         const calcoloPreventivo = () => {
@@ -165,7 +162,6 @@ const A3PagePrint = () => {
             return totale.toFixed(2);
         };
 
-
         if (numeroPaginePDF > 0) setPreventivo(calcoloPreventivo());
         if (numeroPDF === 0) setPreventivo("0.00");
     }, [costi, inchiostro, pagina, numeroPaginePDF, numeroCopie, plastificazione, grammatura, numeroPDF]);
@@ -174,101 +170,147 @@ const A3PagePrint = () => {
         setNumeroCopie(value);
     }, []);
 
-    const submitFormHandler = useCallback(async (event?: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-        event?.preventDefault();
-        setFormSubmitting(true);
-        if (fileData.length === 0 || !data.isValid) { // Controlla se ci sono file
-            setFormSubmitting(false); // Assicurati di impostare formSubmitting su false se non ci sono file
-            return;
-        }
+    // 🔁 AGGIORNATO: ora accetta (event) oppure (paymentPayload, event)
+    const submitFormHandler = useCallback(
+        async (
+            arg1?: any,
+            arg2?: React.MouseEvent<HTMLButtonElement, MouseEvent>
+        ) => {
+            // Riconosci payload pagamento
+            const isPaymentPayload = (o: any) => o && typeof o === "object" && ("method" in o);
+            const payment: { method: "CASH" | "PAYPAL"; confirmed: boolean } | undefined =
+                isPaymentPayload(arg1) ? arg1 : undefined;
+            const event = isPaymentPayload(arg1)
+                ? arg2
+                : (arg1 as React.MouseEvent<HTMLButtonElement, MouseEvent> | undefined);
 
-        const id = v4();
-        const paths: string[] = []; // Array per memorizzare i percorsi dei file
-        const urls: string[] = []; // Array per memorizzare gli URL dei file
+            event?.preventDefault();
 
-        // Carica i file uno per uno
-        for (const { file } of fileData) {
-            const path = `PDF/${data.surname + data.name + "|" + file.name.trim().replace(".pdf", "").replace(/\s/g, "").replace(/\(/g, "[").replace(/\)/g, "]") + "|" + id}.pdf`;
-            paths.push(path);
+            // 🔐 Allineamento ad A4: richiedi login
+            if (!auth.currentUser) {
+                alert("Per effettuare un ordine è necessario effettuare il login.");
+                window.location.href = "/login";
+                return;
+            }
 
-            const fileRef = ref(storage, path);
-            const snapshot = await uploadBytes(fileRef, file);
-            const url = await getDownloadURL(snapshot.ref);
-            urls.push(url);
-        }
+            setFormSubmitting(true);
+            if (fileData.length === 0 || !data.isValid) {
+                setFormSubmitting(false);
+                return;
+            }
 
-        // Crea il messaggio con i link dei file
-        const fileLinks = urls.map((url, index) => {
-            const pages = fileData[index].pages;
-            return `- [File ${index + 1} - ${pages} pagine](${url.replace(/\(/g, "[").replace(/\)/g, "]")})`;
-        }).join("\n");
+            const id = v4();
+            const paths: string[] = [];
+            const urls: string[] = [];
 
-        const dataToUpload = {
-            id: id,
-            paths: paths,
-            nome: data.name,
-            cognome: data.surname,
-            email: data.email,
-            telefono: data.telephoneNumber,
-            corsoLaurea: data.corsoLaurea,
-            annoAccademico: data.annoAccademico,
-            files: urls,
-            grammatura: grammatura === grammaturaEnum.CARTONCINO ? "Cartoncino" : "Normale",
-            colore: inchiostro === inchiostroEnum.COLORE ? "Colore" : "Bianco e nero",
-            pagina: pagina === 1 ? "Fronte" : "Fronte-retro",
-            layout: layout === 0 ? "Orizzontale" : layout === 1 ? "Verticale" : "Auto",
-            plastificazione: plastificazione === plastificazioneEnum.SI ? "Si" : "No",
-            numeroPDF: numeroPDF,
-            pagine: numeroPaginePDF,
-            copie: numeroCopie,
-            prezzo: preventivo,
-            timestamp: serverTimestamp(),
-        };
+            // Upload file
+            for (const { file } of fileData) {
+                const path = `PDF/${data.surname + data.name + "|" + file.name.trim().replace(".pdf", "").replace(/\s/g, "").replace(/\(/g, "[").replace(/\)/g, "]") + "|" + id}.pdf`;
+                paths.push(path);
 
-        if (auth.currentUser) {
-            const userRef = doc(db, "users", auth.currentUser.uid);
-            await updateDoc(userRef, {
-                displayName: dataToUpload.nome,
-                cognome: dataToUpload.cognome,
-                email: dataToUpload.email,
-                telefono: dataToUpload.telefono,
-                corsoLaurea: dataToUpload.corsoLaurea,
-                annoAccademico: dataToUpload.annoAccademico,
-            });
-        }
+                const fileRef = ref(storage, path);
+                const snapshot = await uploadBytes(fileRef, file);
+                const url = await getDownloadURL(snapshot.ref);
+                urls.push(url);
+            }
 
-        const collectionRef = collection(db, "StampePDFA3");
-        const PDFref = doc(collectionRef, id);
-        setDoc(PDFref, dataToUpload)
-            .then(async () => {
-                await setDoc(doc(db, "ArchivioOrdini", id), {
-                    uid: auth.currentUser?.uid,
-                    tipo: "A3",
-                    prezzo: parseFloat(preventivo), // 👈 assicurati che sia numero
-                    timestamp: serverTimestamp(),
-                    nome: dataToUpload.nome,
+            // Link file con numero pagine
+            const fileLinks = urls.map((url, index) => {
+                const pages = fileData[index].pages;
+                return `- [File ${index + 1} - ${pages} pagine](${url.replace(/\(/g, "[").replace(/\)/g, "]")})`;
+            }).join("\n");
+
+            // 🆕 Mappatura pagamento
+            const metodoPagamento =
+                payment?.method === "PAYPAL"
+                    ? "PayPal"
+                    : payment?.method === "CASH"
+                        ? "Contanti (alla consegna)"
+                        : "Non specificato";
+
+            const statoPagamento =
+                payment?.method === "PAYPAL"
+                    ? (payment.confirmed ? "Pagato (conferma utente)" : "Non verificato")
+                    : payment?.method === "CASH"
+                        ? "Da saldare alla consegna"
+                        : "Non specificato";
+
+            const dataToUpload = {
+                id: id,
+                paths: paths,
+                nome: data.name,
+                cognome: data.surname,
+                email: data.email,
+                telefono: data.telephoneNumber,
+                corsoLaurea: data.corsoLaurea,
+                annoAccademico: data.annoAccademico,
+                files: urls,
+                grammatura: grammatura === grammaturaEnum.CARTONCINO ? "Cartoncino" : "Normale",
+                colore: inchiostro === inchiostroEnum.COLORE ? "Colore" : "Bianco e nero",
+                pagina: pagina === 1 ? "Fronte" : "Fronte-retro",
+                layout: layout === 0 ? "Orizzontale" : layout === 1 ? "Verticale" : "Auto",
+                plastificazione: plastificazione === plastificazioneEnum.SI ? "Si" : "No",
+                numeroPDF: numeroPDF,
+                pagine: numeroPaginePDF,
+                copie: numeroCopie,
+                prezzo: preventivo,
+                timestamp: serverTimestamp(),
+                uid: auth.currentUser?.uid, // aggiunto (non rimuove nulla)
+                tipo: "A3",                 // aggiunto (non rimuove nulla)
+                // Se vuoi salvarli anche su Firestore, decommenta:
+                // metodoPagamento,
+                // statoPagamento,
+            };
+
+            if (auth.currentUser) {
+                const userRef = doc(db, "users", auth.currentUser.uid);
+                await updateDoc(userRef, {
+                    displayName: dataToUpload.nome,
                     cognome: dataToUpload.cognome,
                     email: dataToUpload.email,
                     telefono: dataToUpload.telefono,
                     corsoLaurea: dataToUpload.corsoLaurea,
                     annoAccademico: dataToUpload.annoAccademico,
-                    files: dataToUpload.files,
                 });
+            }
 
+            const collectionRef = collection(db, "StampePDFA3");
+            const PDFref = doc(collectionRef, id);
+            setDoc(PDFref, dataToUpload)
+                .then(async () => {
+                    // (lasciato intatto) primo set ArchivioOrdini
+                    await setDoc(doc(db, "ArchivioOrdini", id), {
+                        uid: auth.currentUser?.uid,
+                        tipo: "A3",
+                        prezzo: parseFloat(preventivo), // 👈 assicurati che sia numero
+                        timestamp: serverTimestamp(),
+                        nome: dataToUpload.nome,
+                        cognome: dataToUpload.cognome,
+                        email: dataToUpload.email,
+                        telefono: dataToUpload.telefono,
+                        corsoLaurea: dataToUpload.corsoLaurea,
+                        annoAccademico: dataToUpload.annoAccademico,
+                        files: dataToUpload.files,
+                        // metodoPagamento, // opzionale
+                        // statoPagamento,  // opzionale
+                    });
 
-                setFormSubmitting(false);
-                setFormSubmitted(true);
+                    setFormSubmitting(false);
+                    setFormSubmitted(true);
 
-                //salvataggio dati in ArchivioOrdini
-                const { files, paths, ...rest } = dataToUpload;
-                const datiSnelli = {
-                    ...rest,
-                    timestamp: serverTimestamp(), // Reimposta il timestamp
-                };
+                    // (lasciato intatto) set "snello" ArchivioOrdini
+                    const { files, paths, ...rest } = dataToUpload;
+                    const datiSnelli = {
+                        ...rest,
+                        // metodoPagamento, // opzionale
+                        // statoPagamento,  // opzionale
+                        timestamp: serverTimestamp(), // Reimposta il timestamp
+                    };
 
-                await setDoc(doc(db, "ArchivioOrdini", id), datiSnelli);
-                // Invia il messaggio a Telegram
-                const messageText = `
+                    await setDoc(doc(db, "ArchivioOrdini", id), datiSnelli);
+
+                    // Messaggio Telegram con pagamento
+                    const messageText = `
 =====================
   *NUOVO ORDINE A3*
 =====================
@@ -291,38 +333,59 @@ ${fileLinks}
 *Plastificazione*: ${dataToUpload.plastificazione}
 🔢 *Copie*: ${dataToUpload.copie}
 💰💰 *Prezzo*: ${preventivo}€ 💰💰
+
+💳 *Metodo di pagamento*: ${metodoPagamento}
+✅ *Stato pagamento*: ${statoPagamento}
 `;
-                const apiUrl = `https://api.telegram.org/bot${TOKENA3}/sendMessage`;
-                const data = {
-                    chat_id: CHAT_IDA3,
-                    text: messageText,
-                    parse_mode: "Markdown",
-                };
-                const requestOptions = {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(data),
-                };
-                fetch(apiUrl, requestOptions)
-                    .then((response) => {
-                        if (response.ok) {
-                            console.log("Messaggio inviato con successo");
-                        } else {
-                            console.log("Errore durante l'invio del messaggio:", response.statusText);
-                        }
-                    })
-                    .catch((error) => {
-                        console.error("Errore durante l'invio del messaggio:", error);
-                    });
-            })
-            .catch((error) => {
-                console.log(error);
-                setFormError(true);
-                setFormSubmitting(false);
-            });
-    }, [data.annoAccademico, data.corsoLaurea, data.email, data.isValid, data.name, data.surname, data.telephoneNumber, fileData, grammatura, inchiostro, layout, numeroCopie, numeroPDF, numeroPaginePDF, pagina, plastificazione, preventivo]);
-
-
+                    const apiUrl = `https://api.telegram.org/bot${TOKENA3}/sendMessage`;
+                    const payload = {
+                        chat_id: CHAT_IDA3,
+                        text: messageText,
+                        parse_mode: "Markdown",
+                    };
+                    const requestOptions = {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload),
+                    };
+                    fetch(apiUrl, requestOptions)
+                        .then((response) => {
+                            if (response.ok) {
+                                console.log("Messaggio inviato con successo");
+                            } else {
+                                console.log("Errore durante l'invio del messaggio:", response.statusText);
+                            }
+                        })
+                        .catch((error) => {
+                            console.error("Errore durante l'invio del messaggio:", error);
+                        });
+                })
+                .catch((error) => {
+                    console.log(error);
+                    setFormError(true);
+                    setFormSubmitting(false);
+                });
+        },
+        [
+            data.annoAccademico,
+            data.corsoLaurea,
+            data.email,
+            data.isValid,
+            data.name,
+            data.surname,
+            data.telephoneNumber,
+            fileData,
+            grammatura,
+            inchiostro,
+            layout,
+            numeroCopie,
+            numeroPDF,
+            numeroPaginePDF,
+            pagina,
+            plastificazione,
+            preventivo
+        ]
+    );
 
     useEffect(() => {
         if (formSubmitted) {
@@ -508,7 +571,7 @@ ${fileLinks}
                         layout={layout === 0 ? "Orizzontale" : layout === 1 ? "Verticale" : "Auto"}
                         plastificazione={plastificazione === 0 ? "Si" : "No"}
                         prezzo={preventivo}
-                        onConfirmOrder={submitFormHandler} // Da completare se necessario
+                        onConfirmOrder={submitFormHandler} // compatibile con (payload, event) o solo (event)
                         disabled={!data.isValid || fileData.length === 0 || formSubmitting}
                         loading={formSubmitting}
                         submitted={formSubmitted}

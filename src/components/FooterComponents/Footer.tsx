@@ -52,7 +52,6 @@ const Footer = () => {
 
         {/* Telegram + WhatsApp + telefono */}
         <div className={classes["section"]}>
-          {/* 👉 Sostituisci l'URL Telegram con il tuo handle se ne hai uno (es. https://t.me/photoandvision) */}
           <a
             href="https://t.me/"
             target="_blank"
@@ -91,7 +90,11 @@ const Footer = () => {
         <span className={classes.dot}>•</span>
         <Link to="/cookie-policy" className={classes.legalLink}>Cookie</Link>
         <span className={classes.dot}>•</span>
-        <Link to="/terms" className={classes.legalLink}>Termini</Link>
+        <Link to="/termini" className={classes.legalLink}>Termini</Link>
+
+        {/* >>> Aggiunta Partita IVA <<< */}
+        <span className={classes.dot}>•</span>
+        <span className={classes.piva} aria-label="Partita IVA">P. IVA 05433670758</span>
 
         <span className={classes.copy}>© {year} Photo &amp; Vision</span>
       </nav>

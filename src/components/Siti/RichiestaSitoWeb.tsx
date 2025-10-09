@@ -1,15 +1,55 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { auth, db } from "../../backend/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  onSnapshot,
+  query,
+  where,
+} from "firebase/firestore";
 import { TOKENWEB, CHAT_IDWEB } from "../../backend/telegram";
 
 import styles from "./RichiestaSitoWeb.module.css";
 import Header from "../HeaderComponents/Header";
 import Footer from "../FooterComponents/Footer";
-
-import { TEMPLATE_LIST } from "../Templates";
-import type { TemplateMeta, TemplateCategory } from "../Templates/types";
 import Intro from "../IntroComponents/Intro";
+
+/** =========================================================
+ * Tipi locali (allineati al gestionale)
+ * ======================================================= */
+type TemplateCategory =
+  | "facciata"
+  | "ecommerce"
+  | "portfolio"
+  | "blog"
+  | "booking"
+  | "catalogo"
+  | "landing"
+  | "istituzionale";
+
+type TemplateMeta = {
+  id: string;
+  title: string;
+  short: string;
+  category: TemplateCategory;
+  previewUrl: string;   // immagine anteprima
+  demoPath: string;     // link anteprima esterna
+  pagesIncluded: string[];
+  features: string[];
+  minBudget?: number;   // override minimo categoria
+  published: boolean;
+  order: number;
+};
+
+type WebPricingConfig = {
+  hostingYearly: number;
+  budgetMax: number;
+  timingMultiplier: Record<string, number>;
+  minBudgetByCategory: Record<TemplateCategory, number>;
+  stacks: string[];
+  allFeatures: string[];
+};
 
 interface UserShape {
   displayName?: string;
@@ -23,53 +63,54 @@ type TemplateWithExtras = TemplateMeta & {
   minBudget?: number;
 };
 
-const ALL_FEATURES = [
-  "Responsive design",
-  "Multilingua",
-  "E-commerce (carrello/pagamenti)",
-  "Booking/Prenotazioni",
-  "Blog/Articoli",
-  "SEO tecnica & on-page",
-  "Analytics & eventi",
-  "Area riservata/Admin",
-  "GDPR cookie & privacy",
-];
-
-const STACKS = [
-  "Non ho preferenze",
-  "React + Next.js",
-  "Spring Boot (backend) + React (frontend)",
-];
-
-// =============================
-// Prezzi/Regole di riepilogo
-// =============================
-
-const MIN_BUDGET_BY_CATEGORY: Record<string, number> = {
-  facciata: 800,
-  portfolio: 1200,
-  blog: 1500,
-  catalogo: 2000,
-  booking: 2500,
-  ecommerce: 3000,
-  landing: 800,
-  istituzionale: 1500,
-};
-
-const TIMING_MULTIPLIER: Record<string, number> = {
-  "1-2 settimane": 1.3,
-  "2-4 settimane": 1.15,
-  "4-6 settimane": 1.0,
-  "> 6 settimane": 0.9,
-  "Non so / da consigliare": 1.0,
-};
-
-// Hosting fisso, gestito da noi
-const HOSTING_YEARLY = 50; // € / anno
-
+/** =========================================================
+ * Fallback locali (usati finché non arriva la config da Firestore)
+ * ======================================================= */
 const DEFAULT_MIN = 500;
-const BUDGET_MAX = 20000;
 
+const DEFAULT_CONFIG: WebPricingConfig = {
+  hostingYearly: 50,
+  budgetMax: 20000,
+  timingMultiplier: {
+    "1-2 settimane": 1.3,
+    "2-4 settimane": 1.15,
+    "4-6 settimane": 1.0,
+    "> 6 settimane": 0.9,
+    "Non so / da consigliare": 1.0,
+  },
+  minBudgetByCategory: {
+    facciata: 800,
+    portfolio: 1200,
+    blog: 1500,
+    catalogo: 2000,
+    booking: 2500,
+    ecommerce: 3000,
+    landing: 800,
+    istituzionale: 1500,
+  },
+  stacks: [
+    "Non ho preferenze",
+    "React + Next.js",
+    "Spring Boot (backend) + React (frontend)",
+  ],
+  allFeatures: [
+    "Responsive design",
+    "Multilingua",
+    "E-commerce (carrello/pagamenti)",
+    "Booking/Prenotazioni",
+    "Blog/Articoli",
+    "SEO tecnica & on-page",
+    "Analytics & eventi",
+    "Area riservata/Admin",
+    "GDPR cookie & privacy",
+  ],
+};
+
+/** Firestore paths */
+const TEMPLATES_COL = "web_templates";
+const CONFIG_DOC_PATH = "config/web_pricing";
+
+/** Utils */
 const euro = (n: number, digits = 0) =>
   `€ ${n.toLocaleString("it-IT", {
     minimumFractionDigits: digits,
@@ -79,12 +120,17 @@ const euro = (n: number, digits = 0) =>
 const RichiestaSitoWeb: React.FC = () => {
   const [userData, setUserData] = useState<UserShape | null>(null);
 
+  /** ====== DATI DINAMICI DA FIRESTORE ====== */
+  const [templates, setTemplates] = useState<TemplateMeta[]>([]);
+  const [cfg, setCfg] = useState<WebPricingConfig>(DEFAULT_CONFIG);
+
   // filtro elenco
   const [search, setSearch] = useState("");
+  const [category, setCategory] = useState<TemplateCategory | "tutte">("tutte");
 
   // selezioni form
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
-  const [stack, setStack] = useState(STACKS[2]); // default coerente con la lista attuale
+  const [stack, setStack] = useState(DEFAULT_CONFIG.stacks[2]); // default coerente
 
   // budget con minimo dinamico
   const [minBudget, setMinBudget] = useState<number>(DEFAULT_MIN);
@@ -98,9 +144,8 @@ const RichiestaSitoWeb: React.FC = () => {
   const [isSending, setIsSending] = useState(false);
   const [isSent, setIsSent] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateWithExtras | null>(null);
-  const [category, setCategory] = useState<TemplateCategory | "tutte">("tutte");
 
-  // Recupera utente
+  /** ====== Recupera utente ====== */
   useEffect(() => {
     const run = async () => {
       if (auth.currentUser) {
@@ -112,32 +157,76 @@ const RichiestaSitoWeb: React.FC = () => {
     run();
   }, []);
 
-  // Quando seleziono un template, fisso il budget al minimo (livello Base)
+  /** ====== Live templates pubblicati ======
+   * niente orderBy nella query (evita indice composito),
+   * ordino lato client per `order`.
+   */
+  useEffect(() => {
+    const qRef = query(
+      collection(db, TEMPLATES_COL),
+      where("published", "==", true)
+    );
+    const unsub = onSnapshot(
+      qRef,
+      (snap) => {
+        const arr: TemplateMeta[] = snap.docs.map((d) => ({ ...(d.data() as any), id: d.id })) as TemplateMeta[];
+        arr.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        setTemplates(arr);
+      },
+      (err) => {
+        console.error("[RichiestaSitoWeb] onSnapshot templates error:", err);
+        setTemplates([]);
+      }
+    );
+    return () => unsub();
+  }, []);
+
+  /** ====== Live config ====== */
+  useEffect(() => {
+    const ref = doc(db, CONFIG_DOC_PATH);
+    const unsub = onSnapshot(
+      ref,
+      (snap) => {
+        if (snap.exists()) setCfg(snap.data() as WebPricingConfig);
+        else setCfg(DEFAULT_CONFIG);
+      },
+      (err) => {
+        console.error("[RichiestaSitoWeb] onSnapshot config error:", err);
+        setCfg(DEFAULT_CONFIG);
+      }
+    );
+    return () => unsub();
+  }, []);
+
+  /** ====== Reazioni a template scelto (minimo dinamico) ====== */
   useEffect(() => {
     if (!selectedTemplate) {
       setMinBudget(DEFAULT_MIN);
       return;
     }
     const tplMin = selectedTemplate.minBudget;
-    const catMin = MIN_BUDGET_BY_CATEGORY[selectedTemplate.category] ?? DEFAULT_MIN;
-    const computedMin = typeof tplMin === "number" && tplMin > 0 ? tplMin : catMin;
+    const catMin =
+      cfg.minBudgetByCategory[selectedTemplate.category] ?? DEFAULT_MIN;
+    const computedMin =
+      typeof tplMin === "number" && tplMin > 0 ? tplMin : catMin;
 
     setMinBudget(computedMin);
     setBudget(computedMin); // livello Base
-  }, [selectedTemplate]);
+  }, [selectedTemplate, cfg.minBudgetByCategory]);
 
-  // Filtri template
+  /** ====== Filtri template ====== */
   const filteredTemplates = useMemo(() => {
-    return TEMPLATE_LIST.filter((t) => {
+    return templates.filter((t) => {
       const byCat = category === "tutte" ? true : t.category === category;
+      const term = search.toLowerCase().trim();
       const bySearch =
-        !search.trim() ||
-        t.title.toLowerCase().includes(search.toLowerCase()) ||
-        t.short.toLowerCase().includes(search.toLowerCase()) ||
-        t.features.some((f) => f.toLowerCase().includes(search.toLowerCase()));
+        !term ||
+        t.title.toLowerCase().includes(term) ||
+        t.short.toLowerCase().includes(term) ||
+        (t.features || []).some((f) => f.toLowerCase().includes(term));
       return byCat && bySearch;
     });
-  }, [search, category]);
+  }, [templates, search, category]);
 
   const toggleFeature = (f: string) => {
     setSelectedFeatures((prev) =>
@@ -145,7 +234,7 @@ const RichiestaSitoWeb: React.FC = () => {
     );
   };
 
-  // Livello qualità stimato
+  /** ====== Livello qualità stimato ====== */
   const solidThreshold = useMemo(
     () => Math.ceil((minBudget * 1.25) / 100) * 100,
     [minBudget]
@@ -161,18 +250,21 @@ const RichiestaSitoWeb: React.FC = () => {
     return "Impeccabile";
   }, [budget, solidThreshold, premiumThreshold]);
 
-  // ======================
-  // Riepilogo calcolato
-  // ======================
+  /** ====== Riepilogo calcolato ====== */
+  const TIMING_MULTIPLIER = cfg.timingMultiplier;
+  const ALL_FEATURES = cfg.allFeatures;
+  const STACKS = cfg.stacks;
+  const HOSTING_YEARLY = cfg.hostingYearly;
+  const BUDGET_MAX = cfg.budgetMax;
+
   const timingMultiplier = TIMING_MULTIPLIER[timing] ?? 1;
   const urgencyPct = Math.round((timingMultiplier - 1) * 100);
   const devSubtotal = budget;
   const devTotal = Math.round(devSubtotal * timingMultiplier);
   const devDelta = devTotal - devSubtotal;
-
   const totalYear1 = devTotal + HOSTING_YEARLY;
 
-  // Regole invio
+  /** ====== Regole invio ====== */
   const canSubmit =
     !!selectedTemplate &&
     privacyOk &&
@@ -236,7 +328,7 @@ ${message || "(nessun messaggio)"}
       // reset parziale (mantieni filtraggio/ricerca)
       setSelectedTemplate(null);
       setSelectedFeatures([]);
-      setStack(STACKS[2]);
+      setStack(STACKS[2] || STACKS[0] || "Non ho preferenze");
       setBudget(2500);
       setMinBudget(DEFAULT_MIN);
       setTiming("2-4 settimane");
@@ -255,9 +347,10 @@ ${message || "(nessun messaggio)"}
       <Header />
       <div className={styles.container}>
         <section className={styles.intro}>
-          <Intro title="RICHIESTA SVILUPPO SITO WEB"
-            text="Scegli un template di partenza, seleziona le funzionalità e inviaci la tua richiesta: ti risponderemo con una proposta su misura." />
-
+          <Intro
+            title="RICHIESTA SVILUPPO SITO WEB"
+            text="Scegli un template di partenza, seleziona le funzionalità e inviaci la tua richiesta: ti risponderemo con una proposta su misura."
+          />
         </section>
 
         {/* Filtro & ricerca */}
@@ -277,6 +370,8 @@ ${message || "(nessun messaggio)"}
                 <option value="blog">Blog</option>
                 <option value="booking">Booking</option>
                 <option value="catalogo">Catalogo</option>
+                <option value="landing">Landing</option>
+                <option value="istituzionale">Istituzionale</option>
               </select>
             </div>
             <div className={styles.field}>
@@ -298,21 +393,13 @@ ${message || "(nessun messaggio)"}
             {filteredTemplates.map((t) => {
               const active = selectedTemplate?.id === t.id;
               return (
-                <div key={t.id} className={`${styles.card} ${active ? styles.cardActive : ""}`}>
+                <div
+                  key={t.id}
+                  className={`${styles.card} ${active ? styles.cardActive : ""}`}
+                >
                   <div className={styles.previewWrap}>
                     <div className={styles.previewInner}>
-                      {"component" in t && (t as any).component ? (
-                        <React.Suspense
-                          fallback={<div className={styles.liveFallback}>Caricamento anteprima…</div>}
-                        >
-                          {(() => {
-                            const Demo = (t as any).component;
-                            return <Demo />;
-                          })()}
-                        </React.Suspense>
-                      ) : (
-                        <img src={(t as any).preview} alt={t.title} />
-                      )}
+                      <img src={t.previewUrl} alt={t.title} />
                     </div>
                   </div>
 
@@ -323,7 +410,7 @@ ${message || "(nessun messaggio)"}
                     </div>
                     <p className={styles.cardText}>{t.short}</p>
                     <div className={styles.pills}>
-                      {t.features.slice(0, 4).map((f) => (
+                      {(t.features || []).slice(0, 4).map((f) => (
                         <span key={f} className={styles.pill}>
                           {f}
                         </span>
@@ -333,7 +420,7 @@ ${message || "(nessun messaggio)"}
                     <div className={styles.cardActions}>
                       <a
                         className={`${styles.button} ${styles.ghost}`}
-                        href={(t as any).path}
+                        href={t.demoPath}
                         target="_blank"
                         rel="noopener noreferrer"
                         title="Apri anteprima in una nuova scheda"
@@ -352,7 +439,9 @@ ${message || "(nessun messaggio)"}
               );
             })}
             {!filteredTemplates.length && (
-              <div className={styles.empty}>Nessun template trovato. Prova a cambiare filtri o ricerca.</div>
+              <div className={styles.empty}>
+                Nessun template trovato. Prova a cambiare filtri o ricerca.
+              </div>
             )}
           </div>
         </section>
@@ -520,13 +609,11 @@ ${message || "(nessun messaggio)"}
                       {isSending ? "Invio in corso…" : "Invia richiesta"}
                     </span>
                     <span className={styles.btnPlane} aria-hidden="true">
-                      {/* SVG aeroplanino */}
                       <svg className={styles.planeSvg} viewBox="0 0 24 24" width="18" height="18">
                         <path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z" fill="currentColor" />
                       </svg>
                     </span>
                   </button>
-
                 </div>
 
                 {isSent && <span className={styles.success}>Richiesta inviata con successo! 📩</span>}

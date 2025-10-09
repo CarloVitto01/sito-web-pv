@@ -1,9 +1,9 @@
 // src/components/ContattiServiziFotoVideo/ContattiServiziFotoVideo.tsx
 // PUBLIC VIEW — Animated albums
 // Effect: on card click → centers with shared-layout animation, rotates, then reveals the grid.
-// Clicking a media opens a lightbox modal.
+// Clicking a media opens a viewer modal (Instagram-like) with prev/next via keyboard/buttons/wheel/swipe.
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { auth, db } from "../../backend/firebase";
 import { doc, getDoc, collection, getDocs, onSnapshot, query, orderBy } from "firebase/firestore";
 import { TOKENFOTOVIDEO, CHAT_IDFOTOVIDEO } from "../../backend/telegram";
@@ -30,7 +30,63 @@ const ContattiServiziFotoVideo: React.FC = () => {
   const [albumLoading, setAlbumLoading] = useState(false);
   const [revealed, setRevealed] = useState(false);
 
-  const [lightbox, setLightbox] = useState<{ type: "image" | "video"; url: string } | null>(null);
+  // ===== Instagram-like Viewer (index-based) =====
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+  const railRef = useRef<HTMLDivElement>(null);
+  const feedRef = useRef<HTMLDivElement>(null);        // NEW: container scrollabile mobile
+
+  // rilevamento mobile (<= 700px)
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 700px)");
+    const onChange = () => setIsMobile(mq.matches);
+    onChange();
+    mq.addEventListener ? mq.addEventListener("change", onChange) : mq.addListener(onChange);
+    return () => {
+      mq.removeEventListener ? mq.removeEventListener("change", onChange) : mq.removeListener(onChange);
+    };
+  }, []);
+
+  const hasViewer = viewerIndex !== null && albumItems[viewerIndex!] !== undefined;
+  const currentItem = hasViewer ? albumItems[viewerIndex!] : null;
+
+  const openViewerAt = (i: number) => setViewerIndex(i);
+  const closeViewer = () => setViewerIndex(null);
+  const prevViewer = () => {
+    if (!albumItems.length || viewerIndex === null) return;
+    setViewerIndex(i => (i! - 1 + albumItems.length) % albumItems.length);
+  };
+  const nextViewer = () => {
+    if (!albumItems.length || viewerIndex === null) return;
+    setViewerIndex(i => (i! + 1) % albumItems.length);
+  };
+
+  // lock body + tastiera solo quando viewer aperto (desktop)
+  useEffect(() => {
+    if (viewerIndex === null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") prevViewer();
+      if (e.key === "ArrowRight") nextViewer();
+      if (e.key === "Escape") closeViewer();
+    };
+    document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [viewerIndex, albumItems.length]);
+
+  // quando apro su mobile, scrolla alla slide selezionata
+  // quando apro su mobile, centra la slide selezionata
+  useEffect(() => {
+    if (viewerIndex === null || !isMobile) return;
+    const el = document.getElementById(`pv-slide-${viewerIndex}`);
+    if (el && feedRef.current) {
+      (el as HTMLElement).scrollIntoView({ behavior: "auto", block: "center" });
+    }
+  }, [viewerIndex, isMobile]);
 
   // ===== User data =====
   useEffect(() => {
@@ -60,11 +116,11 @@ const ContattiServiziFotoVideo: React.FC = () => {
       if (ao == null && bo == null) {
         const at = (a as any)?.createdAt?.seconds || 0;
         const bt = (b as any)?.createdAt?.seconds || 0;
-        return bt - at; // createdAt desc
+        return bt - at;
       }
-      if (ao == null) return 1;  // senza order → in fondo
+      if (ao == null) return 1;
       if (bo == null) return -1;
-      return ao - bo;            // order asc
+      return ao - bo;
     });
     return copy;
   }, [albums]);
@@ -81,7 +137,6 @@ const ContattiServiziFotoVideo: React.FC = () => {
       setAlbumItems(list);
     } finally {
       setAlbumLoading(false);
-      // small delay to let the card center before reveal
       setTimeout(() => setRevealed(true), 550);
     }
   }
@@ -112,8 +167,7 @@ const ContattiServiziFotoVideo: React.FC = () => {
 
       <div className={styles.container}>
         {/* Title */}
-        <Intro 
-          title={"SERVIZI FOTOGRAFICI E VIDEO"} text={""}        />    
+        <Intro title={"SERVIZI FOTOGRAFICI E VIDEO"} text={""} />
 
         {/* HERO row */}
         <section className={styles.heroRow}>
@@ -156,7 +210,14 @@ const ContattiServiziFotoVideo: React.FC = () => {
               <motion.article key={a.id} className={styles.albumCard} layoutId={`album-${a.id}`}>
                 <motion.button className={styles.albumBody} onClick={() => openAlbum(a)} layoutId={`album-body-${a.id}`}>
                   {a.coverUrl ? (
-                    <motion.img className={styles.albumCover} src={a.coverUrl} alt={a.title} layoutId={`cover-${a.id}`} />
+                    <motion.img
+                      className={styles.albumCover}
+                      src={a.coverUrl}
+                      alt={a.title}
+                      layoutId={`cover-${a.id}`}
+                      style={{ objectFit: "contain", objectPosition: "center" }}
+                      loading="lazy"
+                    />
                   ) : (
                     <div className={styles.albumCoverPlaceholder}>Nessuna copertina</div>
                   )}
@@ -184,7 +245,13 @@ const ContattiServiziFotoVideo: React.FC = () => {
               >
                 <motion.div className={styles.flyHeader} layoutId={`album-body-${activeAlbum.id}`}>
                   {activeAlbum.coverUrl ? (
-                    <motion.img className={styles.flyCover} src={activeAlbum.coverUrl} alt={activeAlbum.title} layoutId={`cover-${activeAlbum.id}`} />
+                    <motion.img
+                      className={styles.flyCover}
+                      src={activeAlbum.coverUrl}
+                      alt={activeAlbum.title}
+                      layoutId={`cover-${activeAlbum.id}`}
+                      style={{ objectFit: "contain", objectPosition: "center" }}
+                    />
                   ) : (
                     <div className={styles.albumCoverPlaceholder}>Nessuna copertina</div>
                   )}
@@ -208,36 +275,32 @@ const ContattiServiziFotoVideo: React.FC = () => {
                         <p className={styles.loading}>Nessun contenuto presente in questo album.</p>
                       ) : (
                         <div className={styles.flyGrid}>
-                          {albumItems.map((m) => (
-                            <motion.div key={m.id} className={styles.itemCard} whileHover={{ scale: 1.02 }}>
+                          {albumItems.map((m, idx) => (
+                            <motion.div
+                              key={m.id}
+                              className={styles.itemCard}
+                              whileHover={{ scale: 1.02 }}
+                              onClick={() => openViewerAt(idx)}
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && openViewerAt(idx)}
+                            >
                               {m.type === "image" ? (
                                 <img
                                   className={styles.itemMedia}
                                   src={m.url}
                                   alt="media"
-                                  onClick={() => setLightbox({ type: "image", url: m.url })}
-                                  style={{
-                                    objectFit: "contain",
-                                    width: "100%",
-                                    height: "auto",
-                                    maxHeight: "64vh",
-                                    background: "#0a0a0a"
-                                  }}
+                                  loading="lazy"
+                                  draggable={false}
+                                  onClick={(e) => { e.stopPropagation(); openViewerAt(idx); }}
                                 />
                               ) : (
                                 <video
                                   className={styles.itemMedia}
                                   src={m.url}
-                                  onClick={() => setLightbox({ type: "video", url: m.url })}
-                                  controls
+                                  muted
                                   playsInline
-                                  style={{
-                                    objectFit: "contain",
-                                    width: "100%",
-                                    height: "auto",
-                                    maxHeight: "64vh",
-                                    background: "#000"
-                                  }}
+                                  onClick={(e) => { e.stopPropagation(); openViewerAt(idx); }}
                                 />
                               )}
                             </motion.div>
@@ -253,21 +316,63 @@ const ContattiServiziFotoVideo: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Lightbox */}
+      {/* ===== Instagram-like Viewer ===== */}
+      {/* ===== Pure-media Viewer (senza fascia grigia) ===== */}
+      {/* ===== Viewer ===== */}
       <AnimatePresence>
-        {lightbox && (
-          <motion.div className={styles.lightbox} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setLightbox(null)}>
-            <div className={styles.lightboxInner} onClick={(e) => e.stopPropagation()}>
-              <button className={styles.lightboxClose} onClick={() => setLightbox(null)}>✕</button>
-              {lightbox.type === "image" ? (
-                <img src={lightbox.url} alt="preview" />
-              ) : (
-                <video src={lightbox.url} autoPlay controls playsInline />
-              )}
-            </div>
+        {hasViewer && (
+          <motion.div
+            className={styles.viewer}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={closeViewer}
+          >
+            <button className={styles.viewerClose} onClick={closeViewer}>✕</button>
+
+            {/* DESKTOP/TABLET: media singolo + frecce */}
+            {!isMobile && currentItem && (
+              <div className={styles.viewerSolo} onClick={(e) => e.stopPropagation()}>
+                <div className={styles.viewerCanvas}>
+                  <button className={`${styles.viewerNav} ${styles.left}`} onClick={prevViewer} aria-label="Precedente">‹</button>
+                  <button className={`${styles.viewerNav} ${styles.right}`} onClick={nextViewer} aria-label="Successiva">›</button>
+
+                  {currentItem.type === "image" ? (
+                    <img src={currentItem.url} alt="" className={styles.viewerMedia} />
+                  ) : (
+                    <video src={currentItem.url} controls playsInline className={styles.viewerMedia} />
+                  )}
+
+                  <div className={styles.viewerCounter}>
+                    {viewerIndex! + 1} / {albumItems.length}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* MOBILE: feed verticale scrollabile con snap (tipo IG) */}
+            {isMobile && (
+              <div
+                className={styles.viewerFeed}
+                ref={feedRef}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {albumItems.map((m, i) => (
+                  <div key={m.id} id={`pv-slide-${i}`} className={styles.viewerSlide}>
+                    {m.type === "image" ? (
+                      <img src={m.url} alt="" className={styles.viewerMedia} loading="lazy" draggable={false} />
+                    ) : (
+                      <video src={m.url} controls playsInline className={styles.viewerMedia} />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
+
+
 
       <Footer />
     </>

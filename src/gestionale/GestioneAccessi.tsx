@@ -13,7 +13,8 @@ const PAGINE = [
   'gestione-accessi',
   'qr-generator',
   'bobine',
-  'link' // Aggiungi la pagina link
+  'link',
+  'gestionale-web',
 ];
 
 const GestioneAccessi: React.FC = () => {
