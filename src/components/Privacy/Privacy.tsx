@@ -15,9 +15,9 @@ export default function PrivacyPolicy() {
           <h2>Titolare del trattamento</h2>
           <p>
             <strong>Photo & Vision</strong><br />
-            <strong>Sede:</strong> [Via Colonello Gino Chiriatti, 19] — [73025, Martano (Le), Italia]<br />
-            <strong>Email:</strong> [pv.photoandvision@gmail.com]<br />
-            <strong>P.IVA / CF:</strong> [05433670758]
+            <strong>Sede:</strong> Via Colonello Gino Chiriatti, 19 — 73025, Martano (Le), Italia <br />
+            <strong>Email:</strong> pv.photoandvision@gmail.com <br />
+            <strong>P.IVA / CF:</strong> 05433670758
           </p>
         </section>
 

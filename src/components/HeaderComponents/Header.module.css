@@ -109,6 +109,44 @@
   backdrop-filter: blur(5px);
   transform: translateX(0);
   transition: transform var(--transition-fast) ease;
+  overflow: hidden;
+}
+
+.side-menu-header {
+  flex: 0 0 auto;
+  padding: 10px 20px;
+}
+
+/* Contenuto scrollabile (solo l'elenco) */
+.side-menu-content {
+  flex: 1 1 auto;
+  min-height: 0;                     /* fondamentale in flex per permettere lo scroll */
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; /* iOS */
+  overscroll-behavior: contain;
+  padding: 10px 20px 24px;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
+  scrollbar-gutter: stable;
+}
+
+/* Scrollbar dorata solo per l’elenco */
+.side-menu-content {
+  scrollbar-width: thin;                          /* Firefox */
+  scrollbar-color: var(--color-gold) transparent;
+}
+.side-menu-content::-webkit-scrollbar {           /* Chrome/Edge/Safari */
+  width: 10px;
+}
+.side-menu-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+.side-menu-content::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(199,171,43,.85), rgba(199,171,43,.55));
+  border-radius: 8px;
+}
+.side-menu-content::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(199,171,43,1), rgba(199,171,43,.8));
 }
 
 .side-menu.hidden {

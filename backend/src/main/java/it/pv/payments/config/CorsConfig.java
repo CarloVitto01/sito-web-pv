@@ -16,14 +16,14 @@ public class CorsConfig {
     CorsConfiguration cfg = new CorsConfiguration();
     // ✅ Produzione (dominio tuo)
     cfg.setAllowedOriginPatterns(List.of(
-      "https://photoandvision.it",
-      "https://www.photoandvision.it",
-      "https://*.photoandvision.it",
-      // ✅ Sviluppo (localhost)
-      "http://localhost:*",
-      "http://127.0.0.1:*"
-    ));
-    cfg.setAllowedMethods(List.of("GET","POST","OPTIONS"));
+        "https://photoandvision.it",
+        "https://www.photoandvision.it",
+        "https://*.photoandvision.it",
+        // ✅ Sviluppo (localhost)
+        "http://localhost:*",
+        "http://127.0.0.1:*",
+        "http://192.168.1.216:*"));
+    cfg.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
     cfg.setAllowedHeaders(List.of("*"));
     cfg.setAllowCredentials(true);
     cfg.setMaxAge(3600L);

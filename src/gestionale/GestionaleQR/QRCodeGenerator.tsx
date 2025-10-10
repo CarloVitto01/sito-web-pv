@@ -4,8 +4,8 @@ import jsPDF from "jspdf";
 import "./QRCodeGenerator.css";
 
 // ⬇️ Aggiunte PV
-import Header from "../components/HeaderComponents/Header";
-import Footer from "../components/FooterComponents/Footer";
+import Header from "../../components/HeaderComponents/Header";
+import Footer from "../../components/FooterComponents/Footer";
 
 const QRCodeGenerator: React.FC = () => {
   const [url, setUrl] = useState("");
@@ -15,10 +15,11 @@ const QRCodeGenerator: React.FC = () => {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const qrPreviewRef = useRef<HTMLCanvasElement | null>(null);
 
-  const generateCanvas = async (): Promise<HTMLCanvasElement> => {
+  // ora accetta una dimensione (default 256px)
+  const generateCanvas = async (sizePx: number = 256): Promise<HTMLCanvasElement> => {
     const canvas = document.createElement("canvas");
-    canvas.width = 256;
-    canvas.height = 256;
+    canvas.width = sizePx;
+    canvas.height = sizePx;
 
     await QRCode.toCanvas(canvas, url, {
       margin: 0,
@@ -26,7 +27,7 @@ const QRCodeGenerator: React.FC = () => {
         dark: fgColor,
         light: transparentBg ? "#00000000" : bgColor,
       },
-      width: 256,
+      width: sizePx,
     });
 
     const ctx = canvas.getContext("2d");
@@ -34,7 +35,11 @@ const QRCodeGenerator: React.FC = () => {
       const img = new Image();
       img.src = imageSrc;
       await new Promise((resolve) => (img.onload = resolve));
-      ctx.drawImage(img, 96, 96, 64, 64); // centro
+      // logo ~25% del lato (coerente con 64/256 del tuo esempio)
+      const logoSize = Math.round(sizePx * 0.25);
+      const x = Math.round((sizePx - logoSize) / 2);
+      const y = Math.round((sizePx - logoSize) / 2);
+      ctx.drawImage(img, x, y, logoSize, logoSize);
     }
 
     return canvas;
@@ -42,7 +47,7 @@ const QRCodeGenerator: React.FC = () => {
 
   const downloadPNG = async () => {
     try {
-      const canvas = await generateCanvas();
+      const canvas = await generateCanvas(); // 256px
       const dataUrl = canvas.toDataURL("image/png");
       const link = document.createElement("a");
       link.href = dataUrl;
@@ -55,13 +60,33 @@ const QRCodeGenerator: React.FC = () => {
 
   const downloadPDF = async () => {
     try {
-      const canvas = await generateCanvas();
+      const canvas = await generateCanvas(); // 256px
       const dataUrl = canvas.toDataURL("image/png");
-      const pdf = new jsPDF();
+      const pdf = new jsPDF(); // A4 di default
       pdf.addImage(dataUrl, "PNG", 15, 40, 80, 80);
       pdf.save("qr-code.pdf");
     } catch (err) {
       console.error("Errore nel download PDF:", err);
+    }
+  };
+
+  // ✅ NUOVO: PDF ritagliato a misura del QR (pagina quadrata = lato del QR)
+  const downloadPDFTrimmed = async () => {
+    try {
+      const SIZE_PX = 1024; // alta qualità per bordi nitidi
+      const canvas = await generateCanvas(SIZE_PX);
+      const dataUrl = canvas.toDataURL("image/png");
+
+      const pdf = new jsPDF({
+        unit: "px",
+        format: [SIZE_PX, SIZE_PX], // pagina = QR, nessun margine
+        compress: true,
+      });
+
+      pdf.addImage(dataUrl, "PNG", 0, 0, SIZE_PX, SIZE_PX, undefined, "FAST");
+      pdf.save("qr-code-trim.pdf");
+    } catch (err) {
+      console.error("Errore nel download PDF ritagliato:", err);
     }
   };
 
@@ -91,7 +116,7 @@ const QRCodeGenerator: React.FC = () => {
         const img = new Image();
         img.src = imageSrc;
         await new Promise((resolve) => (img.onload = resolve));
-        ctx.drawImage(img, 96, 96, 64, 64); // centro
+        ctx.drawImage(img, 96, 96, 64, 64); // centro (64/256 = 25%)
       }
     };
 
@@ -157,6 +182,8 @@ const QRCodeGenerator: React.FC = () => {
             <div>
               <button onClick={downloadPNG} className="qr-button">Scarica PNG</button>
               <button onClick={downloadPDF} className="qr-button">Scarica PDF</button>
+              {/* ➕ nuovo bottone richiesto */}
+              <button onClick={downloadPDFTrimmed} className="qr-button">Scarica PDF (ritagliato)</button>
             </div>
           )}
         </div>

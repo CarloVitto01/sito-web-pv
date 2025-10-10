@@ -30,7 +30,7 @@
   max-width: 48%;
   /* Posizione sticky può rimanere, ma centriamo il contenuto */
   position: sticky;
-  top: 10rem;
+  top: 6rem;
   align-self: flex-start;       /* centro verticalmente la colonna sticky */
   color: var(--color-text);
   padding-left: 1rem;

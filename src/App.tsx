@@ -16,31 +16,33 @@ import './App.css';
 import ComingSoon from './components/ComingSoon/ComingSoon';
 import Login from './components/Login/pages/Login';
 import Register from './components/Login/pages/Register';
-import A4Gestionale from './gestionale/A4Gestionale';
+import A4Gestionale from './gestionale/GestionaleA4/A4Gestionale';
 import { auth } from './backend/firebase';
 import { getDoc, doc } from 'firebase/firestore';
 import { db } from './backend/firebase';
-import A3Gestionale from './gestionale/A3Gestionale';
+import A3Gestionale from './gestionale/GestionaleA3/A3Gestionale';
 import AccountPage from './components/Login/pages/AccountPage';
 import RecoverPassword from './components/Login/pages/RecoverPassword';
 import ResetPassword from './components/Login/pages/ResetPassword';
-import UtentiGestionale from './gestionale/UtentiGestionale';
-import StoricoDati from './gestionale/StoricoDati';
+import UtentiGestionale from './gestionale/GestionaleUtenti/UtentiGestionale';
+import StoricoDati from './gestionale/GestionaleDati/StoricoDati';
 import ContattiServiziFotoVideo from './components/Foto_e_Video/ContattiServiziFotoVideo';
-import FotoVideoGestionale from './gestionale/FotoVideoGestionale';
-import GestioneAccessi from './gestionale/GestioneAccessi';
+import FotoVideoGestionale from './gestionale/GestionaleFotoVideo/FotoVideoGestionale';
+import GestioneAccessi from './gestionale/GestionaleAccessi/GestioneAccessi';
 import RecoverEmail from './components/Login/pages/RecoverEmail';
-import QRCodeGenerator from './gestionale/QRCodeGenerator';
+import QRCodeGenerator from './gestionale/GestionaleQR/QRCodeGenerator';
 import RichiestaSitoWeb from './components/Siti/RichiestaSitoWeb';
 import QRgen from './components/QR/QRgen';
-import BobinePLAGestionale from './gestionale/BobineGestionale';
+import BobinePLAGestionale from './gestionale/GestionaleBobine/BobineGestionale';
 import Privacy from './components/Privacy/Privacy';
-import LinkGestionale from './gestionale/LinkGestionale';
+import LinkGestionale from './gestionale/GestionaleLink/LinkGestionale';
 import CookieInfoBar from './components/Privacy/CookieInfoBar';
 import Terms from './components/Privacy/Terms';
 import Cookie from './components/Privacy/Cookie';
-import WebGestionale from './gestionale/WebGestionale';
+import WebGestionale from './gestionale/GestionaleWeb/WebGestionale';
 import RichiestaStampa3D from './components/3D/RichiestaStampa3D';
+import TasseGestionale from './gestionale/GestionaleTasse/TasseGestionale';
+
 
 
 const ScrollToTop: React.FC = () => {
@@ -118,15 +120,13 @@ const App: React.FC = () => {
           <Route path="/bobine" element={<ProtectedRoute page="bobine" element={<BobinePLAGestionale />} />} />
           <Route path="/link" element={<ProtectedRoute page="link" element={<LinkGestionale />} />} />
           <Route path="/gestionale-web" element={<ProtectedRoute page="gestionale-web" element={<WebGestionale />} />} />
-  
-
+          <Route path="/tasse" element={<ProtectedRoute page="tasse" element={< TasseGestionale/>} />} />
 
           <Route path="/qrgen" element={<QRgen />} />
           <Route path="/privacy" element={<Privacy/>} />
           <Route path="/termini" element={<Terms />} />
           <Route path="/cookie-policy" element={<Cookie />} />
          
-
           <Route path="/recoveremail" element={<RecoverEmail />} />
           <Route path="/web" element={<RichiestaSitoWeb />} />
           {/* ⬇️ Alias più chiaro per la pagina richieste */}

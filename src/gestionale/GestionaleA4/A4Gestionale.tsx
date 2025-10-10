@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { db } from "../backend/firebase";
+import { db } from "../../backend/firebase";
 import {
   collection,
   deleteDoc,
@@ -9,7 +9,7 @@ import {
   setDoc,
 } from "firebase/firestore";
 import styles from "./A4Gestionale.module.css";
-import Header from '../components/HeaderComponents/Header';
+import Header from '../../components/HeaderComponents/Header';
 import { getStorage, ref, deleteObject } from "firebase/storage";
 
 

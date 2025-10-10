@@ -22,7 +22,7 @@ export default function CookiePolicy() {
         </p>
         <h3 style={{color:"var(--color-gold,#caa700)"}}>Contatti</h3>
         <p style={{lineHeight:1.6}}>
-          Titolare: Photo &amp; Vision — Email: [tua mail] — P.IVA: [inserisci].<br/>
+          Titolare: Photo &amp; Vision — Email: pv.photoandvision@gmail.com — P.IVA: 05433670758 <br/>
           Per richieste sui cookie o sul trattamento dati, contattaci.
         </p>
       </section>

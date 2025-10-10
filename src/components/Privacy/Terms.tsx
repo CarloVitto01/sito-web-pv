@@ -48,9 +48,9 @@ export default function Terms() {
       <section style={card}>
         <h2 style={h2Style}>1. Informazioni sul Titolare</h2>
         <p style={pStyle}><strong>Nome commerciale:</strong> Photo &amp; Vision</p>
-        <p style={pStyle}><strong>Sede legale:</strong> [inserisci indirizzo]</p>
-        <p style={pStyle}><strong>P.IVA / C.F.:</strong> [inserisci P.IVA/C.F.]</p>
-        <p style={pStyle}><strong>Email di contatto:</strong> [tua mail ufficiale]</p>
+        <p style={pStyle}><strong>Sede legale:</strong> Via Colonello Gino Chiriatti 19 Martano(LE) </p>
+        <p style={pStyle}><strong>P.IVA:</strong> 05433670758 </p>
+        <p style={pStyle}><strong>Email di contatto:</strong> pv.photoandvision@gmail.com </p>
       </section>
 
       <section style={card}>
@@ -128,7 +128,7 @@ export default function Terms() {
         <h2 style={h2Style}>10. Legge Applicabile e Foro Competente</h2>
         <p style={pStyle}>
           Le presenti condizioni sono regolate dalla legge italiana. Foro competente esclusivo:
-          <strong> [comune sede legale]</strong>.
+          <strong> Martano (LE)</strong>.
         </p>
       </section>
     </main>

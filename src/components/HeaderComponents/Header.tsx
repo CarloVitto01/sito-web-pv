@@ -45,17 +45,30 @@ const Header: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
+  // Chiudi menu cliccando fuori
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (sideMenuOpen && menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setSideMenuOpen(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [sideMenuOpen]);
 
+  // Chiudi con ESC
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSideMenuOpen(false);
+    };
+    if (sideMenuOpen) document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [sideMenuOpen]);
+
+  // Chiudi menu quando cambi pagina (se navighi da altrove)
+  useEffect(() => {
+    setSideMenuOpen(false);
+  }, [location.pathname]);
 
   const linkAccessibili = [
     { path: "/gestionaleA4", label: "Gestionale A4" },
@@ -68,13 +81,19 @@ const Header: React.FC = () => {
     { path: "/bobine", label: "Bobine Gestionale" },
     { path: "/link", label: "Gestione Link" },
     { path: "/gestionale-web", label: "Gestione Web" },
-
+    { path: "/tasse", label: "Gestione Tasse" },
   ];
 
   return (
     <div className={classes.header}>
       <div className={classes["burger-section"]}>
-        <FiMenu className={classes["burger-icon"]} onClick={toggleSideMenu} aria-label="Apri menu" />
+        <FiMenu
+          className={classes["burger-icon"]}
+          onClick={toggleSideMenu}
+          aria-label="Apri menu"
+          aria-expanded={sideMenuOpen}
+          aria-controls="side-menu"
+        />
       </div>
 
       <div className={classes["left-spacer"]} /> {/* 👈 colonna sinistra vuota */}
@@ -109,113 +128,131 @@ const Header: React.FC = () => {
             Login
           </button>
         )}
-
       </div>
 
       {sideMenuOpen && (
-        <div ref={menuRef} className={classes["side-menu"]}>
-          <button onClick={toggleSideMenu} className={classes["close-button"]}>✕</button>
-          <nav className={classes["side-nav"]}>
+        <div
+          ref={menuRef}
+          id="side-menu"
+          className={classes["side-menu"]}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Menu laterale di navigazione"
+        >
+          {/* ======= HEADER FISSO DEL MENU ======= */}
+          <div className={classes["side-menu-header"]}>
+            <button
+              onClick={toggleSideMenu}
+              className={classes["close-button"]}
+              aria-label="Chiudi menu"
+              title="Chiudi"
+            >
+              ✕
+            </button>
+
             {user && (
               <div className={classes["welcome-user"]}>
                 👋 Benvenuto/a, <strong>{displayName}</strong>
               </div>
             )}
+          </div>
 
-            <ul>
-              {location.pathname !== "/" && (
-                <li>
-                  <Link to="/" onClick={toggleSideMenu} className={classes["link-menu"]}>
-                    Torna Alla Home
-                  </Link>
-                </li>
-              )}
-
-              <li>
-                <Link to="/richiesta-sito-web" onClick={toggleSideMenu} className={classes["link-menu"]}>
-                  🖥️ Sviluppo Siti Web
-                </Link>
-              </li>
-
-              <li>
-                <Link to="/printA4" onClick={toggleSideMenu} className={classes["link-menu"]}>
-                  🖨️ Stampa in A4
-                </Link>
-              </li>
-              <li>
-                <Link to="/printA3" onClick={toggleSideMenu} className={classes["link-menu"]}>
-                  🖨️ Stampa in A3
-                </Link>
-              </li>
-
-              <li>
-                <Link to="/3d" onClick={toggleSideMenu} className={classes["link-menu"]}>
-                  🖨️ Stampa 3D
-                </Link>
-              </li>
-
-              <li>
-                <Link to="/qrgen" onClick={toggleSideMenu} className={classes["link-menu"]}>
-                  📱 Generatore di QR Code
-                </Link>
-              </li>
-
-              <li>
-                <Link to="/contatti-servizi-foto-video" onClick={toggleSideMenu} className={classes["link-menu"]}>
-                  📸 Contatti Servizi Foto/Video
-                </Link>
-              </li>
-
-
-
-              {linkAccessibili
-                .filter(({ path }) => accessiblePages.includes(path.replace("/", "")))
-                .map(({ path, label }) => (
-                  <li key={path}>
-                    <Link to={path} onClick={toggleSideMenu} className={classes["link-menu"]}>
-                      {label}
+          {/* ======= CONTENUTO SCROLLABILE ======= */}
+          <div className={classes["side-menu-content"]}>
+            <nav className={classes["side-nav"]}>
+              <ul>
+                {location.pathname !== "/" && (
+                  <li>
+                    <Link to="/" onClick={toggleSideMenu} className={classes["link-menu"]}>
+                      Torna Alla Home
                     </Link>
                   </li>
-                ))}
-            </ul>
+                )}
 
-            {user ? (
-              <>
-                <button
-                  onClick={() => {
-                    toggleSideMenu();
-                    navigate("/account");
-                  }}
-                  className={classes["account-button"]}
-                >
-                  👤 Il mio Account
-                </button>
+                <li>
+                  <Link to="/richiesta-sito-web" onClick={toggleSideMenu} className={classes["link-menu"]}>
+                    🖥️ Sviluppo Siti Web
+                  </Link>
+                </li>
 
-                <button
-                  onClick={() => {
-                    signOut(auth).then(() => {
-                      setUser(null);
-                      setDisplayName("");
-                      window.location.href = "/";
-                    });
-                  }}
-                  className={classes["logout-button"]}
-                >
-                  Esci
-                </button>
-              </>
-            ) : (
-              <div className={classes["auth-links"]}>
-                <button onClick={() => { toggleSideMenu(); navigate("/login"); }}>
-                  Accedi
-                </button>
-                <span style={{ color: "white" }}>/</span>
-                <button onClick={() => { toggleSideMenu(); navigate("/register"); }}>
-                  Registrati
-                </button>
-              </div>
-            )}
-          </nav>
+                <li>
+                  <Link to="/printA4" onClick={toggleSideMenu} className={classes["link-menu"]}>
+                    🖨️ Stampa in A4
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/printA3" onClick={toggleSideMenu} className={classes["link-menu"]}>
+                    🖨️ Stampa in A3
+                  </Link>
+                </li>
+
+                <li>
+                  <Link to="/3d" onClick={toggleSideMenu} className={classes["link-menu"]}>
+                    🖨️ Stampa 3D
+                  </Link>
+                </li>
+
+                <li>
+                  <Link to="/qrgen" onClick={toggleSideMenu} className={classes["link-menu"]}>
+                    📱 Generatore di QR Code
+                  </Link>
+                </li>
+
+                <li>
+                  <Link to="/contatti-servizi-foto-video" onClick={toggleSideMenu} className={classes["link-menu"]}>
+                    📸 Contatti Servizi Foto/Video
+                  </Link>
+                </li>
+
+                {linkAccessibili
+                  .filter(({ path }) => accessiblePages.includes(path.replace("/", "")))
+                  .map(({ path, label }) => (
+                    <li key={path}>
+                      <Link to={path} onClick={toggleSideMenu} className={classes["link-menu"]}>
+                        {label}
+                      </Link>
+                    </li>
+                  ))}
+              </ul>
+
+              {user ? (
+                <>
+                  <button
+                    onClick={() => {
+                      toggleSideMenu();
+                      navigate("/account");
+                    }}
+                    className={classes["account-button"]}
+                  >
+                    👤 Il mio Account
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      signOut(auth).then(() => {
+                        setUser(null);
+                        setDisplayName("");
+                        window.location.href = "/";
+                      });
+                    }}
+                    className={classes["logout-button"]}
+                  >
+                    Esci
+                  </button>
+                </>
+              ) : (
+                <div className={classes["auth-links"]}>
+                  <button onClick={() => { toggleSideMenu(); navigate("/login"); }}>
+                    Accedi
+                  </button>
+                  <span style={{ color: "white" }}>/</span>
+                  <button onClick={() => { toggleSideMenu(); navigate("/register"); }}>
+                    Registrati
+                  </button>
+                </div>
+              )}
+            </nav>
+          </div>
         </div>
       )}
     </div>

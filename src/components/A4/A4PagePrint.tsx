@@ -24,6 +24,12 @@ import MultiInput from "../MultiInputComponents/MultiInput";
 import RiepilogoOrdine from "../RiepilogoOrdineComponents/RiepilogoOrdine";
 import { onAuthStateChanged } from "firebase/auth";
 
+// Formatter € (aggiunta)
+const fmtEuro = (n?: number | string) =>
+  typeof n === "number"
+    ? n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : Number(n || 0).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 //Constants
 
 //Enum
@@ -184,7 +190,7 @@ const A4PagePrint = () => {
   }, []);
 
 
-
+  //Intervallo Pagine Handling
   const setRangePagesHandler = useCallback(
     (value: RangePagesData) => {
       if (value.all) {
@@ -317,8 +323,16 @@ const A4PagePrint = () => {
   const submitFormHandler = useCallback(async (arg1?: any, arg2?: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     // 🆕 normalizza parametri senza rompere l’esistente
     const isPaymentPayload = (o: any) => o && typeof o === "object" && ("method" in o);
-    const payment: { method: "CASH" | "PAYPAL"; confirmed: boolean } | undefined =
-      isPaymentPayload(arg1) ? arg1 : undefined;
+    const payment = isPaymentPayload(arg1)
+      ? (arg1 as {
+        method: "CASH" | "PAYPAL";
+        confirmed: boolean;
+        amount?: number;
+        orderId?: string;
+        captureId?: string;
+        payerEmail?: string;
+      })
+      : undefined;
     const event = isPaymentPayload(arg1) ? arg2 : (arg1 as React.MouseEvent<HTMLButtonElement, MouseEvent> | undefined);
 
     event?.preventDefault();
@@ -434,16 +448,27 @@ const A4PagePrint = () => {
         setFormSubmitting(false);
         setFormSubmitted(true);
 
+        // 🆕 Totale finale: usa payment.amount (IVA+trasporto+fee) con fallback al preventivo
+        const totaleFinale =
+          typeof payment?.amount === "number" ? payment.amount : Number(preventivo);
+
         // ✅ CREA versione ridotta dell'ordine senza file PDF
         const { file, path, ...rest } = dataToUpload;
         const datiSnelliti = {
           ...rest,
+          totaleFinale,
           timestamp: serverTimestamp(), // Reimposta il timestamp
         };
 
         await setDoc(doc(db, "ArchivioOrdini", id), datiSnelliti);
 
-        // 🆕 Aggiungo al messaggio Telegram il metodo di pagamento selezionato
+        // 🧾 Dettagli PayPal facoltativi
+        const extraPP =
+          payment?.method === "PAYPAL"
+            ? `\n🧾 *PayPal OrderID*: ${payment.orderId ?? "-"}\n🧾 *CaptureID*: ${payment.captureId ?? "-"}\n👤 *Payer*: ${payment.payerEmail ?? "-"}\n`
+            : "";
+
+        // 🆕 Messaggio Telegram aggiornato con Totale finale
         const messageText = `
 =====================
   *NUOVO ORDINE A4*
@@ -467,11 +492,11 @@ ${fileLinks}
 📒 *Rilegatura unica*: ${dataToUpload.rilegaturaUnica}
 *Pagine*: ${dataToUpload.pagine}
 🔢 *Copie*: ${dataToUpload.copie}
-💰💰 *Prezzo*: ${preventivo}€ 💰💰
 
 💳 *Metodo di pagamento*: ${metodoPagamento}
 ✅ *Stato pagamento*: ${statoPagamento}
-`;
+💰 *Totale finale*: ${fmtEuro(totaleFinale)} €
+${extraPP}`.trim();
 
         const apiUrl = `https://api.telegram.org/bot${TOKENA4}/sendMessage`;
         const payload = {
@@ -499,7 +524,18 @@ ${fileLinks}
         setFormError(true);
         setFormSubmitting(false);
       });
-  }, [data, fileData, numeroPDF, preventivo, pagina, layout, inchiostro, numeroCopie, rilegatura, rilegaturaUnica, daA]);
+  }, [
+    data,
+    fileData,
+    numeroPDF,
+    preventivo,
+    pagina,
+    layout,
+    inchiostro,
+    numeroCopie,
+    rilegatura,
+    rilegaturaUnica,
+    daA]);
 
   useEffect(() => {
     if (formSubmitted) {

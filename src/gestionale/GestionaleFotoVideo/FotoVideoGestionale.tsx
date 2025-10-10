@@ -6,7 +6,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { db, storage } from "../backend/firebase";
+import { db, storage } from "../../backend/firebase";
 import {
   addDoc,
   collection,
@@ -22,7 +22,7 @@ import {
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import styles from "./FotoVideoGestionale.module.css";
-import Header from "../components/HeaderComponents/Header";
+import Header from "../../components/HeaderComponents/Header";
 
 /** ===================== Tipi ===================== */
 type Album = {

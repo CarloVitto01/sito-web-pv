@@ -595,6 +595,7 @@ const QRCodeGenerator: React.FC = () => {
             onClick={(e) => e.stopPropagation()}
             style={{
               background: "#fff",
+              color: "#111",
               padding: 20,
               borderRadius: 12,
               width: "min(480px, calc(100% - 32px))",
@@ -614,7 +615,6 @@ const QRCodeGenerator: React.FC = () => {
               {PAYPAL_SURCHARGE_ENABLED && (
                 <>Commissione PayPal stimata: <strong>{paypalFeeEstimate.toFixed(2)} €</strong><br/></>
               )}
-              Da pagare con PayPal: <strong>{amountForPayPal.toFixed(2)} €</strong>
             </div>
 
             {/* PayPal Buttons */}

@@ -7,6 +7,7 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   font-family: var(--font-main);
   color: var(--color-white);
+  text-align: left;    
 }
 
 .riepilogo-title {
@@ -92,6 +93,7 @@
   animation: fadeInScale 0.6s ease-in-out;
 }
 
+/* ============ Metodi di pagamento (griglia) ============ */
 .payment-box {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -113,10 +115,13 @@
   transition: transform .06s ease, border-color .2s ease, box-shadow .2s ease;
 }
 
-.pay-button:hover { transform: translateY(-1px); }
+.pay-button:hover {
+  transform: translateY(-1px);
+}
+
 .selected {
   border-color: var(--color-gold, #caa700);
-  box-shadow: 0 0 0 3px rgba(202,167,0,.15);
+  box-shadow: 0 0 0 3px rgba(202, 167, 0, .15);
 }
 
 .pay-subtext {
@@ -124,8 +129,14 @@
   opacity: .85;
 }
 
-.paypal-flow { margin: 8px 0 4px; }
-.hint { font-size: .95rem; opacity: .9; }
+.paypal-flow {
+  margin: 8px 0 4px;
+}
+
+.hint {
+  font-size: .95rem;
+  opacity: .9;
+}
 
 .checkboxRow {
   display: inline-flex;
@@ -134,31 +145,20 @@
   margin-top: 6px;
 }
 
-/* opzionale
-.txnRow { margin-top: 8px; }
-.txnRow input {
-  margin-left: 8px;
-  background: #0f0f0f;
-  border: 1px solid #333;
-  color: #eee;
-  border-radius: 8px;
-  padding: 6px 8px;
-}
-*/
-
-
+/* Animazione */
 @keyframes fadeInScale {
   0% {
     opacity: 0;
     transform: scale(0.8);
   }
+
   100% {
     opacity: 1;
     transform: scale(1);
   }
 }
 
-/* ✅ Responsive */
+/* ✅ Responsive metodi di pagamento */
 @media screen and (max-width: 500px) {
   .riepilogo-container {
     padding: 1rem;
@@ -174,23 +174,20 @@
   }
 }
 
-
-/* centra il pannello e limita la larghezza massima */
+/* centra pannello PayPal */
 .paypal-flow {
-  max-width: 720px;        /* quanto largo può diventare il pannello */
-  margin: 12px auto;       /* centro orizzontale */
+  max-width: 720px;
+  margin: 12px auto;
 }
 
-/* centra e limita il contenuto interno (testo + container dei bottoni) */
-.paypal-flow > .hint,
-.paypal-flow > div {
-  max-width: 560px;        /* larghezza dei pulsanti PayPal */
+.paypal-flow>.hint,
+.paypal-flow>div {
+  max-width: 560px;
   margin-left: auto;
   margin-right: auto;
 }
 
-/* il container dei pulsanti: centrato e con altezza minima per evitare “salti” */
-.paypal-flow > div {
+.paypal-flow>div {
   min-height: 52px;
   display: flex;
   align-items: center;
@@ -198,9 +195,147 @@
   width: 100%;
 }
 
-/* su schermi piccoli lascia andare a piena larghezza */
 @media (max-width: 560px) {
-  .paypal-flow { max-width: 100%; }
-  .paypal-flow > .hint,
-  .paypal-flow > div { max-width: 100%; }
+  .paypal-flow {
+    max-width: 100%;
+  }
+
+  .paypal-flow>.hint,
+  .paypal-flow>div {
+    max-width: 100%;
+  }
+}
+
+.price-box {
+  display: block;
+  /* sovrascrive la griglia */
+  background: var(--pv-surface, #0f0f10);
+  border: 1px solid var(--pv-border, #262626);
+  border-radius: 12px;
+  padding: 12px;
+  margin: 14px 0 6px;
+}
+
+.price-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-gold);
+  margin: 2px 0 8px;
+}
+
+/* Alias per la card prezzi usata nel JSX */
+.price-card {
+  display: block;
+  /* come .price-box */
+  background: var(--pv-surface, #0f0f10);
+  border: 1px solid var(--pv-border, #262626);
+  border-radius: 12px;
+  padding: 12px;
+  margin: 14px 0 6px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .25);
+  text-align: left;
+}
+
+.price-header {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-gold);
+  margin: 2px 0 8px;
+  letter-spacing: .2px;
+}
+
+/* Riga label → valore allineati, valori con numeri tabulari */
+.price-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+  font-size: .98rem;
+  grid-template-columns: 1fr auto;
+}
+
+.price-row:last-child {
+  border-bottom: none;
+}
+
+.price-label {
+  color: var(--color-text);
+  opacity: .95;
+  justify-self: start;
+  text-align: left;
+}
+
+.price-value {
+  font-variant-numeric: tabular-nums;
+  /* allinea le cifre */
+  text-align: right;
+  min-width: 6.5ch;
+  /* spazio per 0,00 € */
+  color: var(--color-white);
+  justify-self: end;
+  text-align: right;
+}
+
+/* Tipologie */
+.price-row--muted .price-label {
+  opacity: .8;
+}
+
+.price-row--muted .price-value {
+  opacity: .9;
+}
+
+.price-sep {
+  /* separatore forte */
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .14), transparent);
+  margin: 8px 0 6px;
+  border: 0;
+}
+
+.price-subtotal .price-label {
+  font-weight: 600;
+}
+
+.price-subtotal .price-value {
+  font-weight: 600;
+}
+
+.price-fee-paypal .price-label {
+  color: #9fc2ff;
+}
+
+/* tono freddo per fee */
+.price-fee-paypal .price-value {
+  color: #cfe1ff;
+}
+
+.price-total {
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.price-total .price-label {
+  color: var(--color-gold);
+  font-weight: 800;
+}
+
+.price-total .price-value {
+  color: var(--color-gold);
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+
+/* Mobile: stringi un po' lo spacing */
+@media (max-width: 560px) {
+  .price-row {
+    padding: 5px 0;
+  }
+
+  .price-value {
+    min-width: 5.8ch;
+  }
 }

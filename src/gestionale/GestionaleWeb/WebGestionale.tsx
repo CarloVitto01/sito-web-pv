@@ -11,8 +11,8 @@ import {
   setDoc,
   updateDoc,
 } from "firebase/firestore";
-import { db } from "../backend/firebase";
-import Header from "../components/HeaderComponents/Header";
+import { db } from "../../backend/firebase";
+import Header from "../../components/HeaderComponents/Header";
 import styles from "./WebGestionale.module.css";
 
 /** ---------- Tipi ---------- */

@@ -1,12 +1,12 @@
 // src/gestionale/BobinePLAGestionale.tsx
 import React, { useEffect, useMemo, useState } from "react";
-import { db } from "../backend/firebase";
+import { db } from "../../backend/firebase";
 import {
   collection, doc, setDoc, updateDoc, deleteDoc,
   onSnapshot, query, orderBy, serverTimestamp
 } from "firebase/firestore";
 import styles from "./BobineGestionale.module.css";
-import Header from "../components/HeaderComponents/Header";
+import Header from "../../components/HeaderComponents/Header";
 
 type Spool = {
   id: string;

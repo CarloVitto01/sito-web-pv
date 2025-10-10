@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { db } from '../backend/firebase';
+import { db } from '../../backend/firebase';
 import { collection, deleteDoc, doc, getDoc, getDocs, setDoc } from 'firebase/firestore';
-import Header from '../components/HeaderComponents/Header';
+import Header from '../../components/HeaderComponents/Header';
 import styles from './GestioneAccessi.module.css';
 
 const PAGINE = [
@@ -15,6 +15,7 @@ const PAGINE = [
   'bobine',
   'link',
   'gestionale-web',
+  'tasse',
 ];
 
 const GestioneAccessi: React.FC = () => {

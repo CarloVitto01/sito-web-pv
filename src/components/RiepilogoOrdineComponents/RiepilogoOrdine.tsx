@@ -1,5 +1,7 @@
 import styles from "./RiepilogoOrdine.module.css";
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import { db } from "../../backend/firebase";
+import { doc, onSnapshot } from "firebase/firestore";
 
 type PaymentPayload = {
   method: "CASH" | "PAYPAL";
@@ -20,13 +22,12 @@ type RiepilogoProps = {
   numeroCopie: number;
   numeroPDF: number;
   prezzo: string; // imponibile base: "12.50" o "12,50"
-
   onConfirmOrder: (payment: PaymentPayload) => Promise<void>;
   disabled?: boolean;
   submitted?: boolean;
   loading?: boolean;
 
-  /** --- NUOVE OPZIONI --- */
+  /** default usati come fallback se il doc Firestore non esiste o è incompleto */
   ivaRate?: number;           // default 0.22 (22%)
   transportFeeEuro?: number;  // default 0
   paypalPercent?: number;     // default 0.0349 (3.49%)
@@ -46,10 +47,18 @@ const euro = (n: number) =>
   n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 declare global {
-  interface Window {
-    paypal?: any;
-  }
+  interface Window { paypal?: any; }
 }
+
+const FEES_COLLECTION = "configTasse";
+const FEES_DOC = "fees";
+
+type Fees = {
+  ivaRate: number;
+  transportFeeEuro: number;
+  paypalPercent: number;
+  paypalFixed: number;
+};
 
 const RiepilogoOrdine = ({
   inchiostro,
@@ -66,7 +75,7 @@ const RiepilogoOrdine = ({
   submitted = false,
   loading = false,
 
-  // defaults nuovi
+  // fallback locali (usati solo se il doc non esiste/è incompleto)
   ivaRate = 0.22,
   transportFeeEuro = 1,
   paypalPercent = 0.0349,
@@ -79,21 +88,47 @@ const RiepilogoOrdine = ({
   const [paypalReady, setPaypalReady] = useState(false);
   const paypalButtonsContainerRef = useRef<HTMLDivElement | null>(null);
 
+  // === 🔗 Tasse da Firestore (live) con fallback ai default passati via props ===
+  const [fees, setFees] = useState<Fees>({
+    ivaRate,
+    transportFeeEuro,
+    paypalPercent,
+    paypalFixed,
+  });
+
+  useEffect(() => {
+    const ref = doc(db, FEES_COLLECTION, FEES_DOC);
+    const unsub = onSnapshot(ref, (snap) => {
+      if (snap.exists()) {
+        const d = snap.data() as Partial<Fees>;
+        setFees({
+          ivaRate: typeof d.ivaRate === "number" ? d.ivaRate : ivaRate,
+          transportFeeEuro: typeof d.transportFeeEuro === "number" ? d.transportFeeEuro : transportFeeEuro,
+          paypalPercent: typeof d.paypalPercent === "number" ? d.paypalPercent : paypalPercent,
+          paypalFixed: typeof d.paypalFixed === "number" ? d.paypalFixed : paypalFixed,
+        });
+      } else {
+        // se il doc non c'è, usa i fallback delle props
+        setFees({ ivaRate, transportFeeEuro, paypalPercent, paypalFixed });
+      }
+    });
+    return () => unsub();
+  }, [ivaRate, transportFeeEuro, paypalPercent, paypalFixed]);
+
   const totals = useMemo(() => {
     const base = round2(parseEuro(prezzo));
-    const iva = round2(base * ivaRate);
-    const trasporto = round2(transportFeeEuro);
+    const iva = round2(base * fees.ivaRate);
+    const trasporto = round2(fees.transportFeeEuro);
     const subTotale = round2(base + iva + trasporto);
 
     const feePP =
       paymentMethod === "paypal"
-        ? round2(subTotale * paypalPercent + paypalFixed)
+        ? round2(subTotale * fees.paypalPercent + fees.paypalFixed)
         : 0;
 
     const totaleContanti = subTotale; // niente fee PayPal
     const totalePayPal = round2(subTotale + feePP);
 
-    // Importo da addebitare in base al metodo scelto
     const totaleDaAddebitare =
       paymentMethod === "paypal" ? totalePayPal : totaleContanti;
 
@@ -107,7 +142,7 @@ const RiepilogoOrdine = ({
       totalePayPal,
       totaleDaAddebitare,
     };
-  }, [prezzo, ivaRate, transportFeeEuro, paypalPercent, paypalFixed, paymentMethod]);
+  }, [prezzo, fees, paymentMethod]);
 
   // Carica lo script PayPal quando serve
   useEffect(() => {
@@ -122,16 +157,12 @@ const RiepilogoOrdine = ({
     script.onload = () => setPaypalReady(true);
     script.onerror = () => console.error("Impossibile caricare PayPal SDK");
     document.body.appendChild(script);
-    return () => {
-      // opzionale: rimuovere lo script se si cambia metodo
-    };
   }, [paymentMethod]);
 
   // Render dei PayPal Buttons quando SDK pronto
   useEffect(() => {
     if (paymentMethod !== "paypal" || !paypalReady || !paypalButtonsContainerRef.current || submitted) return;
 
-    // Pulisci contenitore (evita doppio mount)
     paypalButtonsContainerRef.current.innerHTML = "";
 
     const Buttons = window.paypal?.Buttons;
@@ -165,7 +196,6 @@ const RiepilogoOrdine = ({
           });
           if (!res.ok) throw new Error("Errore capture-order");
           const cap = await res.json();
-          // attesi: { status: "COMPLETED", orderId, captureId, payerEmail, amount }
           if (cap.status === "COMPLETED") {
             await onConfirmOrder({
               method: "PAYPAL",
@@ -173,7 +203,7 @@ const RiepilogoOrdine = ({
               orderId: cap.orderId,
               captureId: cap.captureId,
               payerEmail: cap.payerEmail,
-              amount: Number(cap.amount), // totale effettivamente addebitato
+              amount: Number(cap.amount),
             });
           } else {
             alert("Pagamento non completato: " + cap.status);
@@ -193,9 +223,7 @@ const RiepilogoOrdine = ({
     instance.render(paypalButtonsContainerRef.current);
 
     return () => {
-      try {
-        instance.close();
-      } catch {}
+      try { instance.close(); } catch { }
     };
   }, [paymentMethod, paypalReady, submitted, totals, onConfirmOrder]);
 
@@ -204,7 +232,7 @@ const RiepilogoOrdine = ({
     setLoadingStarted(true);
     await onConfirmOrder({
       method: "CASH",
-      confirmed: false, // verrà pagato alla consegna
+      confirmed: false,
       amount: totals.totaleContanti, // imponibile + IVA + trasporto
     });
   };
@@ -236,41 +264,93 @@ const RiepilogoOrdine = ({
 
   return (
     <div className={styles["riepilogo-container"]}>
-      <h3 className={styles["riepilogo-title"]}>📋 Riepilogo ordine</h3>
+      <h3 className={styles["riepilogo-title"]}>📋 Riepilogo Ordine A4</h3>
+      {/* --- Dettagli ordine (stile identico al riepilogo pagamento) --- */}
+      <div className={`${styles["price-card"]} ${styles["details-card"]}`}>
+        <div className={styles["price-header"]}>Dettagli ordine</div>
 
-      <p className={styles["riepilogo-item"]}><strong>Numero PDF:</strong> {numeroPDF}</p>
-      <p className={styles["riepilogo-item"]}><strong>Inchiostro:</strong> {inchiostro}</p>
-      <p className={styles["riepilogo-item"]}><strong>Layout:</strong> {layout}</p>
-      <p className={styles["riepilogo-item"]}><strong>Gestione pagina:</strong> {pagina}</p>
-      <p className={styles["riepilogo-item"]}><strong>Rilegatura:</strong> {rilegatura}</p>
-      <p className={styles["riepilogo-item"]}><strong>Rilegatura unica:</strong> {rilegaturaUnica}</p>
-      <p className={styles["riepilogo-item"]}><strong>Intervallo pagine:</strong> {intervalloPagine}</p>
-      <p className={styles["riepilogo-item"]}><strong>Numero copie:</strong> {numeroCopie}</p>
+        <div className={styles["price-row"]}>
+          <span className={styles["price-label"]}>Numero PDF</span>
+          <span className={styles["price-value"]}>{numeroPDF}</span>
+        </div>
+
+        <div className={styles["price-row"]}>
+          <span className={styles["price-label"]}>Inchiostro</span>
+          <span className={styles["price-value"]}>{inchiostro}</span>
+        </div>
+
+        <div className={styles["price-row"]}>
+          <span className={styles["price-label"]}>Layout</span>
+          <span className={styles["price-value"]}>{layout}</span>
+        </div>
+
+        <div className={styles["price-row"]}>
+          <span className={styles["price-label"]}>Gestione pagina</span>
+          <span className={styles["price-value"]}>{pagina}</span>
+        </div>
+
+        <div className={styles["price-row"]}>
+          <span className={styles["price-label"]}>Rilegatura</span>
+          <span className={styles["price-value"]}>{rilegatura}</span>
+        </div>
+
+        <div className={styles["price-row"]}>
+          <span className={styles["price-label"]}>Rilegatura unica</span>
+          <span className={styles["price-value"]}>{rilegaturaUnica}</span>
+        </div>
+
+        <div className={styles["price-row"]}>
+          <span className={styles["price-label"]}>Intervallo pagine</span>
+          <span className={styles["price-value"]}>{intervalloPagine}</span>
+        </div>
+
+        <div className={styles["price-row"]}>
+          <span className={styles["price-label"]}>Numero copie</span>
+          <span className={styles["price-value"]}>{numeroCopie}</span>
+        </div>
+      </div>
+
 
       {/* --- Breakdown economico --- */}
-      <div className={styles["payment-box"]} style={{ marginTop: 8 }}>
-        <div className={styles["riepilogo-item"]}>
-          <strong>Imponibile:</strong> {euro(totals.base)} €
+      <div className={`${styles["price-card"]} ${styles["price-left"]}`}>
+        <div className={styles["price-row"]}>
+          <span className={styles["price-label"]}>Imponibile</span>
+          <span className={styles["price-value"]}>{euro(totals.base)} €</span>
         </div>
-        <div className={styles["riepilogo-item"]}>
-          <strong>IVA ({Math.round(ivaRate * 100)}%):</strong> {euro(totals.iva)} €
+
+        <div className={styles["price-row"]}>
+          <span className={styles["price-label"]}>
+            IVA ({Math.round(fees.ivaRate * 100)}%)
+          </span>
+          <span className={styles["price-value"]}>{euro(totals.iva)} €</span>
         </div>
-        <div className={styles["riepilogo-item"]}>
-          <strong>Trasporto:</strong> {euro(totals.trasporto)} €
+
+        <div className={styles["price-row"]}>
+          <span className={styles["price-label"]}>Trasporto</span>
+          <span className={styles["price-value"]}>{euro(totals.trasporto)} €</span>
         </div>
-        <div className={styles["riepilogo-item"]}>
-          <strong>Subtotale (IVA inclusa):</strong> {euro(totals.subTotale)} €
+
+        <hr className={styles["price-sep"]} />
+
+        <div className={`${styles["price-row"]} ${styles["price-subtotal"]}`}>
+          <span className={styles["price-label"]}>Subtotale (IVA incl.)</span>
+          <span className={styles["price-value"]}>{euro(totals.subTotale)} €</span>
         </div>
+
         {paymentMethod === "paypal" && (
-          <div className={styles["riepilogo-item"]}>
-            <strong>Fee PayPal ({(paypalPercent * 100).toFixed(2)}% + {euro(paypalFixed)} €):</strong> {euro(totals.feePP)} €
+          <div className={`${styles["price-row"]} ${styles["price-fee-paypal"]}`}>
+            <span className={styles["price-label"]}>
+              Fee PayPal ({(fees.paypalPercent * 100).toFixed(2)}% + {euro(fees.paypalFixed)} €)
+            </span>
+            <span className={styles["price-value"]}>{euro(totals.feePP)} €</span>
           </div>
         )}
-        <div className={styles["riepilogo-item"]}>
-          <strong>
-            Totale {paymentMethod === "paypal" ? "PayPal" : "Contanti"}:
-          </strong>{" "}
-          {euro(totals.totaleDaAddebitare)} €
+
+        <div className={`${styles["price-row"]} ${styles["price-total"]}`}>
+          <span className={styles["price-label"]}>
+            Totale {paymentMethod === "paypal" ? "PayPal" : "Contanti"}
+          </span>
+          <span className={styles["price-value"]}>{euro(totals.totaleDaAddebitare)} €</span>
         </div>
       </div>
 
@@ -284,9 +364,6 @@ const RiepilogoOrdine = ({
         >
           💵 Contanti
           <span className={styles["pay-subtext"]}>Paga in contanti alla consegna</span>
-          <span className={styles["pay-subtext"]}>
-            Totale: {euro(totals.totaleContanti)} €
-          </span>
         </button>
 
         <button
@@ -297,9 +374,6 @@ const RiepilogoOrdine = ({
         >
           🟦 PayPal
           <span className={styles["pay-subtext"]}>Paga con PayPal</span>
-          <span className={styles["pay-subtext"]}>
-            Totale: {euro(totals.totalePayPal)} €
-          </span>
         </button>
       </div>
 

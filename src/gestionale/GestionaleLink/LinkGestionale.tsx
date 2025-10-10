@@ -12,9 +12,9 @@ import {
   serverTimestamp,
   where,
 } from "firebase/firestore";
-import { db } from "../backend/firebase";
+import { db } from "../../backend/firebase";
 import styles from "./LinkGestionale.module.css";
-import Header from "../components/HeaderComponents/Header";
+import Header from "../../components/HeaderComponents/Header";
 
 /** ---------- Tipi ---------- */
 type LinkItem = {
