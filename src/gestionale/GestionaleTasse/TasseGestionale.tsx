@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { db } from "../../backend/firebase";
 import { doc, onSnapshot, setDoc } from "firebase/firestore";
 import styles from "../GestionaleA4/A4Gestionale.module.css"; // riusa lo stesso stile dei costi A4
+import Header from "../../components/HeaderComponents/Header";
 
 type Tasse = {
   ivaRate: number;          // 0.22 = 22%
@@ -54,6 +55,8 @@ const TasseGestionale: React.FC = () => {
   };
 
   return (
+    <>
+       <Header />
     <div className={styles.container}>
       <h2 className={styles.title}>🧮 Gestionale Tasse</h2>
 
@@ -121,6 +124,7 @@ const TasseGestionale: React.FC = () => {
         </>
       )}
     </div>
+    </>
   );
 };
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { auth, db } from "../../backend/firebase";
-import { doc, getDoc, collection, onSnapshot, query, where, orderBy } from "firebase/firestore"; // ⬅️ import lasciato com’era
+import { doc, getDoc, collection, onSnapshot, query } from "firebase/firestore"; // ⬅️ import lasciato com’era
 import { TOKEN3D, CHAT_ID3D } from "../../backend/telegram";
 
 import styles from "./RichiestaStampa3D.module.css";

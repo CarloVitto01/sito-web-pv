@@ -34,10 +34,8 @@ type TemplateMeta = {
   previewUrl: string;      // URL immagine anteprima
   demoPath: string;        // link demo/anteprima
   pagesIncluded: string[];
-  features: string[];
   minBudget?: number;      // override minimo categoria
   published: boolean;
-  order: number;
   createdAt?: any;
   updatedAt?: any;
 };
@@ -56,13 +54,11 @@ const blank: Omit<TemplateMeta, "id"> = {
   previewUrl: "",
   demoPath: "",
   pagesIncluded: ["Home", "Contatti"],
-  features: ["Responsive design"],
   minBudget: undefined,
   published: true,
-  order: 0,
 };
 
-/** Tag editor piccolo e veloce */
+/** Tag editor piccolo e veloce (riusato per le pagine) */
 const TagEditor: React.FC<{
   values: string[];
   placeholder?: string;
@@ -129,9 +125,9 @@ const WebGestionale: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // Carica lista realtime (ordinata per "order")
+  // Carica lista realtime (ordinata per "title" asc)
   useEffect(() => {
-    const qRef = query(collection(db, TEMPLATES_COL), orderBy("order", "asc"));
+    const qRef = query(collection(db, TEMPLATES_COL), orderBy("title", "asc"));
     const unsub = onSnapshot(qRef, (snap) => {
       const next: TemplateMeta[] = snap.docs.map((d) => ({
         ...(d.data() as any),
@@ -145,12 +141,14 @@ const WebGestionale: React.FC = () => {
   const filtered = useMemo(() => {
     const term = search.toLowerCase().trim();
     if (!term) return items;
-    return items.filter(
-      (t) =>
-        t.title.toLowerCase().includes(term) ||
-        t.short.toLowerCase().includes(term) ||
-        (t.features || []).some((f) => f.toLowerCase().includes(term))
-    );
+    return items.filter((t) => {
+      const inTitle = t.title.toLowerCase().includes(term);
+      const inShort = t.short.toLowerCase().includes(term);
+      const inPages = (t.pagesIncluded || []).some((p) =>
+        p.toLowerCase().includes(term)
+      );
+      return inTitle || inShort || inPages;
+    });
   }, [items, search]);
 
   /** Azioni form */
@@ -165,15 +163,6 @@ const WebGestionale: React.FC = () => {
     setEditingId(id);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
-
-  const addFeature = (v: string) =>
-    setForm((p) => ({
-      ...p,
-      features: Array.from(new Set([...(p.features || []), v])),
-    }));
-
-  const removeFeature = (v: string) =>
-    setForm((p) => ({ ...p, features: p.features.filter((x) => x !== v) }));
 
   const addPage = (v: string) =>
     setForm((p) => ({
@@ -234,7 +223,7 @@ const WebGestionale: React.FC = () => {
   return (
     <div className={styles.container}>
       <Header />
-      <h1 className={styles.title}>Template Web — gestione semplice</h1>
+      <h1 className={styles.title}>Template Web</h1>
 
       {/* FORM RAPIDO: crea/modifica */}
       <form className={styles.card} onSubmit={save} noValidate>
@@ -326,16 +315,6 @@ const WebGestionale: React.FC = () => {
           </div>
 
           <div>
-            <label className={styles.label}>Ordine</label>
-            <input
-              className={styles.input}
-              type="number"
-              value={form.order}
-              onChange={(e) => setForm({ ...form, order: Number(e.target.value) })}
-            />
-          </div>
-
-          <div>
             <label className={styles.label}>Pubblicato</label>
             <label className={styles.switch}>
               <input
@@ -356,16 +335,6 @@ const WebGestionale: React.FC = () => {
               placeholder="Aggiungi pagina e premi Invio"
               onAdd={addPage}
               onRemove={removePage}
-            />
-          </div>
-
-          <div>
-            <label className={styles.label}>Funzionalità</label>
-            <TagEditor
-              values={form.features}
-              placeholder="Aggiungi feature e premi Invio"
-              onAdd={addFeature}
-              onRemove={removeFeature}
             />
           </div>
         </div>
@@ -390,7 +359,7 @@ const WebGestionale: React.FC = () => {
       <div className={styles.row}>
         <input
           className={styles.input}
-          placeholder="Cerca per titolo/feature…"
+          placeholder="Cerca per titolo/sottotitolo/pagine…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -401,7 +370,6 @@ const WebGestionale: React.FC = () => {
         <table className={styles.table}>
           <thead>
             <tr>
-              <th>#</th>
               <th>Anteprima</th>
               <th>Titolo</th>
               <th>Categoria</th>
@@ -413,7 +381,6 @@ const WebGestionale: React.FC = () => {
           <tbody>
             {filtered.map((t) => (
               <tr key={t.id}>
-                <td>{t.order ?? 0}</td>
                 <td>
                   <img className={styles.thumb} src={t.previewUrl} alt={t.title} />
                 </td>
@@ -422,7 +389,7 @@ const WebGestionale: React.FC = () => {
                   <div className={styles.cellSub}>{t.short}</div>
                 </td>
                 <td className={styles.capitalize}>{t.category}</td>
-                <td>{t.minBudget ? `€ ${t.minBudget}` : "–"}</td>
+                <td>{typeof t.minBudget === "number" ? `€ ${t.minBudget}` : "–"}</td>
                 <td>
                   <label className={styles.switch}>
                     <input
@@ -468,7 +435,7 @@ const WebGestionale: React.FC = () => {
             ))}
             {!filtered.length && (
               <tr>
-                <td className={styles.emptyTd} colSpan={7}>
+                <td className={styles.emptyTd} colSpan={6}>
                   Nessun template
                 </td>
               </tr>

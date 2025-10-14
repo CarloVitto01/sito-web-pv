@@ -405,15 +405,45 @@
   align-items: stretch;
 }
 
+/* === Viewer canvas: centra il media e NON taglia === */
 .viewerCanvas {
   position: relative;
   background: #000;
   border-radius: 12px;
-  overflow: hidden;
-  display: grid;
-  place-items: center;
+  /* era: overflow: hidden; → lo togliamo per sicurezza */
+  overflow: visible;
+  /* meglio flex per centrare perfettamente */
+  display: flex;
+  align-items: center;
+  justify-content: center;
   min-height: 0;
 }
+
+/* === Regola unica per IMG/VIDEO nel viewer === */
+.viewerCanvas > img,
+.viewerCanvas > video,
+.viewerMedia {
+  /* fondamentale: dare entrambe le dimensioni per attivare object-fit */
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center center;
+  display: block;
+  /* rimuove i vecchi limiti */
+  max-width: none;
+  max-height: none;
+}
+
+/* Mobile feed: stessa logica per le slide */
+.viewerSlide > img,
+.viewerSlide > video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center center;
+  display: block;
+}
+
 
 .viewerFeed{
   width: 100%;

@@ -47,8 +47,6 @@ type WebPricingConfig = {
   budgetMax: number;
   timingMultiplier: Record<string, number>;
   minBudgetByCategory: Record<TemplateCategory, number>;
-  stacks: string[];
-  allFeatures: string[];
 };
 
 interface UserShape {
@@ -58,7 +56,7 @@ interface UserShape {
   telefono?: string;
 }
 
-// Estendo solo per minBudget (niente più manutenzione)
+// (compat: mantengo il type usato nello state)
 type TemplateWithExtras = TemplateMeta & {
   minBudget?: number;
 };
@@ -88,22 +86,6 @@ const DEFAULT_CONFIG: WebPricingConfig = {
     landing: 800,
     istituzionale: 1500,
   },
-  stacks: [
-    "Non ho preferenze",
-    "React + Next.js",
-    "Spring Boot (backend) + React (frontend)",
-  ],
-  allFeatures: [
-    "Responsive design",
-    "Multilingua",
-    "E-commerce (carrello/pagamenti)",
-    "Booking/Prenotazioni",
-    "Blog/Articoli",
-    "SEO tecnica & on-page",
-    "Analytics & eventi",
-    "Area riservata/Admin",
-    "GDPR cookie & privacy",
-  ],
 };
 
 /** Firestore paths */
@@ -127,10 +109,6 @@ const RichiestaSitoWeb: React.FC = () => {
   // filtro elenco
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<TemplateCategory | "tutte">("tutte");
-
-  // selezioni form
-  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
-  const [stack, setStack] = useState(DEFAULT_CONFIG.stacks[2]); // default coerente
 
   // budget con minimo dinamico
   const [minBudget, setMinBudget] = useState<number>(DEFAULT_MIN);
@@ -157,10 +135,7 @@ const RichiestaSitoWeb: React.FC = () => {
     run();
   }, []);
 
-  /** ====== Live templates pubblicati ======
-   * niente orderBy nella query (evita indice composito),
-   * ordino lato client per `order`.
-   */
+  /** ====== Live templates pubblicati ====== */
   useEffect(() => {
     const qRef = query(
       collection(db, TEMPLATES_COL),
@@ -228,12 +203,6 @@ const RichiestaSitoWeb: React.FC = () => {
     });
   }, [templates, search, category]);
 
-  const toggleFeature = (f: string) => {
-    setSelectedFeatures((prev) =>
-      prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f]
-    );
-  };
-
   /** ====== Livello qualità stimato ====== */
   const solidThreshold = useMemo(
     () => Math.ceil((minBudget * 1.25) / 100) * 100,
@@ -252,8 +221,6 @@ const RichiestaSitoWeb: React.FC = () => {
 
   /** ====== Riepilogo calcolato ====== */
   const TIMING_MULTIPLIER = cfg.timingMultiplier;
-  const ALL_FEATURES = cfg.allFeatures;
-  const STACKS = cfg.stacks;
   const HOSTING_YEARLY = cfg.hostingYearly;
   const BUDGET_MAX = cfg.budgetMax;
 
@@ -270,7 +237,7 @@ const RichiestaSitoWeb: React.FC = () => {
     privacyOk &&
     !isSending &&
     budget >= minBudget &&
-    (!!message.trim() || selectedFeatures.length > 0);
+    !!message.trim(); // messaggio obbligatorio
 
   const sendTelegram = async () => {
     if (!canSubmit) return;
@@ -291,11 +258,6 @@ const RichiestaSitoWeb: React.FC = () => {
 🧩 *Template scelto:* ${selectedTemplate?.title} (${selectedTemplate?.category})
 📄 *Pagine incluse di base:* ${selectedTemplate?.pagesIncluded.join(", ")}
 
-🧰 *Funzionalità richieste:*
-${selectedFeatures.length ? "• " + selectedFeatures.join("\n• ") : "(non specificate)"}
-
-🧪 *Stack preferito:* ${stack}
-
 💶 *Budget (Base):* ${euro(devSubtotal)}  |  *Minimo:* ${euro(minBudget)}
 ⏱️ *Tempistiche:* ${timing} (${sign})
 ➕ *Delta urgenza:* ${devDelta >= 0 ? "+" : ""}${euro(devDelta)}
@@ -311,7 +273,7 @@ ${selectedFeatures.length ? "• " + selectedFeatures.join("\n• ") : "(non spe
 ===============================
 
 💬 *Messaggio/Note:*
-${message || "(nessun messaggio)"}    
+${message}
     `;
 
     try {
@@ -325,10 +287,8 @@ ${message || "(nessun messaggio)"}
         }),
       });
       setIsSent(true);
-      // reset parziale (mantieni filtraggio/ricerca)
+      // reset parziale (mantengo filtri)
       setSelectedTemplate(null);
-      setSelectedFeatures([]);
-      setStack(STACKS[2] || STACKS[0] || "Non ho preferenze");
       setBudget(2500);
       setMinBudget(DEFAULT_MIN);
       setTiming("2-4 settimane");
@@ -349,7 +309,7 @@ ${message || "(nessun messaggio)"}
         <section className={styles.intro}>
           <Intro
             title="RICHIESTA SVILUPPO SITO WEB"
-            text="Scegli un template di partenza, seleziona le funzionalità e inviaci la tua richiesta: ti risponderemo con una proposta su misura."
+            text="Scegli un template di partenza, imposta budget e tempistiche, scrivi le tue note e inviaci la richiesta: ti risponderemo con una proposta su misura."
           />
         </section>
 
@@ -446,107 +406,74 @@ ${message || "(nessun messaggio)"}
           </div>
         </section>
 
-        {/* Configurazione funzionalità */}
+        {/* Configurazione sintetica */}
+        {/* Configurazione (colonna centrale) */}
         <section className={styles.config}>
           <h2>Configura il tuo progetto</h2>
 
-          <div className={styles.formGrid}>
-            <div className={styles.formCol}>
-              <div className={styles.field}>
-                <label>Funzionalità</label>
-                <div className={styles.checkGrid}>
-                  {ALL_FEATURES.map((f) => (
-                    <label key={f} className={styles.checkItem}>
-                      <input
-                        type="checkbox"
-                        checked={selectedFeatures.includes(f)}
-                        onChange={() => toggleFeature(f)}
-                      />
-                      <span>{f}</span>
-                    </label>
-                  ))}
-                </div>
+          <div className={styles.formCenter}>
+            {/* Hosting: fisso, non selezionabile */}
+            <div className={styles.field}>
+              <label>Hosting</label>
+              <div className={styles.staticRow}>
+                Gestito da noi — <strong>{euro(HOSTING_YEARLY)}</strong>/anno (obbligatorio)
               </div>
-
-              <div className={styles.field}>
-                <label>Stack preferito</label>
-                <select
-                  className={styles.select}
-                  value={stack}
-                  onChange={(e) => setStack(e.target.value)}
-                >
-                  {STACKS.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Hosting: fisso, non selezionabile */}
-              <div className={styles.field}>
-                <label>Hosting</label>
-                <div className={styles.staticRow}>
-                  Gestito da noi — <strong>{euro(HOSTING_YEARLY)}</strong>/anno (obbligatorio)
-                </div>
-                <small className={styles.hint}>
-                  Include dominio, HTTPS, backup e monitoraggio base.
-                </small>
-              </div>
+              <small className={styles.hint}>
+                Include dominio, HTTPS, backup e monitoraggio base.
+              </small>
             </div>
 
-            <div className={styles.formCol}>
-              <div className={styles.field}>
-                <label>
-                  Budget indicativo (€ {budget.toLocaleString("it-IT")}) — livello qualità:{" "}
-                  <strong>{qualityLevel}</strong>
-                </label>
-                <input
-                  type="range"
-                  min={minBudget}
-                  max={BUDGET_MAX}
-                  step={100}
-                  value={budget}
-                  onChange={(e) => setBudget(parseInt(e.target.value, 10))}
-                />
-                <div className={styles.rangeHints}>
-                  <span>€ {minBudget.toLocaleString("it-IT")}</span>
-                  <span>€ {BUDGET_MAX.toLocaleString("it-IT")}</span>
-                </div>
-                <small className={styles.hint}>
-                  Con il <strong>costo minimo</strong> ottieni un sito <em>funzionante</em> (base).
-                  Per un risultato <strong> impeccabile</strong> considera almeno {euro(premiumThreshold)}.
-                </small>
+            <div className={styles.field}>
+              <label>
+                Budget indicativo (€ {budget.toLocaleString("it-IT")}) — livello qualità:{" "}
+                <strong>{qualityLevel}</strong>
+              </label>
+              <input
+                type="range"
+                min={minBudget}
+                max={BUDGET_MAX}
+                step={100}
+                value={budget}
+                onChange={(e) => setBudget(parseInt(e.target.value, 10))}
+              />
+              <div className={styles.rangeHints}>
+                <span>€ {minBudget.toLocaleString("it-IT")}</span>
+                <span>€ {BUDGET_MAX.toLocaleString("it-IT")}</span>
               </div>
+              <small className={styles.hint}>
+                Con il <strong>costo minimo</strong> ottieni un sito <em>funzionante</em> (base).
+                Per un risultato <strong>impeccabile</strong> considera almeno {euro(premiumThreshold)}.
+              </small>
+            </div>
 
-              <div className={styles.field}>
-                <label>Tempistiche desiderate</label>
-                <select
-                  className={styles.select}
-                  value={timing}
-                  onChange={(e) => setTiming(e.target.value)}
-                >
-                  <option value="1-2 settimane">1–2 settimane (priorità, +30%)</option>
-                  <option value="2-4 settimane">2–4 settimane (+15%)</option>
-                  <option value="4-6 settimane">4–6 settimane (standard)</option>
-                  <option value="> 6 settimane">&gt; 6 settimane (risparmio, -10%)</option>
-                  <option value="Non so / da consigliare">Non so / da consigliare</option>
-                </select>
-              </div>
+            <div className={styles.field}>
+              <label>Tempistiche desiderate</label>
+              <select
+                className={styles.select}
+                value={timing}
+                onChange={(e) => setTiming(e.target.value)}
+              >
+                <option value="1-2 settimane">1–2 settimane (priorità, +30%)</option>
+                <option value="2-4 settimane">2–4 settimane (+15%)</option>
+                <option value="4-6 settimane">4–6 settimane (standard)</option>
+                <option value="> 6 settimane">&gt; 6 settimane (risparmio, -10%)</option>
+                <option value="Non so / da consigliare">Non so / da consigliare</option>
+              </select>
+            </div>
 
-              <div className={styles.field}>
-                <label>Messaggio / Note (obbligatorio se non hai selezionato funzionalità)</label>
-                <textarea
-                  className={styles.textarea}
-                  rows={8}
-                  placeholder="Raccontaci del tuo progetto: obiettivi, pubblico, competitor, contenuti già disponibili, dominio, ecc."
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                />
-              </div>
+            <div className={styles.field}>
+              <label>Messaggio / Note (obbligatorio)</label>
+              <textarea
+                className={styles.textarea}
+                rows={8}
+                placeholder="Raccontaci del tuo progetto: obiettivi, pubblico, competitor, contenuti già disponibili, dominio, ecc."
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+              />
             </div>
           </div>
         </section>
+
 
         {/* ======================= RIEPILOGO COSTI + Invio ======================= */}
         <section className={styles.config} aria-live="polite">
@@ -602,7 +529,9 @@ ${message || "(nessun messaggio)"}
                         ? "Seleziona un template"
                         : budget < minBudget
                           ? `Il budget minimo per questo template è ${euro(minBudget)}`
-                          : undefined
+                          : !message.trim()
+                            ? "Inserisci un messaggio/nota"
+                            : undefined
                     }
                   >
                     <span className={styles.btnLabel}>

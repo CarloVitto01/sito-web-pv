@@ -3,7 +3,7 @@
 // Effect: on card click → centers with shared-layout animation, rotates, then reveals the grid.
 // Clicking a media opens a viewer modal (Instagram-like) with prev/next via keyboard/buttons/wheel/swipe.
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback  } from "react";
 import { auth, db } from "../../backend/firebase";
 import { doc, getDoc, collection, getDocs, onSnapshot, query, orderBy } from "firebase/firestore";
 import { TOKENFOTOVIDEO, CHAT_IDFOTOVIDEO } from "../../backend/telegram";
@@ -32,7 +32,6 @@ const ContattiServiziFotoVideo: React.FC = () => {
 
   // ===== Instagram-like Viewer (index-based) =====
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
-  const railRef = useRef<HTMLDivElement>(null);
   const feedRef = useRef<HTMLDivElement>(null);        // NEW: container scrollabile mobile
 
   // rilevamento mobile (<= 700px)
@@ -52,14 +51,17 @@ const ContattiServiziFotoVideo: React.FC = () => {
 
   const openViewerAt = (i: number) => setViewerIndex(i);
   const closeViewer = () => setViewerIndex(null);
-  const prevViewer = () => {
-    if (!albumItems.length || viewerIndex === null) return;
-    setViewerIndex(i => (i! - 1 + albumItems.length) % albumItems.length);
-  };
-  const nextViewer = () => {
-    if (!albumItems.length || viewerIndex === null) return;
-    setViewerIndex(i => (i! + 1) % albumItems.length);
-  };
+
+  const prevViewer = useCallback(() => {
+    if (!albumItems.length) return;
+    setViewerIndex(i => (i === null ? i : (i - 1 + albumItems.length) % albumItems.length));
+  }, [albumItems.length]);
+
+  const nextViewer = useCallback(() => {
+    if (!albumItems.length) return;
+    setViewerIndex(i => (i === null ? i : (i + 1) % albumItems.length));
+  }, [albumItems.length]);
+
 
   // lock body + tastiera solo quando viewer aperto (desktop)
   useEffect(() => {
@@ -76,9 +78,8 @@ const ContattiServiziFotoVideo: React.FC = () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prevOverflow;
     };
-  }, [viewerIndex, albumItems.length]);
+  }, [viewerIndex, prevViewer, nextViewer]);
 
-  // quando apro su mobile, scrolla alla slide selezionata
   // quando apro su mobile, centra la slide selezionata
   useEffect(() => {
     if (viewerIndex === null || !isMobile) return;
@@ -95,7 +96,7 @@ const ContattiServiziFotoVideo: React.FC = () => {
       const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
       if (snap.exists()) setUserData(snap.data());
     })();
-  }, []);
+  }, [activeAlbum]);
 
   // ===== Albums stream =====
   useEffect(() => {

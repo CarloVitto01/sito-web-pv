@@ -3,20 +3,24 @@ import QRCode from "qrcode";
 import jsPDF from "jspdf";
 import "./QRgen.module.css";
 
-// ⬇️ Aggiunte PV
+// ⬇️ PV
 import Header from "../HeaderComponents/Header";
 import Footer from "../FooterComponents/Footer";
 
-// Base API (proxy o nginx a /api → :8080)
+// ⬇️ Firestore (LEGGE il prezzo dal gestionale)
+import { db } from "../../backend/firebase"; // <-- ADATTA IL PATH SE SERVE
+import { doc, onSnapshot } from "firebase/firestore";
+
+// Base API
 const API_BASE = "/api";
 
 // ======= PayPal config (ENV) =======
 const PAYPAL_CLIENT_ID = process.env.REACT_APP_PAYPAL_CLIENT_ID as string;
 
-// prezzo PRO (EUR) per sbloccare le funzioni del QR
-const PRO_PRICE_EUR = Number(process.env.REACT_APP_QR_PRO_PRICE_EUR ?? "9.99");
+// Fallback se il doc Firestore non esiste
+const PRO_PRICE_EUR_FALLBACK = Number(process.env.REACT_APP_QR_PRO_PRICE_EUR ?? "9.99");
 
-// opzionale: sovrapprezzo PayPal (disattivo di default)
+// opzionale: sovrapprezzo PayPal
 const PAYPAL_SURCHARGE_ENABLED =
   (process.env.REACT_APP_PAYPAL_SURCHARGE_ENABLED ?? "false") === "true";
 const PAYPAL_FEE_PCT = Number(process.env.REACT_APP_PAYPAL_FEE_PCT ?? "0.034");
@@ -26,12 +30,10 @@ function grossWithPayPalFee(net: number) {
   return Math.max(0, Number(gross.toFixed(2)));
 }
 
-// Helpers
+// Helpers colore/preview
 const normalizeHex = (hex: string) => hex.trim().toLowerCase();
 const isPureBlack = (hex: string) => normalizeHex(hex) === "#000000";
 const isPureWhite = (hex: string) => normalizeHex(hex) === "#ffffff";
-
-// === UTIL PREVIEW: contrasto e dimensioni (SOLO PER PREVIEW) ===
 const hexToRgb = (hex: string) => {
   const h = normalizeHex(hex).replace("#", "");
   const full = h.length === 3 ? h.split("").map(c => c + c).join("") : h;
@@ -57,8 +59,9 @@ const pickHighContrastBW = (hex: string) => {
   const cWhite = contrastRatio(hex, "#ffffff");
   return cBlack > cWhite ? "#000000" : "#ffffff";
 };
-const QR_SIZE = 256;    // lato del QR (come ora)
-const PANEL_PAD = 16;   // padding del riquadro in preview
+
+const QR_SIZE = 256;
+const PANEL_PAD = 16;
 
 declare global { interface Window { paypal?: any } }
 
@@ -80,6 +83,31 @@ const QRCodeGenerator: React.FC = () => {
 
   const qrPreviewRef = useRef<HTMLCanvasElement | null>(null);
 
+  // ======== PREZZO da Gestionale (Firestore) ========
+  const [priceNetDb, setPriceNetDb] = useState<number | null>(null);
+  const [, setPriceUpdatedAt] = useState<Date | null>(null);
+  const [priceLoading, setPriceLoading] = useState(true);
+
+  useEffect(() => {
+    const ref = doc(db, "configQR", "costi"); // doc usato dal gestionale
+    const unsub = onSnapshot(
+      ref,
+      (snap) => {
+        const d = snap.data() as any;
+        const eur = Number(d?.prezzo_euro);
+        setPriceNetDb(Number.isFinite(eur) && eur > 0 ? eur : null);
+        const ts = d?.updatedAt?.toDate?.();
+        setPriceUpdatedAt(ts ?? null);
+        setPriceLoading(false);
+      },
+      (err) => {
+        console.error("Errore lettura prezzo PRO:", err);
+        setPriceLoading(false);
+      }
+    );
+    return () => unsub();
+  }, []);
+
   // Regole PRO
   const isPremium = useMemo(() => {
     const colored = !isPureBlack(fgColor);
@@ -88,11 +116,11 @@ const QRCodeGenerator: React.FC = () => {
     return colored || bgChanged || hasImage;
   }, [fgColor, transparentBg, bgColor, imageSrc]);
 
-  // Colore riquadro SOLO PREVIEW
+  // Colore riquadro preview
   const panelColor = useMemo(() => {
-    if (isPureBlack(fgColor)) return "#ffffff"; // QR nero → riquadro bianco
-    if (isPureWhite(fgColor)) return "#000000"; // QR bianco → riquadro nero
-    return pickHighContrastBW(fgColor);         // altri colori → bianco/nero con più contrasto
+    if (isPureBlack(fgColor)) return "#ffffff";
+    if (isPureWhite(fgColor)) return "#000000";
+    return pickHighContrastBW(fgColor);
   }, [fgColor]);
 
   const drawWatermark = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
@@ -124,10 +152,11 @@ const QRCodeGenerator: React.FC = () => {
     ctx.restore();
   };
 
-  const generateCanvas = async (forPreview = false): Promise<HTMLCanvasElement> => {
+  // ⬇️ Ora con dimensione parametrica (default 256) per esportazioni HD
+  const generateCanvas = async (sizePx: number = 256): Promise<HTMLCanvasElement> => {
     const canvas = document.createElement("canvas");
-    canvas.width = 256;
-    canvas.height = 256;
+    canvas.width = sizePx;
+    canvas.height = sizePx;
 
     await QRCode.toCanvas(canvas, url, {
       margin: 0,
@@ -135,7 +164,7 @@ const QRCodeGenerator: React.FC = () => {
         dark: fgColor,
         light: transparentBg ? "#00000000" : bgColor,
       },
-      width: 256,
+      width: sizePx,
     });
 
     const ctx = canvas.getContext("2d");
@@ -145,7 +174,10 @@ const QRCodeGenerator: React.FC = () => {
       const img = new Image();
       img.src = imageSrc;
       await new Promise((resolve) => (img.onload = resolve));
-      ctx.drawImage(img, 96, 96, 64, 64);
+      const logoSize = Math.round(sizePx * 0.25);
+      const x = Math.round((sizePx - logoSize) / 2);
+      const y = Math.round((sizePx - logoSize) / 2);
+      ctx.drawImage(img, x, y, logoSize, logoSize);
     }
 
     if (isPremium && !isPaid) {
@@ -166,7 +198,7 @@ const QRCodeGenerator: React.FC = () => {
   const downloadPNG = async () => {
     try {
       if (!guardDownloadOrOpenPaywall()) return;
-      const canvas = await generateCanvas();
+      const canvas = await generateCanvas(); // 256px
       const dataUrl = canvas.toDataURL("image/png");
       const link = document.createElement("a");
       link.href = dataUrl;
@@ -177,16 +209,25 @@ const QRCodeGenerator: React.FC = () => {
     }
   };
 
-  const downloadPDF = async () => {
+  // ✅ PDF ritagliato (pagina = QR), HD e compresso
+  const downloadPDFTrimmed = async () => {
     try {
       if (!guardDownloadOrOpenPaywall()) return;
-      const canvas = await generateCanvas();
+
+      const SIZE_PX = 1024; // alta qualità
+      const canvas = await generateCanvas(SIZE_PX);
       const dataUrl = canvas.toDataURL("image/png");
-      const pdf = new jsPDF();
-      pdf.addImage(dataUrl, "PNG", 15, 40, 80, 80);
-      pdf.save("qr-code.pdf");
+
+      const pdf = new jsPDF({
+        unit: "px",
+        format: [SIZE_PX, SIZE_PX], // pagina quadrata = QR
+        compress: true,
+      });
+
+      pdf.addImage(dataUrl, "PNG", 0, 0, SIZE_PX, SIZE_PX, undefined, "FAST");
+      pdf.save("qr-code-trim.pdf");
     } catch (err) {
-      console.error("Errore nel download PDF:", err);
+      console.error("Errore nel download PDF ritagliato:", err);
     }
   };
 
@@ -198,7 +239,7 @@ const QRCodeGenerator: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
-  // Aggiorna anteprima (SOLO QUI aggiungiamo il riquadro)
+  // Anteprima con riquadro
   useEffect(() => {
     const updatePreview = async () => {
       if (!qrPreviewRef.current || !url) return;
@@ -247,7 +288,7 @@ const QRCodeGenerator: React.FC = () => {
     updatePreview();
   }, [url, fgColor, bgColor, transparentBg, imageSrc, isPremium, isPaid, panelColor]);
 
-  // Debug helper per aprire la modale a comando
+  // Debug helper
   useEffect(() => {
     // @ts-ignore
     window.__pvOpenPaywall = () => setShowPaywall(true);
@@ -265,7 +306,6 @@ const QRCodeGenerator: React.FC = () => {
       return;
     }
 
-    // se già presente
     if (window.paypal) {
       setPaypalReady(true);
       return;
@@ -289,25 +329,25 @@ const QRCodeGenerator: React.FC = () => {
     document.head.appendChild(s);
   }, [showPaywall, isPremium, isPaid]);
 
-  // ===== Render dei PayPal Buttons nella modale =====
-  const amountNet = PRO_PRICE_EUR;
+  // ===== Importo dinamico (DB → fallback ENV) =====
+  const amountNet = (priceNetDb ?? PRO_PRICE_EUR_FALLBACK);
   const amountForPayPal = PAYPAL_SURCHARGE_ENABLED
     ? grossWithPayPalFee(amountNet)
     : amountNet;
   const paypalFeeEstimate = Math.max(0, Number((amountForPayPal - amountNet).toFixed(2)));
+  const priceSource = priceNetDb != null ? "db" : "env";
 
+  // ===== Render PayPal Buttons (si aggiorna se cambia importo) =====
   useEffect(() => {
     if (!showPaywall || !isPremium || isPaid) return;
     if (!paypalReady || !paypalButtonsRef.current) return;
 
-    // pulizia container
     paypalButtonsRef.current.innerHTML = "";
     const Buttons = window.paypal?.Buttons;
     if (!Buttons) return;
 
     const instance = Buttons({
       style: { layout: "vertical" },
-
       createOrder: async () => {
         const res = await fetch(`${API_BASE}/paypal/create-order`, {
           method: "POST",
@@ -327,7 +367,6 @@ const QRCodeGenerator: React.FC = () => {
         if (!data?.orderId) throw new Error("orderId assente");
         return data.orderId;
       },
-
       onApprove: async (data: any) => {
         try {
           const res = await fetch(`${API_BASE}/paypal/capture-order`, {
@@ -352,7 +391,6 @@ const QRCodeGenerator: React.FC = () => {
           alert("Si è verificato un errore durante il pagamento.");
         }
       },
-
       onError: (err: any) => {
         console.error("PayPal Buttons error:", err);
         alert("Errore PayPal. Riprova.");
@@ -360,17 +398,12 @@ const QRCodeGenerator: React.FC = () => {
     });
 
     instance.render(paypalButtonsRef.current);
-
-    return () => {
-      try { instance.close(); } catch {}
-    };
+    return () => { try { instance.close(); } catch {} };
   }, [paypalReady, showPaywall, isPremium, isPaid, amountForPayPal]);
 
   // ripristina stato PRO se già pagato in sessione
   useEffect(() => {
-    if (sessionStorage.getItem("qr-paid") === "1") {
-      setIsPaid(true);
-    }
+    if (sessionStorage.getItem("qr-paid") === "1") setIsPaid(true);
   }, []);
 
   return (
@@ -391,7 +424,7 @@ const QRCodeGenerator: React.FC = () => {
             className="qr-input"
           />
 
-          {/* === OPZIONI QR (sostituisci l'intero blocco qr-options + upload + hint) === */}
+          {/* Opzioni */}
           <div className="qr-options" style={{ display: "grid", gap: 16 }}>
             {/* Colore QR */}
             <div style={{ display: "grid", gap: 8 }}>
@@ -409,67 +442,28 @@ const QRCodeGenerator: React.FC = () => {
               </div>
             </div>
 
-            {/* Sfondo: Trasparente / Colore */}
+            {/* Sfondo */}
             <div style={{ display: "grid", gap: 8 }}>
               <label className="qr-label">Sfondo</label>
-
-              <div
-                style={{
-                  display: "inline-flex",
-                  border: "1px solid #333",
-                  borderRadius: 999,
-                  overflow: "hidden",
-                }}
-              >
-                <label
-                  style={{
-                    padding: "8px 14px",
-                    cursor: "pointer",
-                    background: transparentBg ? "rgba(202,167,0,0.15)" : "transparent",
-                  }}
-                >
-                  <input
-                    type="radio"
-                    name="bgmode"
-                    checked={transparentBg}
-                    onChange={() => setTransparentBg(true)}
-                    style={{ display: "none" }}
-                  />
+              <div style={{ display: "inline-flex", border: "1px solid #333", borderRadius: 999, overflow: "hidden" }}>
+                <label style={{ padding: "8px 14px", cursor: "pointer", background: transparentBg ? "rgba(202,167,0,0.15)" : "transparent" }}>
+                  <input type="radio" name="bgmode" checked={transparentBg} onChange={() => setTransparentBg(true)} style={{ display: "none" }} />
                   Trasparente
                 </label>
-                <label
-                  style={{
-                    padding: "8px 14px",
-                    cursor: "pointer",
-                    background: !transparentBg ? "rgba(202,167,0,0.15)" : "transparent",
-                  }}
-                >
-                  <input
-                    type="radio"
-                    name="bgmode"
-                    checked={!transparentBg}
-                    onChange={() => setTransparentBg(false)}
-                    style={{ display: "none" }}
-                  />
+                <label style={{ padding: "8px 14px", cursor: "pointer", background: !transparentBg ? "rgba(202,167,0,0.15)" : "transparent" }}>
+                  <input type="radio" name="bgmode" checked={!transparentBg} onChange={() => setTransparentBg(false)} style={{ display: "none" }} />
                   Colore
                 </label>
               </div>
 
               {transparentBg ? (
-                <div
-                  style={{
-                    marginTop: 8,
-                    border: "1px dashed #333",
-                    borderRadius: 10,
-                    padding: "10px 12px",
-                    fontSize: "0.9rem",
-                    color: "#bdbdbd",
-                    backgroundImage:
-                      "linear-gradient(45deg, #1a1a1a 25%, transparent 25%),linear-gradient(-45deg, #1a1a1a 25%, transparent 25%),linear-gradient(45deg, transparent 75%, #1a1a1a 75%),linear-gradient(-45deg, transparent 75%, #1a1a1a 75%)",
-                    backgroundSize: "18px 18px",
-                    backgroundPosition: "0 0, 0 9px, 9px -9px, -9px 0",
-                  }}
-                >
+                <div style={{
+                  marginTop: 8, border: "1px dashed #333", borderRadius: 10, padding: "10px 12px",
+                  fontSize: "0.9rem", color: "#bdbdbd",
+                  backgroundImage:
+                    "linear-gradient(45deg, #1a1a1a 25%, transparent 25%),linear-gradient(-45deg, #1a1a1a 25%, transparent 25%),linear-gradient(45deg, transparent 75%, #1a1a1a 75%),linear-gradient(-45deg, transparent 75%, #1a1a1a 75%)",
+                  backgroundSize: "18px 18px", backgroundPosition: "0 0, 0 9px, 9px -9px, -9px 0",
+                }}>
                   Anteprima trasparenza
                 </div>
               ) : (
@@ -488,56 +482,28 @@ const QRCodeGenerator: React.FC = () => {
             </div>
           </div>
 
-          {/* Upload logo con anteprima */}
+          {/* Upload logo */}
           <div className="qr-upload" style={{ display: "grid", gap: 10, marginTop: 12 }}>
             Immagine Centrale
             <label title="Aggiungere un'immagine centrale attiva la modalità PRO">
               <input type="file" accept="image/*" onChange={handleImageUpload} />
             </label>
-
             {imageSrc ? (
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "88px 1fr auto",
-                  gap: 12,
-                  alignItems: "center",
-                }}
-              >
-                <div
-                  style={{
-                    width: 88,
-                    height: 88,
-                    borderRadius: 12,
-                    border: "1px solid #333",
-                    display: "grid",
-                    placeItems: "center",
-                    overflow: "hidden",
-                    backgroundImage:
-                      "linear-gradient(45deg, #1a1a1a 25%, transparent 25%),linear-gradient(-45deg, #1a1a1a 25%, transparent 25%),linear-gradient(45deg, transparent 75%, #1a1a1a 75%),linear-gradient(-45deg, transparent 75%, #1a1a1a 75%)",
-                    backgroundSize: "18px 18px",
-                    backgroundPosition: "0 0, 0 9px, 9px -9px, -9px 0",
-                  }}
-                >
-                  <img
-                    src={imageSrc}
-                    alt="Anteprima logo"
-                    style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
-                  />
+              <div style={{ display: "grid", gridTemplateColumns: "88px 1fr auto", gap: 12, alignItems: "center" }}>
+                <div style={{
+                  width: 88, height: 88, borderRadius: 12, border: "1px solid #333", display: "grid", placeItems: "center",
+                  overflow: "hidden",
+                  backgroundImage:
+                    "linear-gradient(45deg, #1a1a1a 25%, transparent 25%),linear-gradient(-45deg, #1a1a1a 25%, transparent 25%),linear-gradient(45deg, transparent 75%, #1a1a1a 75%),linear-gradient(-45deg, transparent 75%, #1a1a1a 75%)",
+                  backgroundSize: "18px 18px", backgroundPosition: "0 0, 0 9px, 9px -9px, -9px 0",
+                }}>
+                  <img src={imageSrc} alt="Anteprima logo" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
                 </div>
-
-                <small className="qr-hint">
-                  Suggerito <strong>296×296 px</strong> (PNG con sfondo trasparente).
-                </small>
-
-                <button onClick={() => setImageSrc(null)} className="qr-remove-button">
-                  Elimina Foto
-                </button>
+                <small className="qr-hint">Suggerito <strong>296×296 px</strong> (PNG con sfondo trasparente).</small>
+                <button onClick={() => setImageSrc(null)} className="qr-remove-button">Elimina Foto</button>
               </div>
             ) : (
-              <small className="qr-hint">
-                Carica un logo quadrato <strong>296×296 px</strong> (PNG con sfondo trasparente consigliato).
-              </small>
+              <small className="qr-hint">Carica un logo quadrato <strong>296×296 px</strong> (PNG con sfondo trasparente consigliato).</small>
             )}
           </div>
 
@@ -557,14 +523,17 @@ const QRCodeGenerator: React.FC = () => {
               >
                 Scarica PNG
               </button>
+
+              {/* ⬇️ Sostituisce il vecchio download PDF con la versione ritagliata */}
               <button
-                onClick={downloadPDF}
+                onClick={downloadPDFTrimmed}
                 className="qr-button"
                 disabled={isPremium && !isPaid}
-                title={isPremium && !isPaid ? "Sblocca le funzioni PRO per scaricare" : "Scarica PDF"}
+                title={isPremium && !isPaid ? "Sblocca le funzioni PRO per scaricare" : "Scarica PDF (ritagliato)"}
               >
-                Scarica PDF
+                Scarica PDF (ritagliato)
               </button>
+
               {isPremium && !isPaid && (
                 <button className="qr-button primary" onClick={() => setShowPaywall(true)}>
                   Sblocca PRO
@@ -581,26 +550,12 @@ const QRCodeGenerator: React.FC = () => {
         <div
           className="paywall-backdrop"
           onClick={() => setShowPaywall(false)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.6)",
-            zIndex: 2147483647,
-            display: "grid",
-            placeItems: "center",
-          }}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 2147483647, display: "grid", placeItems: "center" }}
         >
           <div
             className="paywall-modal"
             onClick={(e) => e.stopPropagation()}
-            style={{
-              background: "#fff",
-              color: "#111",
-              padding: 20,
-              borderRadius: 12,
-              width: "min(480px, calc(100% - 32px))",
-              boxShadow: "0 10px 30px rgba(0,0,0,.25)",
-            }}
+            style={{ background: "#fff", color: "#111", padding: 20, borderRadius: 12, width: "min(480px, calc(100% - 32px))", boxShadow: "0 10px 30px rgba(0,0,0,.25)" }}
           >
             <h3>Sblocca le funzioni PRO</h3>
             <ul className="paywall-list">
@@ -611,20 +566,32 @@ const QRCodeGenerator: React.FC = () => {
             </ul>
 
             <div style={{ margin: "8px 0 12px", lineHeight: 1.4 }}>
-              Totale: <strong>{amountNet.toFixed(2)} €</strong><br/>
-              {PAYPAL_SURCHARGE_ENABLED && (
-                <>Commissione PayPal stimata: <strong>{paypalFeeEstimate.toFixed(2)} €</strong><br/></>
+              {priceLoading ? (
+                <>Caricamento prezzo…</>
+              ) : (
+                <>
+                  Prezzo PRO: <strong>{amountNet.toFixed(2)} €</strong>{" "}
+                  {priceSource === "db" ? (
+                    <span style={{ fontSize: 12, opacity: 0.8 }}></span>
+                  ) : (
+                    <span style={{ fontSize: 12, opacity: 0.8 }}>(valore di default)</span>
+                  )}
+                  {PAYPAL_SURCHARGE_ENABLED && (
+                    <>
+                      <br />
+                      Commissione PayPal stimata: <strong>{paypalFeeEstimate.toFixed(2)} €</strong>
+                      <br />
+                      Totale in cassa: <strong>{amountForPayPal.toFixed(2)} €</strong>
+                    </>
+                  )}
+                </>
               )}
             </div>
 
-            {/* PayPal Buttons */}
             {paypalError ? (
               <p style={{ color: "#b00020" }}>{paypalError}</p>
             ) : (
-              <div
-                ref={paypalButtonsRef}
-                style={{ display: "grid", placeItems: "center", minHeight: 45 }}
-              />
+              <div ref={paypalButtonsRef} style={{ display: "grid", placeItems: "center", minHeight: 45 }} />
             )}
 
             <div className="paywall-cta" style={{ display: "grid", gap: 8, marginTop: 12 }}>

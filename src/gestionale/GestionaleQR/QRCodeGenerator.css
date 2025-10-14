@@ -78,7 +78,7 @@
 }
 
 .qr-button {
-  margin: 10px 5px;
+  margin: 40px 20px;
   background-color: var(--color-gold);
   color: black;
   padding: 10px 20px;
@@ -92,3 +92,4 @@
 .qr-button:hover {
   background-color: #e6c100;
 }
+

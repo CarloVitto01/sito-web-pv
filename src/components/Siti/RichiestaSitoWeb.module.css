@@ -38,10 +38,6 @@
   gap: 8px;
 }
 
-.fieldRow {
-  margin-top: 10px;
-}
-
 .select,
 .input,
 .textarea {
@@ -247,38 +243,6 @@
   margin-top: 34px;
 }
 
-.formGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 22px;
-}
-
-@media (max-width: 1000px) {
-  .formGrid { grid-template-columns: 1fr; }
-}
-
-.checkGrid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px 16px;
-  background: #0b0b0b;
-  border: 1px solid #1f1f1f;
-  border-radius: 12px;
-  padding: 16px; /* leggermente più arioso */
-}
-
-@media (max-width: 640px) {
-  .checkGrid { grid-template-columns: 1fr; }
-}
-
-.checkItem {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: .95rem;
-  color: #e8e8e8;
-}
-
 .rangeHints {
   display: flex;
   justify-content: space-between;
@@ -292,13 +256,6 @@
   align-items: flex-start;
   gap: 10px;
   color: #dcdcdc;
-}
-
-.submitRow {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 8px;
 }
 
 .buttonPrimary:disabled {
@@ -424,16 +381,15 @@
 
 /* --- Spaziatura extra attorno ai titoli dei campi --- */
 .field > label {
-  padding: 6px 4px;      /* cuscinetto interno al titolo */
-  margin: 6px 0 12px;    /* spazio sopra e sotto il titolo */
+  padding: 6px 4px;
+  margin: 6px 0 12px;
   font-weight: 700;
   line-height: 1.2;
   letter-spacing: .2px;
 }
 
 /* Più spazio tra i blocchi di campi adiacenti */
-.formCol .field + .field,
-.formCol .field + .fieldRow {
+.formCol .field + .field {
   margin-top: 20px;
 }
 
@@ -441,15 +397,15 @@
 .summaryActions {
   display: flex;
   flex-direction: column;
-  align-items: center;  /* centra tutto orizzontalmente */
+  align-items: center;
   gap: 14px;
   margin-top: 16px;
-  flex-wrap: nowrap;    /* layout stabile */
+  flex-wrap: nowrap;
 }
 
 .summaryActions .checkLine {
   max-width: 720px;
-  text-align: left;     /* testo leggibile, non centrato */
+  text-align: left;
 }
 
 /* CTA centrata e con dimensione minima elegante + label perfettamente centrata */
@@ -459,9 +415,9 @@
   padding: 12px 20px;
   border-radius: 12px;
   font-size: 1rem;
-  justify-content: center;  /* centra la label */
+  justify-content: center;
   gap: 0;
-  padding-right: 44px;      /* spazio riservato all'icona a destra */
+  padding-right: 44px;
 }
 
 @media (max-width: 520px) {
@@ -479,8 +435,6 @@
 
 /* =========================================================
    CTA “Invia richiesta” – shimmer + aereo animato in invio
-   (richiede nel JSX: .ctaReady / .ctaDisabled / .isSending,
-   .btnLabel, .btnPlane, .planeSvg)
    ========================================================= */
 .buttonPrimary {
   position: relative;
@@ -540,7 +494,7 @@
   place-items: center;
   opacity: 0.95;
   transform-origin: 50% 50%;
-  transform: translateY(-50%); /* centratura verticale */
+  transform: translateY(-50%);
   transition: transform 160ms ease, opacity 160ms ease;
 }
 
@@ -564,6 +518,15 @@
   filter: drop-shadow(0 0 6px rgba(202,167,0,0.25));
 }
 
+/* Contenitore colonna centrale per la sezione Configura */
+.formCenter {
+  max-width: 760px;
+  margin: 0 auto;          /* centra il blocco */
+  display: grid;
+  gap: 22px;               /* spazio uniforme tra i campi */
+}
+
+
 @keyframes pvFlyCentered {
   0%   { transform: translateY(-50%) translateX(0) rotate(0deg); }
   50%  { transform: translateY(calc(-50% - 3px)) translateX(8px) rotate(12deg); }
@@ -580,8 +543,7 @@
   pointer-events: none;
   background:
     radial-gradient(circle at 70% 50%, rgba(202, 167, 0, 0.35), transparent 60%),
-    radial-gradient(circle at 90% 60%, rgba(202, 167, 0, 0.25), transparent 60%),
-    radial-gradient(circle at 85% 40%, rgba(202, 167, 0, 0.25), transparent 60%);
+    radial-gradient(circle at 90% 60%, rgba(202, 167, 0, 0.25), transparent 60%);
   transform: translateX(-10px);
   opacity: 0.0;
   animation: pvSparks 900ms ease-in-out infinite;

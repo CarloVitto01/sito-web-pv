@@ -3,9 +3,28 @@ import QRCode from "qrcode";
 import jsPDF from "jspdf";
 import "./QRCodeGenerator.css";
 
-// ⬇️ Aggiunte PV
+// ⬇️ PV
 import Header from "../../components/HeaderComponents/Header";
 import Footer from "../../components/FooterComponents/Footer";
+
+// ⬇️ Firestore (gestione prezzo)
+import { db } from "../../backend/firebase";
+import { doc, onSnapshot, setDoc, serverTimestamp } from "firebase/firestore";
+
+const fmtEuro = (val: number | string) => {
+  const n =
+    typeof val === "number"
+      ? val
+      : Number(String(val).replace(/\./g, "").replace(",", ".").replace(/[^\d.]/g, ""));
+  const safe = isNaN(n) ? 0 : n;
+  return safe.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
+const parseEuro = (val: string | number): number => {
+  if (typeof val === "number") return val;
+  const n = Number(val.replace(/\./g, "").replace(",", ".").replace(/[^\d.]/g, ""));
+  return isNaN(n) ? 0 : n;
+};
 
 const QRCodeGenerator: React.FC = () => {
   const [url, setUrl] = useState("");
@@ -14,6 +33,51 @@ const QRCodeGenerator: React.FC = () => {
   const [bgColor, setBgColor] = useState("#ffffff");
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const qrPreviewRef = useRef<HTMLCanvasElement | null>(null);
+
+  // ======= Stato gestione prezzo (Firestore) =======
+  const [priceEuro, setPriceEuro] = useState<string>("0,00");
+  const [savingPrice, setSavingPrice] = useState(false);
+  const [loadingPrice, setLoadingPrice] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  useEffect(() => {
+    const ref = doc(db, "configQR", "costi");
+    const unsub = onSnapshot(
+      ref,
+      (snap) => {
+        const data = snap.data() as any;
+        const prezzo = data?.prezzo_euro ?? 0;
+        setPriceEuro(fmtEuro(prezzo));
+        const ts = data?.updatedAt?.toDate?.();
+        setLastUpdated(ts ?? null);
+        setLoadingPrice(false);
+      },
+      (err) => {
+        console.error("Errore lettura prezzo:", err);
+        setLoadingPrice(false);
+      }
+    );
+    return () => unsub();
+  }, []);
+
+  const handleSavePrice = async () => {
+    try {
+      setSavingPrice(true);
+      const ref = doc(db, "configQR", "costi");
+      await setDoc(
+        ref,
+        {
+          prezzo_euro: parseEuro(priceEuro),
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+    } catch (err) {
+      console.error("Errore salvataggio prezzo:", err);
+    } finally {
+      setSavingPrice(false);
+    }
+  };
 
   // ora accetta una dimensione (default 256px)
   const generateCanvas = async (sizePx: number = 256): Promise<HTMLCanvasElement> => {
@@ -35,7 +99,7 @@ const QRCodeGenerator: React.FC = () => {
       const img = new Image();
       img.src = imageSrc;
       await new Promise((resolve) => (img.onload = resolve));
-      // logo ~25% del lato (coerente con 64/256 del tuo esempio)
+      // logo ~25% del lato
       const logoSize = Math.round(sizePx * 0.25);
       const x = Math.round((sizePx - logoSize) / 2);
       const y = Math.round((sizePx - logoSize) / 2);
@@ -70,16 +134,16 @@ const QRCodeGenerator: React.FC = () => {
     }
   };
 
-  // ✅ NUOVO: PDF ritagliato a misura del QR (pagina quadrata = lato del QR)
+  // ✅ PDF ritagliato al QR
   const downloadPDFTrimmed = async () => {
     try {
-      const SIZE_PX = 1024; // alta qualità per bordi nitidi
+      const SIZE_PX = 1024; // alta qualità
       const canvas = await generateCanvas(SIZE_PX);
       const dataUrl = canvas.toDataURL("image/png");
 
       const pdf = new jsPDF({
         unit: "px",
-        format: [SIZE_PX, SIZE_PX], // pagina = QR, nessun margine
+        format: [SIZE_PX, SIZE_PX], // pagina = QR
         compress: true,
       });
 
@@ -130,6 +194,44 @@ const QRCodeGenerator: React.FC = () => {
       <main className="pv-main">
         <div className="qr-container">
           <h2 className="qr-title">Crea Codice QR</h2>
+
+          {/* ======= Blocco gestione prezzo ======= */}
+          <section className="qr-admin" style={{ marginBottom: 18 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 12, alignItems: "end" }}>
+              <div>
+                <div className="qr-label" style={{ marginBottom: 6 }}>
+                  Prezzo corrente
+                  {loadingPrice ? (
+                    <span style={{ marginLeft: 8, opacity: 0.7 }}>(caricamento…)</span>
+                  ) : (
+                    <span style={{ marginLeft: 8, fontWeight: 600 }}>€ {priceEuro}</span>
+                  )}
+                </div>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={priceEuro}
+                  onChange={(e) => setPriceEuro(e.target.value)}
+                  className="qr-input"
+                  placeholder="es. 9,90"
+                />
+                {lastUpdated && (
+                  <div style={{ fontSize: 12, opacity: 0.8, marginTop: 6 }}>
+                    Ultimo aggiornamento: {lastUpdated.toLocaleString("it-IT")}
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={handleSavePrice}
+                className="qr-button"
+                disabled={savingPrice}
+                title="Salva prezzo su Firestore"
+              >
+                {savingPrice ? "Salvataggio…" : "Salva prezzo"}
+              </button>
+            </div>
+          </section>
+          {/* ======= Fine gestione prezzo ======= */}
 
           <input
             type="text"
@@ -182,7 +284,6 @@ const QRCodeGenerator: React.FC = () => {
             <div>
               <button onClick={downloadPNG} className="qr-button">Scarica PNG</button>
               <button onClick={downloadPDF} className="qr-button">Scarica PDF</button>
-              {/* ➕ nuovo bottone richiesto */}
               <button onClick={downloadPDFTrimmed} className="qr-button">Scarica PDF (ritagliato)</button>
             </div>
           )}
