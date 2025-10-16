@@ -1,6 +1,4 @@
-it\pv\payments\config\CorsConfig.class
+it\pv\payments\paypal\PaypalService.class
+it\pv\payments\controller\PaypalController.class
 it\pv\payments\config\SecurityConfig.class
 it\pv\payments\PaymentsApplication.class
-it\pv\payments\controller\PaypalController.class
-it\pv\payments\config\PaypalConfig.class
-it\pv\payments\dto\CheckoutRequest.class
