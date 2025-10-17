@@ -23,6 +23,7 @@ import { RangePagesData } from "../../types/RangePagesData";
 import MultiInput from "../MultiInputComponents/MultiInput";
 import RiepilogoOrdine from "../RiepilogoOrdineComponents/RiepilogoOrdine";
 import { onAuthStateChanged } from "firebase/auth";
+import Banner from "../Banner/Banner";
 
 // Formatter € (aggiunta)
 const fmtEuro = (n?: number | string) =>
@@ -576,6 +577,7 @@ ${extraPP}`.trim();
   return (
     <div className="">
       <Header />
+      <Banner />
       <Intro
         title={"STAMPA I TUOI DOCUMENTI A4"}
         text={"In questa pagina potrai ordinare la stampa del tuo documento, inserisci le caratteristiche disponibili nelle varie sezioni per poter avere dei documenti cartacei di qualità."}

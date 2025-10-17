@@ -18,7 +18,6 @@ const defaultTasse: Tasse = {
   paypalFixed: 0.35,
 };
 
-// Percorso Firestore centrale per le tasse
 const FEES_COLLECTION = "configTasse";
 const FEES_DOC = "fees";
 
@@ -26,7 +25,9 @@ const TasseGestionale: React.FC = () => {
   const [tasse, setTasse] = useState<Tasse>(defaultTasse);
   const [loaded, setLoaded] = useState(false);
 
-  // carica in tempo reale la config
+  // UI state per il salvataggio
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+
   useEffect(() => {
     const ref = doc(db, FEES_COLLECTION, FEES_DOC);
     const unsub = onSnapshot(ref, (snap) => {
@@ -39,7 +40,6 @@ const TasseGestionale: React.FC = () => {
           paypalFixed: typeof d.paypalFixed === "number" ? d.paypalFixed : defaultTasse.paypalFixed,
         });
       } else {
-        // crea doc con default se non esiste
         setDoc(ref, defaultTasse).catch(console.error);
         setTasse(defaultTasse);
       }
@@ -49,81 +49,115 @@ const TasseGestionale: React.FC = () => {
   }, []);
 
   const handleSave = async () => {
-    const ref = doc(db, FEES_COLLECTION, FEES_DOC);
-    await setDoc(ref, tasse, { merge: true });
-    alert("Tasse aggiornate ✅");
+    try {
+      setSaveState("saving");
+      const ref = doc(db, FEES_COLLECTION, FEES_DOC);
+      await setDoc(ref, tasse, { merge: true });
+      setSaveState("saved");
+      // nasconde il visto dopo 2.5s
+      const t = setTimeout(() => setSaveState("idle"), 2500);
+      return () => clearTimeout(t);
+    } catch (e) {
+      console.error(e);
+      setSaveState("error");
+      const t = setTimeout(() => setSaveState("idle"), 3000);
+      return () => clearTimeout(t);
+    }
   };
 
   return (
     <>
-       <Header />
-    <div className={styles.container}>
-      <h2 className={styles.title}>🧮 Gestionale Tasse</h2>
+      <Header />
+      <div className={styles.container}>
+        <h2 className={styles.title}>🧮 Gestionale Tasse</h2>
 
-      {!loaded ? (
-        <p>Caricamento…</p>
-      ) : (
-        <>
-          <div className={styles.grid}>
-            {/* IVA % (mostri in percento, salvi in decimale) */}
-            <div className={styles.field}>
-              <label className={styles.label} htmlFor="ivaRate">IVA (%)</label>
-              <input
-                id="ivaRate"
-                type="number"
-                step="0.01"
-                min={0}
-                value={(tasse.ivaRate * 100).toString()}
-                className={styles.input}
-                onChange={(e) => setTasse(s => ({ ...s, ivaRate: Number(e.target.value) / 100 }))}
-              />
+        {!loaded ? (
+          <p>Caricamento…</p>
+        ) : (
+          <>
+            <div className={styles.grid}>
+              {/* IVA % (UI in %, salvo in decimale) */}
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="ivaRate">IVA (%)</label>
+                <input
+                  id="ivaRate"
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  value={(tasse.ivaRate * 100).toString()}
+                  className={styles.input}
+                  onChange={(e) => setTasse(s => ({ ...s, ivaRate: Number(e.target.value) / 100 }))}
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="transportFeeEuro">Trasporto (€)</label>
+                <input
+                  id="transportFeeEuro"
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  value={tasse.transportFeeEuro}
+                  className={styles.input}
+                  onChange={(e) => setTasse(s => ({ ...s, transportFeeEuro: Number(e.target.value) }))}
+                />
+              </div>
+
+              {/* PayPal % (UI in %, salvo in frazione) */}
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="paypalPercent">PayPal (%)</label>
+                <input
+                  id="paypalPercent"
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  value={(tasse.paypalPercent * 100).toString()}
+                  className={styles.input}
+                  onChange={(e) => setTasse(s => ({ ...s, paypalPercent: Number(e.target.value) / 100 }))}
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="paypalFixed">PayPal fisso (€)</label>
+                <input
+                  id="paypalFixed"
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  value={tasse.paypalFixed}
+                  className={styles.input}
+                  onChange={(e) => setTasse(s => ({ ...s, paypalFixed: Number(e.target.value) }))}
+                />
+              </div>
             </div>
 
-            <div className={styles.field}>
-              <label className={styles.label} htmlFor="transportFeeEuro">Trasporto (€)</label>
-              <input
-                id="transportFeeEuro"
-                type="number"
-                step="0.01"
-                min={0}
-                value={tasse.transportFeeEuro}
-                className={styles.input}
-                onChange={(e) => setTasse(s => ({ ...s, transportFeeEuro: Number(e.target.value) }))}
-              />
-            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 12 }}>
+              <button
+                onClick={handleSave}
+                className={styles.button}
+                disabled={saveState === "saving"}
+              >
+                {saveState === "saving" ? "⏳ Salvataggio…" : "💾 Salva Tasse"}
+              </button>
 
-            {/* PayPal % (UI in %, salvi in frazione) */}
-            <div className={styles.field}>
-              <label className={styles.label} htmlFor="paypalPercent">PayPal (%)</label>
-              <input
-                id="paypalPercent"
-                type="number"
-                step="0.01"
-                min={0}
-                value={(tasse.paypalPercent * 100).toString()}
-                className={styles.input}
-                onChange={(e) => setTasse(s => ({ ...s, paypalPercent: Number(e.target.value) / 100 }))}
-              />
+              {/* “Visto”/stato salvataggio */}
+              <div
+                aria-live="polite"
+                role="status"
+                style={{
+                  minHeight: 24,
+                  fontWeight: 600,
+                  opacity: saveState === "saved" || saveState === "error" ? 1 : 0,
+                  transition: "opacity .25s ease",
+                }}
+              >
+                {saveState === "saved" && <span>✅ Salvato</span>}
+                {saveState === "error" && <span>⚠️ Errore nel salvataggio</span>}
+              </div>
             </div>
-
-            <div className={styles.field}>
-              <label className={styles.label} htmlFor="paypalFixed">PayPal fisso (€)</label>
-              <input
-                id="paypalFixed"
-                type="number"
-                step="0.01"
-                min={0}
-                value={tasse.paypalFixed}
-                className={styles.input}
-                onChange={(e) => setTasse(s => ({ ...s, paypalFixed: Number(e.target.value) }))}
-              />
-            </div>
-          </div>
-
-          <button onClick={handleSave} className={styles.button}>💾 Salva Tasse</button>
-        </>
-      )}
-    </div>
+          </>
+        )}
+      </div>
     </>
   );
 };

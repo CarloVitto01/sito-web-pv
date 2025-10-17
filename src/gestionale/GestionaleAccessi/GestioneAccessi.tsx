@@ -16,6 +16,7 @@ const PAGINE = [
   'link',
   'gestionale-web',
   'tasse',
+  'banner'
 ];
 
 const GestioneAccessi: React.FC = () => {

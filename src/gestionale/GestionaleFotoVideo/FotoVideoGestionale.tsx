@@ -147,7 +147,7 @@ const FotoVideoGestionale: React.FC = () => {
       setItems(list);
     });
     return () => unsub();
-  }, [activeAlbum?.id]);
+  }, [activeAlbum]);
 
   // ====== Crea album (tramite "card vuota") ======
   async function createAlbum() {

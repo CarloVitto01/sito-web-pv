@@ -14,6 +14,7 @@ import styles from "./RichiestaSitoWeb.module.css";
 import Header from "../HeaderComponents/Header";
 import Footer from "../FooterComponents/Footer";
 import Intro from "../IntroComponents/Intro";
+import Banner from "../Banner/Banner";
 
 /** =========================================================
  * Tipi locali (allineati al gestionale)
@@ -305,6 +306,7 @@ ${message}
   return (
     <>
       <Header />
+      <Banner />
       <div className={styles.container}>
         <section className={styles.intro}>
           <Intro

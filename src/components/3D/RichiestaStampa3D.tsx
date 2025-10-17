@@ -8,6 +8,10 @@ import Header from "../HeaderComponents/Header";
 import Footer from "../FooterComponents/Footer";
 import ModelPreview from "../3D/ModelPreview";
 import Intro from "../IntroComponents/Intro";
+import Banner from "../Banner/Banner";
+
+// ⬇️ NEW: Storage (upload + url)
+import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "firebase/storage";
 
 interface UserShape {
   displayName?: string;
@@ -37,6 +41,46 @@ function normalizeHex(hex?: string) {
     h = `#${r}${r}${g}${g}${b}${b}`;
   }
   return h.toLowerCase();
+}
+
+// Escape minimale per Telegram Markdown (non V2)
+function escapeMd(text: string) {
+  // Escapa i simboli Markdown/Telegram: usa alternanze, non una classe
+  return text.replace(/[_*`>#=|{}.!-]|\[|\]|\(|\)/g, (m) => "\\" + m);
+}
+
+// ⬇️ NEW: upload su Firebase Storage con struttura ordinata
+async function uploadFilesToStorage(files: File[], uid?: string | null) {
+  if (!files.length) return [];
+
+  // Usa getStorage() o il tuo export 'storage'
+  const storage = getStorage(); // oppure: const storage = storage;
+
+  const ts = Date.now();
+  const userPart = uid ? uid : "anon";
+
+  const results: Array<{ name: string; sizeKB: number; url: string; path: string }> = [];
+
+  // Carico in serie (robusto); se vuoi più veloce usa Promise.all
+  for (const f of files) {
+    // Percorso: stampe3d/<uid|anon>/<timestamp>/<filename>
+    const path = `stampe3d/${userPart}/${ts}/${f.name}`;
+    const ref = sRef(storage, path);
+
+    const metadata = { contentType: f.type || "application/octet-stream" };
+
+    await uploadBytes(ref, f, metadata);
+    const url = await getDownloadURL(ref);
+
+    results.push({
+      name: f.name,
+      sizeKB: Math.round(f.size / 1024),
+      url,
+      path,
+    });
+  }
+
+  return results;
 }
 
 const RichiestaStampa3D: React.FC = () => {
@@ -120,44 +164,53 @@ const RichiestaStampa3D: React.FC = () => {
     return normalizeHex(hex);
   }, [selectedSpoolId, visibleSpools]);
 
-  // invio Telegram
+  // invio Telegram (con upload su Storage e link cliccabili)
   const sendTelegram = async () => {
     if (!canSubmit) return;
     setIsSending(true);
 
     const u = userData || {};
-    const fileLines = files.length
-      ? files.map((f) => `• ${f.name} (${Math.round(f.size / 1024)} KB)`).join("\n")
-      : "(nessun file allegato)";
 
-    // ⬅️ CHANGED: label ricavata dalle bobine del gestionale
-    const spoolLabel = selectedSpoolId
-      ? (visibleSpools.find((s) => s.id === selectedSpoolId)?.label || selectedSpoolId)
-      : "(non specificato)";
+    try {
+      // 1) Upload su Firebase Storage
+      const uploaded = await uploadFilesToStorage(files, auth?.currentUser?.uid);
 
-    const msg = `
+      // 2) Prepara elenco file (cliccabili in Telegram)
+      const fileLines = uploaded.length
+        ? uploaded
+            .map((f) => `• [${escapeMd(f.name)}](${f.url}) (${f.sizeKB} KB)`)
+            .join("\n")
+        : "(nessun file allegato)";
+
+      // 3) Dati bobina da gestionale (come già facevi)
+      const spoolLabel = selectedSpoolId
+        ? (visibleSpools.find((s) => s.id === selectedSpoolId)?.label || selectedSpoolId)
+        : "(non specificato)";
+
+      // 4) Messaggio Telegram (Markdown)
+      const msg = `
 ===============================
 *Richiesta Stampa 3D* (semplificata)
 ===============================
 
-👤 *Nome:* ${u.displayName || ""} ${u.cognome || ""}
-📧 *Email:* ${u.email || ""}
-📞 *Telefono:* ${u.telefono || ""}
+👤 *Nome:* ${escapeMd(`${u.displayName || ""} ${u.cognome || ""}`.trim())}
+📧 *Email:* ${escapeMd(u.email || "")}
+📞 *Telefono:* ${escapeMd(u.telefono || "")}
 
-🏷️ *Progetto:* ${projectName || "—"}
+🏷️ *Progetto:* ${escapeMd(projectName || "—")}
 🔁 *Copie:* ${copies}
 
 🎨 *Colore (bobina):*
-${spoolLabel}
+${escapeMd(spoolLabel)}
 
-📎 *File allegati:*
+📎 *File allegati (Firebase Storage):*
 ${fileLines}
 
 📝 *Note:*
-${notes || "(nessuna nota)"}
+${escapeMd(notes || "(nessuna nota)")}
 `.trim();
 
-    try {
+      // 5) Invia messaggio su Telegram
       await fetch(`https://api.telegram.org/bot${TOKEN3D}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -165,9 +218,26 @@ ${notes || "(nessuna nota)"}
           chat_id: CHAT_ID3D,
           text: msg,
           parse_mode: "Markdown",
+          disable_web_page_preview: true, // evita anteprime troppo grandi
         }),
       });
+
+      // (Opzionale) Invia anche i file come document nel gruppo usando gli URL pubblici
+      // for (const f of uploaded) {
+      //   await fetch(`https://api.telegram.org/bot${TOKEN3D}/sendDocument`, {
+      //     method: "POST",
+      //     headers: { "Content-Type": "application/json" },
+      //     body: JSON.stringify({
+      //       chat_id: CHAT_ID3D,
+      //       document: f.url,
+      //       caption: f.name,
+      //       parse_mode: "Markdown",
+      //     }),
+      //   });
+      // }
+
       setIsSent(true);
+
       // reset leggero
       setProjectName("");
       setFiles([]);
@@ -178,6 +248,7 @@ ${notes || "(nessuna nota)"}
       setSelectedSpoolId(null);
     } catch (e) {
       console.error("Errore invio Telegram:", e);
+      alert("Errore durante l'invio della richiesta. Riprova.");
     } finally {
       setIsSending(false);
     }
@@ -186,6 +257,7 @@ ${notes || "(nessuna nota)"}
   return (
     <>
       <Header />
+      <Banner />
       <div className={styles.container}>
         <Intro
           title={"STAMPA I TUOI PROGETTI 3D"}

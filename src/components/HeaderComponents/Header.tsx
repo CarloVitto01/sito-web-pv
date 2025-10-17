@@ -142,6 +142,7 @@ const Header: React.FC = () => {
       { path: "/storicoDati", label: "Storico Dati" },
       { path: "/link", label: "Link" },
       { path: "/tasse", label: "Tasse" },
+      { path: "/banner", label: "Banner" },
     ],
     []
   );

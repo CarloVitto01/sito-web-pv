@@ -44,7 +44,6 @@ const AssistantWidget: React.FC<AssistantWidgetProps> = ({
   faqs = DEFAULT_FAQS,
   onSendTicket,
   onTrack,
-  orderLookup,
   user,
   accentHex = "#c7ab2b",
   position = "right",

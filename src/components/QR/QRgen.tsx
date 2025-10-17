@@ -10,6 +10,7 @@ import Footer from "../FooterComponents/Footer";
 // ⬇️ Firestore (LEGGE il prezzo dal gestionale)
 import { db } from "../../backend/firebase"; // <-- ADATTA IL PATH SE SERVE
 import { doc, onSnapshot } from "firebase/firestore";
+import Banner from "../Banner/Banner";
 
 // Base API
 const API_BASE = "/api";
@@ -116,6 +117,12 @@ const QRCodeGenerator: React.FC = () => {
     return colored || bgChanged || hasImage;
   }, [fgColor, transparentBg, bgColor, imageSrc]);
 
+  // ✅ Chiave univoca per QR corrente
+  const currentQRKey = useMemo(() => {
+    const raw = `${url}|${fgColor}|${bgColor}|${transparentBg}|${!!imageSrc}`;
+    return btoa(raw).slice(0, 16);
+  }, [url, fgColor, bgColor, transparentBg, imageSrc]);
+
   // Colore riquadro preview
   const panelColor = useMemo(() => {
     if (isPureBlack(fgColor)) return "#ffffff";
@@ -198,12 +205,17 @@ const QRCodeGenerator: React.FC = () => {
   const downloadPNG = async () => {
     try {
       if (!guardDownloadOrOpenPaywall()) return;
-      const canvas = await generateCanvas(); // 256px
+      const canvas = await generateCanvas();
       const dataUrl = canvas.toDataURL("image/png");
       const link = document.createElement("a");
       link.href = dataUrl;
       link.download = "qr-code.png";
       link.click();
+
+      // 🔒 Dopo il primo download blocca la versione PRO
+      setIsPaid(false);
+      sessionStorage.setItem("qr-downloaded", "1");
+      sessionStorage.removeItem("qr-paid-key");
     } catch (err) {
       console.error("Errore nel download PNG:", err);
     }
@@ -214,18 +226,23 @@ const QRCodeGenerator: React.FC = () => {
     try {
       if (!guardDownloadOrOpenPaywall()) return;
 
-      const SIZE_PX = 1024; // alta qualità
+      const SIZE_PX = 1024;
       const canvas = await generateCanvas(SIZE_PX);
       const dataUrl = canvas.toDataURL("image/png");
 
       const pdf = new jsPDF({
         unit: "px",
-        format: [SIZE_PX, SIZE_PX], // pagina quadrata = QR
+        format: [SIZE_PX, SIZE_PX],
         compress: true,
       });
 
       pdf.addImage(dataUrl, "PNG", 0, 0, SIZE_PX, SIZE_PX, undefined, "FAST");
       pdf.save("qr-code-trim.pdf");
+
+      // 🔒 Dopo il primo download blocca la versione PRO
+      setIsPaid(false);
+      sessionStorage.setItem("qr-downloaded", "1");
+      sessionStorage.removeItem("qr-paid-key");
     } catch (err) {
       console.error("Errore nel download PDF ritagliato:", err);
     }
@@ -243,7 +260,6 @@ const QRCodeGenerator: React.FC = () => {
   useEffect(() => {
     const updatePreview = async () => {
       if (!qrPreviewRef.current || !url) return;
-
       const preview = qrPreviewRef.current;
       preview.width = QR_SIZE + PANEL_PAD * 2;
       preview.height = QR_SIZE + PANEL_PAD * 2;
@@ -288,16 +304,9 @@ const QRCodeGenerator: React.FC = () => {
     updatePreview();
   }, [url, fgColor, bgColor, transparentBg, imageSrc, isPremium, isPaid, panelColor]);
 
-  // Debug helper
-  useEffect(() => {
-    // @ts-ignore
-    window.__pvOpenPaywall = () => setShowPaywall(true);
-  }, []);
-
-  // ===== PayPal SDK lazy-load quando apro la modale =====
+  // ===== PayPal SDK =====
   useEffect(() => {
     if (!showPaywall || !isPremium || isPaid) return;
-
     setPaypalError(null);
 
     if (!PAYPAL_CLIENT_ID) {
@@ -329,7 +338,7 @@ const QRCodeGenerator: React.FC = () => {
     document.head.appendChild(s);
   }, [showPaywall, isPremium, isPaid]);
 
-  // ===== Importo dinamico (DB → fallback ENV) =====
+  // ===== Importo dinamico =====
   const amountNet = (priceNetDb ?? PRO_PRICE_EUR_FALLBACK);
   const amountForPayPal = PAYPAL_SURCHARGE_ENABLED
     ? grossWithPayPalFee(amountNet)
@@ -337,11 +346,10 @@ const QRCodeGenerator: React.FC = () => {
   const paypalFeeEstimate = Math.max(0, Number((amountForPayPal - amountNet).toFixed(2)));
   const priceSource = priceNetDb != null ? "db" : "env";
 
-  // ===== Render PayPal Buttons (si aggiorna se cambia importo) =====
+  // ===== PayPal Buttons =====
   useEffect(() => {
     if (!showPaywall || !isPremium || isPaid) return;
     if (!paypalReady || !paypalButtonsRef.current) return;
-
     paypalButtonsRef.current.innerHTML = "";
     const Buttons = window.paypal?.Buttons;
     if (!Buttons) return;
@@ -381,7 +389,8 @@ const QRCodeGenerator: React.FC = () => {
           const cap = await res.json();
           if (cap.status === "COMPLETED") {
             setIsPaid(true);
-            sessionStorage.setItem("qr-paid", "1");
+            sessionStorage.setItem("qr-paid-key", currentQRKey);
+            sessionStorage.removeItem("qr-downloaded");
             setShowPaywall(false);
           } else {
             alert("Pagamento non completato: " + cap.status);
@@ -398,18 +407,24 @@ const QRCodeGenerator: React.FC = () => {
     });
 
     instance.render(paypalButtonsRef.current);
-    return () => { try { instance.close(); } catch {} };
-  }, [paypalReady, showPaywall, isPremium, isPaid, amountForPayPal]);
+    return () => { try { instance.close(); } catch { } };
+  }, [paypalReady, showPaywall, isPremium, isPaid, amountForPayPal, currentQRKey]);
 
-  // ripristina stato PRO se già pagato in sessione
+  // ===== Restore sessione =====
   useEffect(() => {
-    if (sessionStorage.getItem("qr-paid") === "1") setIsPaid(true);
-  }, []);
+    const paidKey = sessionStorage.getItem("qr-paid-key");
+    const downloaded = sessionStorage.getItem("qr-downloaded");
+    if (paidKey === currentQRKey && downloaded !== "1") {
+      setIsPaid(true);
+    } else {
+      setIsPaid(false);
+    }
+  }, [currentQRKey]);
 
   return (
     <>
       <Header />
-
+      <Banner />
       <main className="pv-main">
         <div className="qr-container">
           <h2 className="qr-title">
@@ -555,8 +570,18 @@ const QRCodeGenerator: React.FC = () => {
           <div
             className="paywall-modal"
             onClick={(e) => e.stopPropagation()}
-            style={{ background: "#fff", color: "#111", padding: 20, borderRadius: 12, width: "min(480px, calc(100% - 32px))", boxShadow: "0 10px 30px rgba(0,0,0,.25)" }}
+            style={{
+              background: "#fff",
+              color: "#111",
+              padding: 20,
+              borderRadius: 12,
+              width: "min(480px, calc(100% - 32px))",
+              maxHeight: "80vh",
+              overflowY: "auto",
+              boxShadow: "0 10px 30px rgba(0,0,0,.25)",
+            }}
           >
+
             <h3>Sblocca le funzioni PRO</h3>
             <ul className="paywall-list">
               <li>Colore QR personalizzato</li>

@@ -3,7 +3,7 @@
 // Effect: on card click → centers with shared-layout animation, rotates, then reveals the grid.
 // Clicking a media opens a viewer modal (Instagram-like) with prev/next via keyboard/buttons/wheel/swipe.
 
-import React, { useEffect, useMemo, useRef, useState, useCallback  } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { auth, db } from "../../backend/firebase";
 import { doc, getDoc, collection, getDocs, onSnapshot, query, orderBy } from "firebase/firestore";
 import { TOKENFOTOVIDEO, CHAT_IDFOTOVIDEO } from "../../backend/telegram";
@@ -13,6 +13,7 @@ import Footer from "../FooterComponents/Footer";
 import collabs from "../../assets/images/logo_b.png";
 import { motion, AnimatePresence } from "framer-motion";
 import Intro from "../IntroComponents/Intro";
+import Banner from "../Banner/Banner";
 
 /* ===== Types ===== */
 interface Album { id: string; title: string; coverUrl?: string; order?: number }
@@ -165,6 +166,7 @@ const ContattiServiziFotoVideo: React.FC = () => {
   return (
     <>
       <Header />
+      <Banner />
 
       <div className={styles.container}>
         {/* Title */}

@@ -43,6 +43,7 @@ import WebGestionale from './gestionale/GestionaleWeb/WebGestionale';
 import RichiestaStampa3D from './components/3D/RichiestaStampa3D';
 import TasseGestionale from './gestionale/GestionaleTasse/TasseGestionale';
 import Assistant from './components/Assistenza/Assistant';
+import BannerGestionale from './gestionale/GestionaleBanner/BannerGestionale';
 
 
 
@@ -122,6 +123,8 @@ const App: React.FC = () => {
             <Route path="/link" element={<ProtectedRoute page="link" element={<LinkGestionale />} />} />
             <Route path="/gestionale-web" element={<ProtectedRoute page="gestionale-web" element={<WebGestionale />} />} />
             <Route path="/tasse" element={<ProtectedRoute page="tasse" element={< TasseGestionale />} />} />
+            <Route path="/banner" element={<ProtectedRoute page="banner" element={< BannerGestionale />} />} />
+
 
             <Route path="/qrgen" element={<QRgen />} />
             <Route path="/privacy" element={<Privacy />} />

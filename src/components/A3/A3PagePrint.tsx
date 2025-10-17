@@ -19,6 +19,7 @@ import MultiInput from "../MultiInputComponents/MultiInput";
 import classes from "../A3/A3PagePrint.module.css";
 import RiepilogoOrdineA3 from "../RiepilogoOrdineComponents/RiepilogoOrdineA3";
 import { onAuthStateChanged } from "firebase/auth";
+import Banner from "../Banner/Banner";
 
 // Formatter € (aggiunta)
 const fmtEuro = (n?: number | string) =>
@@ -295,7 +296,7 @@ const A3PagePrint = () => {
                 setFormSubmitted(true);
 
                 // 🆕 Totale finale: usa payment.amount (IVA+trasporto+fee) con fallback al preventivo
-                const totaleFinale = 
+                const totaleFinale =
                     typeof payment?.amount === "number" ? payment.amount : Number(preventivo);
 
                 // ✅ CREA versione ridotta dell'ordine senza file PDF
@@ -424,6 +425,7 @@ ${extraPP}`.trim();
     return (
         <div className="container">
             <Header />
+            <Banner />
             <Intro
                 title={"STAMPA I TUOI DOCUMENTI A3"}
                 text={"In questa pagina potrai ordinare la stampa del tuo documento, inserisci le caratteristiche disponibili nelle varie sezioni per poter avere dei documenti cartacei di qualità."}
