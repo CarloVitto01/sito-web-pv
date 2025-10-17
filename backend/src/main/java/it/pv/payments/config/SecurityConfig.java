@@ -14,7 +14,7 @@ public class SecurityConfig {
     .cors(cors -> cors.configurationSource(req -> {
       var c = new org.springframework.web.cors.CorsConfiguration();
       c.setAllowedOrigins(java.util.List.of(
-        "https://photoandvision.it","https://www.photoandvision.it","http://localhost:3000"
+        "https://photoandvision.it","https://www.photoandvision.it","http://photoandvision.it","http://localhost:3000"
       ));
       c.setAllowedMethods(java.util.List.of("POST","GET","OPTIONS"));
       c.setAllowedHeaders(java.util.List.of("Content-Type","Authorization"));

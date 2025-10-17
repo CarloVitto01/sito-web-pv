@@ -42,6 +42,7 @@ import Cookie from './components/Privacy/Cookie';
 import WebGestionale from './gestionale/GestionaleWeb/WebGestionale';
 import RichiestaStampa3D from './components/3D/RichiestaStampa3D';
 import TasseGestionale from './gestionale/GestionaleTasse/TasseGestionale';
+import Assistant from './components/Assistenza/Assistant';
 
 
 
@@ -94,7 +95,7 @@ const App: React.FC = () => {
     return () => clearTimeout(timer);
   }, []);
 
-
+  
   return (
     <Router>
       <ScrollToTop />
@@ -102,49 +103,59 @@ const App: React.FC = () => {
         <SplashScreen onEnd={() => setShowSplash(false)} />
       ) : (
         <>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/printA4" element={<A4PagePrint />} />
-          <Route path="/printA3" element={<A3PagePrint />} />
-          <Route path="/comingSoon" element={<ComingSoon />} />
-          <Route path="/contatti-servizi-foto-video" element={<ContattiServiziFotoVideo />} />
-          <Route path="/gestionaleA4" element={<ProtectedRoute page="gestionaleA4" element={<A4Gestionale />} />} />
-          <Route path="/gestionaleA3" element={<ProtectedRoute page="gestionaleA3" element={<A3Gestionale />} />} />
-          <Route path="/utentiGestionale" element={<ProtectedRoute page="utentiGestionale" element={<UtentiGestionale />} />} />
-          <Route path="/storicoDati" element={<ProtectedRoute page="storicoDati" element={<StoricoDati />} />} />
-          <Route path="/foto-video-gestionale" element={<ProtectedRoute page="foto-video-gestionale" element={<FotoVideoGestionale />} />} />
-          <Route path="/gestione-accessi" element={<ProtectedRoute page="gestione-accessi" element={<GestioneAccessi />} />} />
-          <Route path="/qr-generator" element={<ProtectedRoute page="qr-generator" element={<QRCodeGenerator />} />} />
-          <Route path="/bobine" element={<ProtectedRoute page="bobine" element={<BobinePLAGestionale />} />} />
-          <Route path="/link" element={<ProtectedRoute page="link" element={<LinkGestionale />} />} />
-          <Route path="/gestionale-web" element={<ProtectedRoute page="gestionale-web" element={<WebGestionale />} />} />
-          <Route path="/tasse" element={<ProtectedRoute page="tasse" element={< TasseGestionale/>} />} />
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/printA4" element={<A4PagePrint />} />
+            <Route path="/printA3" element={<A3PagePrint />} />
+            <Route path="/comingSoon" element={<ComingSoon />} />
+            <Route path="/contatti-servizi-foto-video" element={<ContattiServiziFotoVideo />} />
+            <Route path="/gestionaleA4" element={<ProtectedRoute page="gestionaleA4" element={<A4Gestionale />} />} />
+            <Route path="/gestionaleA3" element={<ProtectedRoute page="gestionaleA3" element={<A3Gestionale />} />} />
+            <Route path="/utentiGestionale" element={<ProtectedRoute page="utentiGestionale" element={<UtentiGestionale />} />} />
+            <Route path="/storicoDati" element={<ProtectedRoute page="storicoDati" element={<StoricoDati />} />} />
+            <Route path="/foto-video-gestionale" element={<ProtectedRoute page="foto-video-gestionale" element={<FotoVideoGestionale />} />} />
+            <Route path="/gestione-accessi" element={<ProtectedRoute page="gestione-accessi" element={<GestioneAccessi />} />} />
+            <Route path="/qr-generator" element={<ProtectedRoute page="qr-generator" element={<QRCodeGenerator />} />} />
+            <Route path="/bobine" element={<ProtectedRoute page="bobine" element={<BobinePLAGestionale />} />} />
+            <Route path="/link" element={<ProtectedRoute page="link" element={<LinkGestionale />} />} />
+            <Route path="/gestionale-web" element={<ProtectedRoute page="gestionale-web" element={<WebGestionale />} />} />
+            <Route path="/tasse" element={<ProtectedRoute page="tasse" element={< TasseGestionale />} />} />
 
-          <Route path="/qrgen" element={<QRgen />} />
-          <Route path="/privacy" element={<Privacy/>} />
-          <Route path="/termini" element={<Terms />} />
-          <Route path="/cookie-policy" element={<Cookie />} />
-         
-          <Route path="/recoveremail" element={<RecoverEmail />} />
-          <Route path="/web" element={<RichiestaSitoWeb />} />
-          {/* ⬇️ Alias più chiaro per la pagina richieste */}
-          <Route path="/richiesta-sito-web" element={<RichiestaSitoWeb />} />
-          <Route path="/3d" element={<RichiestaStampa3D />} />
+            <Route path="/qrgen" element={<QRgen />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/termini" element={<Terms />} />
+            <Route path="/cookie-policy" element={<Cookie />} />
+
+            <Route path="/recoveremail" element={<RecoverEmail />} />
+            <Route path="/web" element={<RichiestaSitoWeb />} />
+            {/* ⬇️ Alias più chiaro per la pagina richieste */}
+            <Route path="/richiesta-sito-web" element={<RichiestaSitoWeb />} />
+            <Route path="/3d" element={<RichiestaStampa3D />} />
 
 
-          <Route path="/account" element={<AccountPage />} />
-          <Route path="/recoverpassword" element={<RecoverPassword />} />
-          <Route path="/resetpassword" element={<ResetPassword />} />
+            <Route path="/account" element={<AccountPage />} />
+            <Route path="/recoverpassword" element={<RecoverPassword />} />
+            <Route path="/resetpassword" element={<ResetPassword />} />
 
-          {/* ⬇️ NUOVE ROTTE di anteprima template */}
-        </Routes>
+            {/* ⬇️ NUOVE ROTTE di anteprima template */}
+          </Routes>
           <CookieInfoBar policyUrl="/cookie-policy" />
-        </> 
+
+
+          <Assistant
+            position="right"
+            accentHex="#c7ab2b"
+
+          />
+
+        </>
+
+
       )}
     </Router>
-    
+
   );
 };
 

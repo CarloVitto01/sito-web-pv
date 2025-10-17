@@ -13,6 +13,9 @@ export const CHAT_ID3D = "-4760125215";
 export const TOKENWEB = "8278518725:AAEOAWOaehg4qSwUDVwb-LgXUCnlYKwXnk0";
 export const CHAT_IDWEB = "-4918519412";
 
+export const TOKENTICKET = "8412378807:AAF-fwmTGc3MWgPYdimGpK68qltQr06Yku0";
+export const CHAT_IDTICKET = "-4880513245";
+
 
 
 
