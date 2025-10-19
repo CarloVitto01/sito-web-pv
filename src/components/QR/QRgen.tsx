@@ -355,7 +355,7 @@ const QRCodeGenerator: React.FC = () => {
     const instance = Buttons({
       style: { layout: "vertical" },
       createOrder: async () => {
-        const res = await fetch(`${API}/paypal/create-order`, {
+        const res = await fetch(`${API}/api/paypal/create-order`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -375,7 +375,7 @@ const QRCodeGenerator: React.FC = () => {
       },
       onApprove: async (data: any) => {
         try {
-          const res = await fetch(`${API}/paypal/capture-order`, {
+          const res = await fetch(`${API}/api/paypal/capture-order`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ orderId: data.orderID }),
