@@ -121,33 +121,33 @@ const StoricoDati: React.FC = () => {
   const getManualReason = (row: any) =>
     (row?.manualAdjustment?.reason ?? "").toString();
 
-  const normalize = (s?: string) =>
-    (s ?? "")
-      .toString()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase()
-      .trim();
+ const normalize = useCallback((s?: string) =>
+  (s ?? "")
+    .toString()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim(),
+[],);
 
-  const matchesUtente = (ordine: any) => {
-    const raw = ricercaUtente?.trim();
-    if (!raw) return true;
+const matchesUtente = useCallback((ordine: any) => {
+  const raw = ricercaUtente?.trim();
+  if (!raw) return true;
 
-    const q = normalize(raw).replace(/\s+/g, " ");
-    const tokens = q.split(" ").filter(Boolean);
+  const q = normalize(raw).replace(/\s+/g, " ");
+  const tokens = q.split(" ").filter(Boolean);
 
-    const nome = normalize(ordine?.nome);
-    const cognome = normalize(ordine?.cognome);
-    const email = normalize(ordine?.email);
-    const telefono = (ordine?.telefono ?? "").toString().replace(/\D/g, "");
+  const nome = normalize(ordine?.nome);
+  const cognome = normalize(ordine?.cognome);
+  const email = normalize(ordine?.email);
+  const telefono = (ordine?.telefono ?? "").toString().replace(/\D/g, "");
 
-    const full = `${nome} ${cognome}`.trim();
-    const fullRev = `${cognome} ${nome}`.trim();
+  const full = `${nome} ${cognome}`.trim();
+  const fullRev = `${cognome} ${nome}`.trim();
 
-    const haystacks = [nome, cognome, full, fullRev, email, telefono];
-
-    return tokens.every((t) => haystacks.some((h) => h.includes(t)));
-  };
+  const haystacks = [nome, cognome, full, fullRev, email, telefono];
+  return tokens.every((t) => haystacks.some((h) => h.includes(t)));
+}, [ricercaUtente, normalize]);
 
   const resetFiltri = () => {
     setDataInizio("");
@@ -171,19 +171,19 @@ const StoricoDati: React.FC = () => {
     return parts.join("_") + ".xlsx";
   };
 
-  const withinDateRange = (ts: Date | undefined | null) => {
-    const inizio = dataInizio ? new Date(dataInizio) : null;
-    const fine = dataFine ? new Date(dataFine + "T23:59:59") : null;
-    if (!ts) return false;
-    if (inizio && ts < inizio) return false;
-    if (fine && ts > fine) return false;
-    return true;
-  };
+  const withinDateRange = useCallback((ts: Date | undefined | null) => {
+  const inizio = dataInizio ? new Date(dataInizio) : null;
+  const fine = dataFine ? new Date(dataFine + "T23:59:59") : null;
+  if (!ts) return false;
+  if (inizio && ts < inizio) return false;
+  if (fine && ts > fine) return false;
+  return true;
+}, [dataInizio, dataFine]);
 
-  const getRowMillis = (row: any) => {
-    const ts = row?.timestamp?.toDate?.();
-    return ts instanceof Date ? ts.getTime() : 0;
-  };
+const getRowMillis = useCallback((row: any) => {
+  const ts = row?.timestamp?.toDate?.();
+  return ts instanceof Date ? ts.getTime() : 0;
+}, []);
 
   // Apri la modale per editare
   const openEdit = (docRef: any, data: any) => {
@@ -679,72 +679,80 @@ const StoricoDati: React.FC = () => {
     saveAs(blob, formatFilename("utenti_registrati"));
   };
 
-  // ------- Anteprima (ordinata DESC e con lordo effettivo) -------
-  const generaAnteprima = async () => {
-    const baseRef = collection(db, "ArchivioOrdini");
-    const snapshot = await getDocs(query(baseRef));
+  const generaAnteprima = useCallback(async () => {
+  const baseRef = collection(db, "ArchivioOrdini");
+  const snapshot = await getDocs(query(baseRef));
 
-    // Crea lista [{ref, data}] filtrata
-    const all = snapshot.docs
-      .map((d) => ({ ref: d.ref, data: d.data() }))
-      .filter(({ data }) => {
-        if (!matchesUtente(data)) return false;
-        const ts = data.timestamp?.toDate?.();
-        if (!withinDateRange(ts)) return false;
-        return true;
-      })
-      .sort((a, b) => {
-        const ta = a.data?.timestamp?.toDate?.();
-        const tb = b.data?.timestamp?.toDate?.();
-        const ma = ta instanceof Date ? ta.getTime() : 0;
-        const mb = tb instanceof Date ? tb.getTime() : 0;
-        return mb - ma; // DESC: più recente prima
-      });
+  const all = snapshot.docs
+    .map((d) => ({ ref: d.ref, data: d.data() }))
+    .filter(({ data }) => {
+      if (!matchesUtente(data)) return false;
+      const ts = data.timestamp?.toDate?.();
+      if (!withinDateRange(ts)) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      const ta = a.data?.timestamp?.toDate?.();
+      const tb = b.data?.timestamp?.toDate?.();
+      const ma = ta instanceof Date ? ta.getTime() : 0;
+      const mb = tb instanceof Date ? tb.getTime() : 0;
+      return mb - ma;
+    });
 
-    // A4
-    if (filtroTipo === "Tutti" || filtroTipo === "A4") {
-      const rowsA4: DettaglioRow[] = [];
-      let totA4 = 0;
-      const refsA4: any[] = [];
+  // A4
+  if (filtroTipo === "Tutti" || filtroTipo === "A4") {
+    const rowsA4: DettaglioRow[] = [];
+    let totA4 = 0;
+    const refsA4: any[] = [];
 
-      for (const { ref, data } of all) {
-        if (data.tipo !== "A4") continue;
-        const { dettaglio, lordoEff } = computeMetrics(data, "A4");
-        rowsA4.push(dettaglio);
-        refsA4.push({ ref, data });
-        totA4 += lordoEff;
-      }
-      setDetailA4(rowsA4);
-      setDocsA4(refsA4);
-      setTotaleA4(totA4);
-    } else {
-      setDetailA4([]);
-      setDocsA4([]);
-      setTotaleA4(0);
+    for (const { ref, data } of all) {
+      if (data.tipo !== "A4") continue;
+      const { dettaglio, lordoEff } = computeMetrics(data, "A4");
+      rowsA4.push(dettaglio);
+      refsA4.push({ ref, data });
+      totA4 += lordoEff;
     }
+    setDetailA4(rowsA4);
+    setDocsA4(refsA4);
+    setTotaleA4(totA4);
+  } else {
+    setDetailA4([]);
+    setDocsA4([]);
+    setTotaleA4(0);
+  }
 
-    // A3
-    if (filtroTipo === "Tutti" || filtroTipo === "A3") {
-      const rowsA3: DettaglioRow[] = [];
-      let totA3 = 0;
-      const refsA3: any[] = [];
+  // A3
+  if (filtroTipo === "Tutti" || filtroTipo === "A3") {
+    const rowsA3: DettaglioRow[] = [];
+    let totA3 = 0;
+    const refsA3: any[] = [];
 
-      for (const { ref, data } of all) {
-        if (data.tipo !== "A3") continue;
-        const { dettaglio, lordoEff } = computeMetrics(data, "A3");
-        rowsA3.push(dettaglio);
-        refsA3.push({ ref, data });
-        totA3 += lordoEff;
-      }
-      setDetailA3(rowsA3);
-      setDocsA3(refsA3);
-      setTotaleA3(totA3);
-    } else {
-      setDetailA3([]);
-      setDocsA3([]);
-      setTotaleA3(0);
+    for (const { ref, data } of all) {
+      if (data.tipo !== "A3") continue;
+      const { dettaglio, lordoEff } = computeMetrics(data, "A3");
+      rowsA3.push(dettaglio);
+      refsA3.push({ ref, data });
+      totA3 += lordoEff;
     }
-  };
+    setDetailA3(rowsA3);
+    setDocsA3(refsA3);
+    setTotaleA3(totA3);
+  } else {
+    setDetailA3([]);
+    setDocsA3([]);
+    setTotaleA3(0);
+  }
+}, [
+  filtroTipo,
+  matchesUtente,
+  withinDateRange,
+  // i calcoli dipendono da queste config (usate da computeMetrics -> calcCostiInterni, ecc.)
+  ivaRate, ppPercent, ppFixed, transportFeeEuro,
+  unitA4, unitA3, extrasA4, extrasA3,
+  // helper stabile
+  getRowMillis,
+]);
+
 
   // Trigger automatico iniziale quando le config sono pronte
   useEffect(() => {

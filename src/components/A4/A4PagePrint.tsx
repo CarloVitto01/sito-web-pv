@@ -415,8 +415,6 @@ const A4PagePrint = () => {
 
     // split colore/BN per aiutare eventuali debug (Storico li calcola da solo comunque)
     const isColore = inchiostro === inchiostroEnum.COLORE;
-    const nColore = isColore ? nFogli : 0;
-    const nBN = isColore ? 0 : nFogli;
 
     const dataToUpload = {
       id: id,
@@ -579,6 +577,7 @@ ${extraPP}`.trim();
     preventivo,
     pagina,
     layout,
+    intervalloPagine,
     inchiostro,
     numeroCopie,
     rilegatura,
