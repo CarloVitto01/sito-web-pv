@@ -12,11 +12,9 @@ import { db } from "../../backend/firebase"; // <-- ADATTA IL PATH SE SERVE
 import { doc, onSnapshot } from "firebase/firestore";
 import Banner from "../Banner/Banner";
 
-// Base API
-const API = (process.env.REACT_APP_API_BASE_URL || "https://api.photoandvision.it").replace(/\/+$/, "");
-
-// ======= PayPal config (ENV) =======
 const PAYPAL_CLIENT_ID = process.env.REACT_APP_PAYPAL_CLIENT_ID as string;
+const API_BASE = process.env.REACT_APP_API_BASE_URL || "";
+const API = (API_BASE || "").replace(/\/+$/, ""); // toglie eventuale "/" finale
 
 // Fallback se il doc Firestore non esiste
 const PRO_PRICE_EUR_FALLBACK = Number(process.env.REACT_APP_QR_PRO_PRICE_EUR ?? "9.99");
