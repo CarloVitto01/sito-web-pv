@@ -6,7 +6,7 @@
   align-items: center;
   background: radial-gradient(circle at center, var(--color-background), var(--color-background));
   text-align: center;
-  margin-top: 3rem;
+  margin-top: 5rem;
 }
 
 .title {

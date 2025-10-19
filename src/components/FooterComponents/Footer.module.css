@@ -84,3 +84,67 @@
     align-items: center;
   }
 }
+
+
+/* Link contatti cliccabili */
+.contactLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: #eaeaea;
+  transition: opacity .2s ease, transform .12s ease;
+}
+.contactLink:hover { opacity: .9; }
+.contactLink:active { transform: translateY(1px); }
+
+/* Solo icone (Telegram/WhatsApp) affiancate */
+.iconOnly {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 8px;
+  transition: transform .12s ease, filter .2s ease;
+}
+.iconOnly:hover { filter: drop-shadow(0 0 8px rgba(202,167,0,.25)); }
+.iconOnly:active { transform: translateY(1px); }
+
+/* Telefono in linea con le icone */
+.inlineTel {
+  margin-left: 6px;
+}
+
+/* Barra legale */
+.legalRow {
+  margin-top: 18px;
+  padding-top: 10px;
+  border-top: 1px solid #2a2a2a;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  color: #bdbdbd;
+  font-size: .95rem;
+}
+.legalLink {
+  color: var(--color-gold, #caa700);
+  text-decoration: none;
+  font-weight: 600;
+}
+.legalLink:hover { text-decoration: underline; }
+.dot { opacity: .6; }
+.copy { margin-left: 6px; opacity: .85; }
+
+.piva {
+  margin: 0 8px;
+  opacity: 0.9;
+  white-space: nowrap;
+}
+
+
+
+/* Piccoli ritocchi responsive */
+@media (max-width: 600px) {
+  .inlineTel { margin-left: 0; }
+  .legalRow { font-size: .9rem; }
+}

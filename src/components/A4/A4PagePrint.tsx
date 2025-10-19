@@ -23,20 +23,17 @@ import { RangePagesData } from "../../types/RangePagesData";
 import MultiInput from "../MultiInputComponents/MultiInput";
 import RiepilogoOrdine from "../RiepilogoOrdineComponents/RiepilogoOrdine";
 import { onAuthStateChanged } from "firebase/auth";
+import Banner from "../Banner/Banner";
+
+// Formatter € (aggiunta)
+const fmtEuro = (n?: number | string) =>
+  typeof n === "number"
+    ? n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : Number(n || 0).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 //Constants
 
-
-//const foglio = 0.03;
-//const biancoNero: number = 0.015;
-//const colore: number = 0.075;
-//const anelli = 1.5;
-//const fascetta = 1;
-//const ciappatura = 0.1;
-//const spirale = 2;
-
 //Enum
-
 const inchiostroEnum = {
   BIANCOENERO: 0,
   COLORE: 1,
@@ -194,7 +191,7 @@ const A4PagePrint = () => {
   }, []);
 
 
-
+  //Intervallo Pagine Handling
   const setRangePagesHandler = useCallback(
     (value: RangePagesData) => {
       if (value.all) {
@@ -321,9 +318,46 @@ const A4PagePrint = () => {
     }
   }, [inchiostro, pagina, layout, rilegatura, intervalloPagine, numeroPaginePDF, numeroCopie, numeroPDF, rilegaturaUnica, costi]);
 
-  //Send data to the Firebase server
+  // --- Helpers per quantità interne ---
+  const computeNFogliPerCopia = (pagineSelezionate: number, paginaMode: number, layoutMode: number) => {
+    // pagina: fronte-retro dimezza
+    let fogli = paginaMode === paginaEnum.FRONTE_RETRO ? Math.ceil(pagineSelezionate / 2) : pagineSelezionate;
+    // layout: 2-in-1 dimezza (arrotondando per eccesso)
+    if (layoutMode === layoutEnum.DUEPAGORIZZ || layoutMode === layoutEnum.DUEPAGVERT) {
+      fogli = Math.ceil(fogli / 2);
+    }
+    return Math.max(0, fogli);
+  };
 
-  const submitFormHandler = useCallback(async (event?: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+  const computeFascicoli = (copie: number, rilegaturaUnicaVal: number) => {
+    // rispecchia StoricoDati.numFascicoli: se unica -> 1, altrimenti = copie
+    const isUnica = rilegaturaUnicaVal === rilegaturaUnicaEnum.SI;
+    return isUnica ? 1 : Math.max(1, copie);
+  };
+
+
+  // 🆕 accetta sia (event) sia (paymentPayload, event)
+  const submitFormHandler = useCallback(async (arg1?: any, arg2?: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    // 🆕 normalizza parametri senza rompere l’esistente
+    const isPaymentPayload = (o: any) => o && typeof o === "object" && ("method" in o);
+    const payment = isPaymentPayload(arg1)
+      ? (arg1 as {
+        method: "CASH" | "PAYPAL";
+        confirmed: boolean;
+        amount?: number;
+        orderId?: string;
+        captureId?: string;
+        payerEmail?: string;
+        breakdown?: {
+          imponibile: number;
+          iva: number;
+          trasporto: number;
+          feePayPal: number;
+        };
+      })
+      : undefined;
+    const event = isPaymentPayload(arg1) ? arg2 : (arg1 as React.MouseEvent<HTMLButtonElement, MouseEvent> | undefined);
+
     event?.preventDefault();
 
     if (!auth.currentUser) {
@@ -357,6 +391,30 @@ const A4PagePrint = () => {
       const pages = fileData[index].pages;
       return `- [File ${index + 1} - ${pages} pagine](${url.replace(/\(/g, "[").replace(/\)/g, "]")})`;
     }).join("\n");
+
+    // 🆕 calcolo descrizioni pagamento (fallback se non passato)
+    const metodoPagamento =
+      payment?.method === "PAYPAL"
+        ? "PayPal"
+        : payment?.method === "CASH"
+          ? "Contanti"
+          : "n/d";
+
+    const statoPagamento =
+      payment?.method === "PAYPAL"
+        ? (payment.confirmed ? "Pagato (conferma utente)" : "Non verificato")
+        : payment?.method === "CASH"
+          ? "Da saldare alla consegna"
+          : "Non specificato";
+
+
+    // 🧮 quantità interne (per StoricoDati)
+    const nFogliPerCopia = computeNFogliPerCopia(intervalloPagine, pagina, layout);
+    const nFogli = nFogliPerCopia * Math.max(1, numeroCopie);
+    const fascicoli = computeFascicoli(numeroCopie, rilegaturaUnica);
+
+    // split colore/BN per aiutare eventuali debug (Storico li calcola da solo comunque)
+    const isColore = inchiostro === inchiostroEnum.COLORE;
 
     const dataToUpload = {
       id: id,
@@ -396,6 +454,13 @@ const A4PagePrint = () => {
       timestamp: serverTimestamp(),
       tipo: "A4", // ✅ aggiunto per filtro gestionale
       uid: auth.currentUser?.uid,
+      nFogli,                 // <-- importantissimo
+      nFogliPerCopia,         // (facoltativo, ma utile)
+      fascicoli,              // per costi "per_fascicolo"
+      inchiostro: isColore ? "colore" : "biancoenero",
+      // (facoltativo) potresti anche salvare questi due campi:
+      // metodoPagamento,
+      // statoPagamento,
     };
 
     const collectionRef = collection(db, "StampePDFA4");
@@ -419,17 +484,37 @@ const A4PagePrint = () => {
         setFormSubmitting(false);
         setFormSubmitted(true);
 
+        // 🆕 Totale finale: usa payment.amount (IVA+trasporto+fee) con fallback al preventivo
+        const totaleFinale =
+          typeof payment?.amount === "number" ? payment.amount : Number(preventivo);
+
         // ✅ CREA versione ridotta dell'ordine senza file PDF
         const { file, path, ...rest } = dataToUpload;
         const datiSnelliti = {
           ...rest,
-          timestamp: serverTimestamp(), // Reimposta il timestamp
+          totaleFinale,                             // già presente
+          metodoPagamento,                          // ✅ nuovo
+          trasporto: payment?.breakdown?.trasporto ?? 0,    // ✅ nuovo
+          imponibile: payment?.breakdown?.imponibile ?? undefined, // ✅ nuovo
+          iva: payment?.breakdown?.iva ?? undefined,         // ✅ nuovo
+          paypalFee: payment?.breakdown?.feePayPal ?? 0,     // ✅ nuovo
+          timestamp: serverTimestamp(),
+          // ✅ ripeti anche qui i campi tecnici
+          nFogli,
+          nFogliPerCopia,
+          fascicoli,
+          inchiostro: isColore ? "colore" : "biancoenero",
         };
 
         await setDoc(doc(db, "ArchivioOrdini", id), datiSnelliti);
 
+        // 🧾 Dettagli PayPal facoltativi
+        const extraPP =
+          payment?.method === "PAYPAL"
+            ? `\n🧾 *PayPal OrderID*: ${payment.orderId ?? "-"}\n🧾 *CaptureID*: ${payment.captureId ?? "-"}\n👤 *Payer*: ${payment.payerEmail ?? "-"}\n`
+            : "";
 
-
+        // 🆕 Messaggio Telegram aggiornato con Totale finale
         const messageText = `
 =====================
   *NUOVO ORDINE A4*
@@ -453,8 +538,11 @@ ${fileLinks}
 📒 *Rilegatura unica*: ${dataToUpload.rilegaturaUnica}
 *Pagine*: ${dataToUpload.pagine}
 🔢 *Copie*: ${dataToUpload.copie}
-💰💰 *Prezzo*: ${preventivo}€ 💰💰
-`;
+
+💳 *Metodo di pagamento*: ${metodoPagamento}
+✅ *Stato pagamento*: ${statoPagamento}
+💰 *Totale finale*: ${fmtEuro(totaleFinale)} €
+${extraPP}`.trim();
 
         const apiUrl = `https://api.telegram.org/bot${TOKENA4}/sendMessage`;
         const payload = {
@@ -482,7 +570,19 @@ ${fileLinks}
         setFormError(true);
         setFormSubmitting(false);
       });
-  }, [data, fileData, numeroPDF, preventivo, pagina, layout, inchiostro, numeroCopie, rilegatura, rilegaturaUnica, daA]);
+  }, [
+    data,
+    fileData,
+    numeroPDF,
+    preventivo,
+    pagina,
+    layout,
+    intervalloPagine,
+    inchiostro,
+    numeroCopie,
+    rilegatura,
+    rilegaturaUnica,
+    daA]);
 
   useEffect(() => {
     if (formSubmitted) {
@@ -523,6 +623,7 @@ ${fileLinks}
   return (
     <div className="">
       <Header />
+      <Banner />
       <Intro
         title={"STAMPA I TUOI DOCUMENTI A4"}
         text={"In questa pagina potrai ordinare la stampa del tuo documento, inserisci le caratteristiche disponibili nelle varie sezioni per poter avere dei documenti cartacei di qualità."}

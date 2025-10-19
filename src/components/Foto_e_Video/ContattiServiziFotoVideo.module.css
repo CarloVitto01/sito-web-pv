@@ -1,258 +1,605 @@
+:root {
+  --pv-bg: #0a0a0a;
+  --pv-surface: #101010;
+  --pv-surface-2: #141414;
+  --pv-border: #262626;
+  --pv-text: #eeeeee;
+  --pv-muted: #bdbdbd;
+  --pv-gold: var(--color-gold, #caa700);
+
+  --pv-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  --pv-radius: 16px;
+  --pv-pad: 14px;
+
+  --z-overlay: 2100;
+  --z-viewer: 3000;
+}
+
+/* ---------- Page container ---------- */
 .container {
-  padding: 40px 20px;
-  color: white;
-  max-width: 1000px;
-  margin: auto;
-  margin-top: 3vh;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 24px 16px 60px;
+  color: var(--pv-text);
+  background: transparent;
 }
 
-.intro {
-  text-align: center;
-  margin-bottom: 40px;
+/* ---------- Hero row: logo (left) + form (right) ---------- */
+.heroRow {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 24px;
+  align-items: start;
+  margin-bottom: 26px;
 }
 
-.intro h1 {
-  font-size: 2.4rem;
-  margin-bottom: 10px;
-  color: var(--color-gold);
-}
-
-.intro p {
-  font-size: 1.1rem;
-  color: #ccc;
-}
-
-.showcase {
-  margin-bottom: 50px;
-}
-
-.showcase h2 {
-  text-align: center;
-  margin-bottom: 20px;
-  font-size: 1.8rem;
-  color: var(--color-gold);
-}
-
-.grid {
-  column-count: 3;
-  column-gap: 20px;
-}
-
-@media (max-width: 1000px) {
-  .grid {
-    column-count: 2;
+@media (max-width: 900px) {
+  .heroRow {
+    grid-template-columns: 1fr;
   }
 }
 
-@media (max-width: 600px) {
-  .grid {
-    column-count: 1;
-  }
+.logoCol {
+  display: grid;
+  place-items: center;
+  width: 50%;
+  margin: 0 auto;
+  margin-top: 10%;
 }
 
-.grid img,
-.grid video {
+.heroLogo {
+  max-width: 320px;
   width: 100%;
-  margin-bottom: 20px;
-  break-inside: avoid;
-  border-radius: 10px;
-  border: 2px solid var(--color-gold);
-  object-fit: contain;
+  height: auto;
   display: block;
-  background-color: #000;
+  margin: 0 auto;
+  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, .35));
 }
 
-
-.formSection {
-  margin-top: 60px;
+.formTitle {
+  margin: 0 0 10px;
+  color: var(--pv-text);
 }
 
+/* ---------- Request box ---------- */
 .box {
-  background-color: #121212;
-  padding: 20px;
-  border-radius: 10px;
-  border: 1px solid var(--color-gold);
-  box-shadow: 0 0 10px rgba(222, 181, 0, 0.2);
+  background: linear-gradient(180deg, var(--pv-surface), #0d0d0d);
+  border: 1px solid var(--pv-gold);
+  border-radius: var(--pv-radius);
+  padding: 16px 14px;
+  box-shadow: 0 8px 30px rgba(202, 167, 0, .12);
+}
+
+.userLine {
+  margin: 0 0 10px;
+}
+
+.strongUser {
+  color: var(--pv-gold);
+  font-weight: 600;
 }
 
 .textarea {
-  width: 95%;
-  margin-top: 20px;
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  resize: none;
-  font-size: 16px;
+  width: 96%;
+  min-height: 140px;
+  border-radius: 12px;
+  border: 1px solid var(--pv-border);
+  padding: 10px 12px;
+  background: #ffffff;
+  color: black;
+  resize: vertical;
+  outline: none;
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+
+.textarea::placeholder {
+  color: #8d8d8d;
+}
+
+.textarea:focus-visible {
+  border-color: var(--pv-gold);
+  box-shadow: 0 0 0 3px rgba(202, 167, 0, .22);
 }
 
 .button {
-  margin-top: 20px;
-  background-color: var(--color-gold);
+  margin-top: 10px;
+  background: var(--pv-gold);
   color: #000;
-  padding: 10px 20px;
-  font-weight: bold;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 700;
   cursor: pointer;
-  transition: 0.3s;
+  transition: transform .06s ease, opacity .18s ease, box-shadow .18s ease;
 }
 
 .button:hover {
-  background-color: #e6c100;
+  box-shadow: 0 6px 20px rgba(202, 167, 0, .18);
+}
+
+.button:active {
+  transform: translateY(1px);
+}
+
+.button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
 }
 
 .success {
-  color: lightgreen;
-  margin-top: 10px;
-  font-weight: bold;
+  margin-top: 8px;
+  color: #8fe38f;
 }
 
 .loading {
-  color: gray;
+  color: var(--pv-muted);
 }
 
-.clickable {
+/* ---------- Albums section ---------- */
+.albumsSection {
+  margin-top: 34px;
+}
+
+.sectionTitle {
+  text-align: center;
+  color: var(--pv-gold);
+  margin: 0 0 14px;
+}
+
+.albumGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.albumCard {
+  background: var(--pv-surface);
+  border: 1px solid var(--pv-border);
+  border-radius: var(--pv-radius);
+  overflow: hidden;
+  box-shadow: var(--pv-shadow);
+  transition: transform .12s ease, border-color .18s ease, box-shadow .18s ease;
+  will-change: transform;
+}
+
+.albumCard:hover {
+  transform: translateY(-2px);
+  border-color: rgba(202, 167, 0, .35);
+}
+
+.albumBody {
+  width: 100%;
+  display: block;
+  text-align: left;
+  padding: 0;
+  background: none;
+  border: none;
   cursor: pointer;
-  transition: transform 0.2s ease;
 }
 
-.clickable:hover {
-  transform: scale(1.02);
+.albumBody:focus-visible {
+  outline: 2px solid var(--pv-gold);
+  outline-offset: 2px;
 }
 
-.modalOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.85);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modalContent {
-  max-width: 90vw;
-  max-height: 90vh;
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.modalMediaWrapper {
-  position: relative;
-}
-
-.modalContent img,
-.modalContent video {
-  max-width: 100%;
-  max-height: 80vh;
-  height: auto;
-  width: auto;
+/* Card cover (centrata, non tagliata) */
+.albumCover {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16/9;
   object-fit: contain;
-  border-radius: 8px;
-  border: 2px solid var(--color-gold);
+  object-position: center;
+  background: #0a0a0a;
 }
 
-.modalClose {
+.albumCoverPlaceholder {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #121212;
+  color: var(--pv-muted);
+  border-bottom: 1px solid var(--pv-border);
+}
+
+.albumMeta {
+  padding: 12px 12px 10px;
+}
+
+.albumTitle {
+  margin: 0;
+  color: #f3f3f3;
+  font-size: 1.05rem;
+}
+
+/* ---------- Animated overlay (flyout album) ---------- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .65);
+  z-index: var(--z-overlay);
+  display: grid;
+  place-items: center;
+  backdrop-filter: saturate(120%) blur(3px);
+  overscroll-behavior: contain;
+}
+
+.flyStage {
+  width: min(1024px, 96vw);
+  perspective: 1400px;
+}
+
+.flyCard {
+  background: linear-gradient(180deg, #0f0f0f, #0b0b0b);
+  border: 1px solid var(--pv-border);
+  border-radius: var(--pv-radius);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .55);
+  overflow: hidden;
+  transform-style: preserve-3d;
+  will-change: transform;
+  display: flex;
+  flex-direction: column;
+  max-height: 78vh;
+}
+
+/* Header con copertina più bassa */
+.flyHeader {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.flyCover {
+  display: block;
+  width: 100%;
+  height: clamp(140px, 24vh, 220px);
+  object-fit: contain;
+  background:
+    radial-gradient(80% 60% at 50% 50%, rgba(202, 167, 0, .08), transparent 65%),
+    #0b0b0b;
+  box-sizing: border-box;
+  padding: 12px;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, .35));
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: optimizeQuality;
+}
+
+.flyHeader .albumCoverPlaceholder {
+  aspect-ratio: auto;
+  height: clamp(140px, 24vh, 220px);
+  display: grid;
+  place-items: center;
+  background: #101010;
+  border-bottom: 1px solid var(--pv-border);
+  color: var(--pv-muted);
+}
+
+.flyTitle {
+  position: absolute;
+  left: 14px;
+  bottom: 10px;
+  margin: 0;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, .45);
+  border: 1px solid rgba(202, 167, 0, .35);
+  border-radius: 10px;
+  color: #fff;
+  backdrop-filter: blur(2px);
+}
+
+.closeBtn {
   position: absolute;
   top: 10px;
   right: 10px;
-  background: var(--color-gold);
-  color: black;
-  font-size: 1.2rem;
-  border: none;
-  border-radius: 50%;
-  padding: 4px 10px;
+  background: rgba(0, 0, 0, .55);
+  border: 1px solid rgba(255, 255, 255, .15);
+  color: #fff;
+  border-radius: 10px;
+  padding: 6px 10px;
   cursor: pointer;
-  z-index: 2;
 }
 
-
-.intro {
-  text-align: center;
+/* Corpo scrollabile */
+.flyBody {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 12px;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
-.introImages {
+/* Griglia stile Instagram: 3 colonne */
+.flyGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.itemCard {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: #000;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, .04);
+  transition: transform .15s ease;
+  cursor: zoom-in;
+  /* fa capire che si apre */
+}
+
+.itemCard:hover {
+  transform: translateY(-2px);
+}
+
+.itemMedia {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #000;
+  transition: transform .25s ease, opacity .25s ease;
+}
+
+.itemCard:hover .itemMedia {
+  transform: scale(1.02);
+}
+
+.itemCard::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(60% 60% at 50% 50%, rgba(0, 0, 0, .0), rgba(0, 0, 0, .18));
+  opacity: 0;
+  transition: opacity .25s ease;
+}
+
+.itemCard:hover::after {
+  opacity: 1;
+}
+
+/* Scrollbar del body del popup album */
+.flyBody {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(202, 167, 0, .6) transparent;
+}
+
+.flyBody::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.flyBody::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.flyBody::-webkit-scrollbar-thumb {
+  background: rgba(202, 167, 0, .6);
+  border-radius: 10px;
+  border: 2px solid rgba(0, 0, 0, .25);
+}
+
+/* ===== Instagram-like Pure Viewer (solo media) ===== */
+:root {
+  --viewer-feed-h: 74vh;
+  /* altezza del riquadro scrollabile */
+  --viewer-peek: 10vh;
+  /* quanto far intravedere sopra/sotto */
+}
+
+.viewer {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .92);
+  z-index: var(--z-viewer);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+/* layout desktop/tablet: media singolo */
+.viewerSolo {
+  width: min(96vw, 1200px);
+  height: min(92vh, 860px);
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: stretch;
+}
+
+/* === Viewer canvas: centra il media e NON taglia === */
+.viewerCanvas {
+  position: relative;
+  background: #000;
+  border-radius: 12px;
+  /* era: overflow: hidden; → lo togliamo per sicurezza */
+  overflow: visible;
+  /* meglio flex per centrare perfettamente */
   display: flex;
-  justify-content: center;
   align-items: center;
-  gap: 2rem;
-  flex-wrap: nowrap;
+  justify-content: center;
+  min-height: 0;
 }
 
-.imageBox {
-  flex-shrink: 0;
-}
-
-/* Immagini laterali (1° e 3°) leggermente più grandi */
-.imageBox {
-  width: 300px;
-  height: 300px;
-  margin-top: -50px;
-    margin-bottom: -120px;
-
-}
-
-.imageBox img {
+/* === Regola unica per IMG/VIDEO nel viewer === */
+.viewerCanvas > img,
+.viewerCanvas > video,
+.viewerMedia {
+  /* fondamentale: dare entrambe le dimensioni per attivare object-fit */
   width: 100%;
   height: 100%;
   object-fit: contain;
+  object-position: center center;
+  display: block;
+  /* rimuove i vecchi limiti */
+  max-width: none;
+  max-height: none;
 }
 
-@media (max-width: 480px) {
-  .modalOverlay {
-    padding: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+/* Mobile feed: stessa logica per le slide */
+.viewerSlide > img,
+.viewerSlide > video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center center;
+  display: block;
+}
+
+
+.viewerFeed{
+  width: 100%;
+  max-width: 700px;
+  height: var(--viewer-feed-h);
+  background: #000;
+  border-radius: 12px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: y mandatory;
+
+  /* il trucco: questa imbottitura lascia intravedere sopra/sotto */
+  padding-block: var(--viewer-peek);
+
+  /* così quando centri una slide, resta allineata al centro */
+  scroll-padding-block: var(--viewer-peek);
+
+  overscroll-behavior: contain;
+}
+
+/* ogni slide è più bassa del feed, così si vedono le adiacenti */
+.viewerSlide{
+  height: calc(var(--viewer-feed-h) - (var(--viewer-peek) * 2));
+  display: grid;
+  place-items: center;
+  scroll-snap-align: center;
+  /* margine sottile (facoltativo) per separare leggermente le slide */
+  margin-block: 0.5vh;
+}
+
+/* media sempre centrato e contenuto */
+.viewerMedia {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.viewerNav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(255, 255, 255, .92);
+  color: #000;
+  font-size: 28px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .35);
+}
+
+.viewerNav.left {
+  left: 10px;
+}
+
+.viewerNav.right {
+  right: 10px;
+}
+
+.viewerNav:hover {
+  background: #fff;
+}
+
+.viewerCounter {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, .55);
+  border: 1px solid rgba(255, 255, 255, .15);
+  color: #fff;
+  font-size: .9rem;
+}
+
+/* bottone chiudi */
+.viewerClose {
+  position: fixed;
+  top: 18px;
+  right: 24px;
+  z-index: 1;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .92);
+  color: #000;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+
+
+/* switch tra layout */
+@media (max-width: 700px) {
+  .viewerSolo {
+    display: none;
   }
 
-  .modalContent {
-    width: 90%;
-    max-height: 90vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  /* nasconde layout desktop */
+  .viewerNav {
+    display: none;
   }
 
-  .modalContent img,
-  .modalContent video {
-    width: 100%;
-    height: auto;
-    max-height: 80vh;
-    border-radius: 10px;
+  /* nasconde frecce su mobile */
+}
+
+@media (min-width: 701px) {
+  .viewerFeed {
+    display: none;
   }
 
-  .modalClose {
-    top: 5px;
-    right: 5px;
-    font-size: 1.2rem;
-    padding: 6px 10px;
+  /* feed solo su mobile */
+}
+
+/* ===== Mobile: logo sopra centrato ===== */
+@media (max-width: 640px) {
+  .heroRow {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    justify-items: center;
   }
 
-  .introImages {
-    flex-direction: column;
-    gap: 0;
-    align-items: center;
+  .logoCol {
+    width: 30% !important;
+    margin: 0 !important;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    justify-self: center;
   }
 
-  .imageBox {
-    width: 350px;
-    margin-top: -50px;
-    margin-bottom: -100px;
+  .heroLogo {
+    display: block;
+    margin: 0 auto 30px;
+    max-width: clamp(160px, 60vw, 260px);
   }
 
   .textarea {
-  width: 92%;
-  margin-top: 20px;
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  resize: none;
-  font-size: 16px;
+    width: 93%;
+  }
 }
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+
+  .albumCard,
+  .button,
+  .overlay,
+  .flyCard {
+    transition: none !important;
+  }
 }

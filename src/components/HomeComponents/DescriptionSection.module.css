@@ -8,10 +8,31 @@
 }
 
 .title {
-  font-size: 1.5rem;
-  margin-bottom: 10px;
-  color: white;
+  font-size: 3rem;
+  font-weight: 15rem;
+  line-height: 1.1;
+  margin-bottom: 16px;
+  letter-spacing: 0.02em;
+  text-align: center;
+
+  /* TITOLO tutto bianco */
+  color: #ffffff;
 }
+
+/* Solo le parole "Photo" e "Vision" in oro (solido) */
+.gold {
+  color: #ffd700;           /* oro principale */
+}
+
+/* --- Variante opzionale con oro in gradiente ---
+.gold {
+  background: linear-gradient(90deg, #ffd700 0%, #b8860b 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+*/
 
 .text {
   font-size: 1.2rem;

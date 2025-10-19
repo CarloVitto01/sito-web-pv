@@ -1,11 +1,11 @@
+/* ===== Base header ===== */
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
+  top: 0; left: 0; width: 100%;
   background-color: var(--color-background);
   border-bottom: 2px solid var(--color-gold);
   border-bottom-left-radius: var(--radius);
@@ -14,156 +14,303 @@
   box-shadow: 0 4px 15px rgba(199, 171, 43, 0.2);
   padding: 10px 20px;
 }
-/* 👈 colonna sinistra vuota */
-.left-spacer {
-  flex: 1;
-}
 
+.left-spacer { flex: 1; }
 
 .logo-section {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  flex: 1; display: flex; justify-content: center; align-items: center;
 }
-
-.logo-section a {
-  pointer-events: auto; /* abilita clic sul logo */
-}
-
+.logo-section a { pointer-events: auto; }
 
 .placeholder-section {
-  flex: 1;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  padding-right: 40px;
+  flex: 1; display: flex; justify-content: flex-end; align-items: center; padding-right: 40px;
 }
 
 .Logo {
-  max-width: 200px;
-  width: 100%;
-  margin: 8px;
+  max-width: 200px; width: 100%; margin: 8px;
   filter: drop-shadow(0 0 6px rgba(199, 171, 43, 0.7));
 }
 
-
-
-/* Button: Login/Logout gold */
-.menu-button-gold {
-  background-color: var(--color-gold);
-  color: var(--color-text);
-  border: 1px solid var(--color-gold);
-  padding: 5px 12px;
-  margin-left: 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-  font-size: 14px;
-  transition: background-color 0.2s ease;
-}
-
-.menu-button-gold:hover {
-  background-color: rgba(222, 181, 0, 0.1);
-}
-
-.user-name {
-  color: var(--color-text);
-  font-weight: 500;
-  margin-right: 8px;
-  display: flex;
-  align-items: center;
-}
-
+/* ===== Burger ===== */
 .burger-section {
-  display: block;
-  /* rimuovi display: none */
-  position: absolute;
-  left: 20px;
-  top: 15px;
+  position: absolute; left: 20px; top: 15px;
 }
-
-
 .burger-icon {
   font-size: 1.8rem;
   color: var(--color-gold);
   cursor: pointer;
   background: none;
   border: none;
+  display: inline-flex; align-items: center; justify-content: center;
 }
 
-/* Side Menu - mobile */
+/* ===== Header buttons ===== */
+.menu-button-gold {
+  background-color: var(--color-gold);
+  color: var(--color-text);
+  border: 1px solid var(--color-gold);
+  padding: 6px 12px;
+  margin-left: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: transform .12s ease, background-color .2s ease;
+}
+.menu-button-gold:hover {
+  background-color: rgba(222, 181, 0, 0.12);
+  transform: translateY(-1px);
+}
+
+/* ===== Overlay ===== */
+.backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 998;
+  animation: fadeIn .15s ease both;
+}
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+
+/* ===== Side panel ===== */
 .side-menu {
   position: fixed;
-  top: 0;
-  left: 0;
-  height: 100vh;
-  width: 70%;
-  max-width: 260px;
+  top: 0; left: 0; height: 100vh;
+  width: 78vw; max-width: 320px; /* mobile default */
   background-color: rgba(15, 15, 15, 0.97);
-  box-shadow: 2px 0 10px rgba(199, 171, 43, 0.3);
+  box-shadow: 2px 0 18px rgba(199, 171, 43, 0.35);
   z-index: 999;
-  display: flex;
-  flex-direction: column;
-  padding: 20px;
+  display: flex; flex-direction: column;
+  padding: 12px 0 0;
   backdrop-filter: blur(5px);
   transform: translateX(0);
-  transition: transform var(--transition-fast) ease;
+  animation: slideIn .18s var(--transition-fast, ease) both;
+  overflow: hidden;
+}
+@keyframes slideIn {
+  from { transform: translateX(-100%); opacity: .6; }
+  to   { transform: translateX(0); opacity: 1; }
 }
 
-.side-menu.hidden {
-  transform: translateX(-100%);
+.side-menu-header {
+  flex: 0 0 auto;
+  padding: 10px 20px 6px 20px;
+  border-bottom: 1px solid rgba(199,171,43,.25);
+  position: relative;
 }
-
-.side-menu a,
-.side-menu button {
-  color: var(--color-gold);
-  text-decoration: none;
-  background: none;
-  border: none;
-  margin: 10px 0;
-  font-size: 16px;
-  text-align: left;
-  cursor: pointer;
-}
-
-.side-menu ul {
-  list-style: none;
-  padding: 0 20px;
-}
-
-.side-menu li {
-  margin: 1em 0;
-  border-bottom: 1px solid var(--color-gold);
-  /* fisso dorato */
-  padding-bottom: 0.5em;
-}
-
-.side-menu li:hover {
-  border-bottom: 1px solid var(--color-gold);
-  /* rimane dorata */
-}
-
 .close-button {
-  background: none;
-  border: none;
-  font-size: 40%;
+  background: none; border: none;
+  font-size: 1.3rem; line-height: 1;
   color: var(--color-gold);
   cursor: pointer;
-  position: absolute;
-  top: 10px;
-  right: 20px;
-  font-weight: bold;
+  position: absolute; top: 10px; right: 16px;
+  font-weight: 800;
   text-shadow: 0 0 5px gold;
 }
-
 .welcome-user {
-  color: white;
-  font-size: 16px;
-  font-weight: 500;
-  padding: 0 20px;
+  color: #fff; font-size: 15px; font-weight: 500;
+  padding-right: 34px;
+}
+
+.home-link {
+  display: block;                 /* diventa un blocco centrabile */
+  width: fit-content;             /* largo quanto il contenuto */
+  margin: 12px auto 0;            /* <-- centro orizzontale */
+  background: none;
+  border: 1px solid rgba(199,171,43,.35);
+  color: var(--color-gold);
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: center;
   margin-bottom: 10px;
 }
 
+/* Scroll area */
+.side-menu-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: 12px 14px 18px 14px;
+  padding-bottom: calc(18px + env(safe-area-inset-bottom));
+  scrollbar-gutter: stable;
+}
 
+/* Gold-only scrollbar inside the panel */
+.side-menu-content { scrollbar-width: thin; scrollbar-color: var(--color-gold) transparent; }
+.side-menu-content::-webkit-scrollbar { width: 10px; }
+.side-menu-content::-webkit-scrollbar-track { background: transparent; }
+.side-menu-content::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(199,171,43,.85), rgba(199,171,43,.55));
+  border-radius: 10px;
+}
+.side-menu-content::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(199,171,43,1), rgba(199,171,43,.8));
+}
 
+/* Sections */
+.section { margin: 10px 6px 18px; }
+.section-title {
+  font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+  color: rgba(255,255,255,.75);
+  margin: 6px 8px 10px;
+}
+.list { list-style: none; margin: 0; padding: 0; }
+.item { margin: 2px 0; }
+
+.linkBtn {
+  width: 100%;
+  display: grid; grid-template-columns: 24px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: transparent;
+  border: 1px solid  rgba(199,171,43,.45);
+  border-radius: 12px;
+  color: var(--color-gold);
+  cursor: pointer;
+  text-align: left;
+  transition: background .15s ease, border-color .15s ease, transform .08s ease;
+  margin-bottom: 0.5rem ;
+}
+.linkBtn:hover {
+  background: rgba(199,171,43,.08);
+  border-color: rgba(199,171,43,.25);
+  transform: translateX(1px);
+}
+.active {
+  background: rgba(199,171,43,.12);
+  border-color: rgba(199,171,43,.45);
+}
+
+.icon { width: 24px; text-align: center; }
+.label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Footer fisso nel pannello */
+.side-menu-footer {
+  border-top: 1px solid rgba(199,171,43,.25);
+  padding: 10px 14px 14px;
+  display: grid; gap: 10px;
+  background: linear-gradient(180deg, rgba(0,0,0,0), rgba(199,171,43,.06));
+}
+.account-button, .logout-button {
+  background: none;
+  border: 1px solid rgba(199,171,43,.35);
+  color: var(--color-gold);
+  padding: 8px 12px;
+  border-radius: 10px; cursor: pointer; text-align: center;
+}
+.logout-button { border-color: rgba(255, 90, 90, .45); color: #ff6b6b; }
+.auth-links {
+  display: flex; justify-content: center; align-items: center; gap: 10px;
+}
+.sep { color: #fff; opacity: .6; }
+
+/* A11y helper */
+.sr-only {
+  position: absolute !important;
+  height: 1px; width: 1px;
+  overflow: hidden; clip: rect(1px, 1px, 1px, 1px);
+  white-space: nowrap;
+}
+
+/* ===== Desktop tweaks ===== */
+@media (min-width: 880px) {
+  .side-menu {
+    width: 360px; max-width: 360px;
+  }
+}
+
+/* ===== Reduced motion ===== */
+@media (prefers-reduced-motion: reduce) {
+  .side-menu { animation: none; }
+  .backdrop { animation: none; }
+}
+/* ===== Gestione titoli completi nell’Area Gestionale ===== */
+
+/* layout due colonne: testo + eventuale "auto" (freccia futura ecc.) */
+.linkBtnWrap {
+  grid-template-columns: 1fr auto !important; /* rimuove la colonna-icona da 24px */
+  align-items: start;
+}
+
+/* testo a capo, senza ellissi né tagli */
+.labelFull {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  word-break: break-word;
+  line-height: 1.25;
+}
+
+/* opzionale: un filo di spazio in più per testi lunghi */
+.linkBtnWrap {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+/* ===== Row pulsanti Account/Esci affiancati ===== */
+.accountRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+.accountRow .account-button,
+.accountRow .logout-button {
+  box-shadow: none !important;
+  background: transparent;
+  border-radius: 12px;
+  font-weight: 700;
+  padding: 10px 12px;
+  transition: background .15s ease, border-color .15s ease;
+}
+.accountRow .account-button {
+  border: 1px solid rgba(199,171,43,.35);
+  color: var(--color-gold);
+}
+.accountRow .logout-button {
+  border: 1px solid rgba(255, 90, 90, .45);
+  color: #ff6b6b;
+}
+.accountRow .account-button:hover {
+  background: rgba(199,171,43,.10);
+  border-color: rgba(199,171,43,.55);
+}
+.accountRow .logout-button:hover {
+  background: rgba(255,107,107,.12);
+  border-color: rgba(255,107,107,.7);
+}
+
+/* ===== Row pulsanti Accedi/Registrati affiancati ===== */
+.authRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 40px;
+}
+.login-button,
+.register-button {
+  box-shadow: none !important;
+  background: transparent;
+  border-radius: 12px;
+  font-weight: 700;
+  padding: 10px 12px;
+  border: 1px solid rgba(199,171,43,.35);
+  color: var(--color-gold);
+  transition: background .15s ease, border-color .15s ease;
+}
+.login-button:hover,
+.register-button:hover {
+  background: rgba(199,171,43,.10);
+  border-color: rgba(199,171,43,.55);
+}
+
+/* opzionale: su display molto stretti puoi farli andare in colonna */
+/*
+@media (max-width: 320px) {
+  .accountRow, .authRow { grid-template-columns: 1fr; }
+}
+*/

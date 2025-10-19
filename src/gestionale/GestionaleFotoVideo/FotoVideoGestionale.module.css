@@ -1,0 +1,491 @@
+:root {
+  --pv-bg: #0a0a0a;
+  --pv-surface: #101010;
+  --pv-surface-2: #141414;
+  --pv-border: #262626;
+  --pv-text: #eeeeee;
+  --pv-muted: #bdbdbd;
+  --pv-gold: var(--color-gold, #caa700);
+  --pv-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  --pv-radius: 16px;
+  --pv-radius-lg: 20px;
+  --pv-pad: 14px;
+}
+
+/* ---------- Page layout ---------- */
+.page {
+  min-height: 100vh;
+  background:
+    radial-gradient(1100px 520px at 80% -160px, rgba(202,167,0,0.09), transparent 60%),
+    var(--pv-bg);
+  color: var(--pv-text);
+  padding: 18px 20px 56px;
+  margin-top: 8vh;
+}
+
+/* ---------- Admin bar ---------- */
+.adminBar {
+  max-width: 1180px;
+  margin: 6px auto 18px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  align-items: center;
+}
+.adminBarLeft { display: grid; gap: 4px; }
+
+.title {
+  margin: 0;
+  font-size: 1.9rem;
+  letter-spacing: 0.2px;
+  color: var(--pv-gold);
+}
+.subtitle { margin: 0; color: var(--pv-muted); }
+
+/* ---------- Card panel (create album) ---------- */
+.cardPanel {
+  max-width: 1180px;
+  margin: 0 auto 18px;
+  background: linear-gradient(180deg, var(--pv-surface), #0c0c0c);
+  border: 1px solid var(--pv-border);
+  border-radius: var(--pv-radius-lg);
+  padding: var(--pv-pad);
+  box-shadow: var(--pv-shadow);
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+}
+
+@media (max-width: 640px) {
+  .formRow { grid-template-columns: 1fr; }
+}
+
+/* ---------- Inputs ---------- */
+.input {
+  background: #0e0e0e;
+  border: 1px solid var(--pv-border);
+  color: var(--pv-text);
+  border-radius: 12px;
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.input::placeholder { color: #8d8d8d; }
+.input:focus-visible {
+  border-color: var(--pv-gold);
+  box-shadow: 0 0 0 3px rgba(202,167,0,0.22);
+}
+
+/* ---------- Buttons ---------- */
+.primaryBtn,
+.secondaryBtn,
+.dangerBtn,
+.iconBtn {
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 10px 12px;
+  cursor: pointer;
+  background: #191919;
+  color: var(--pv-text);
+  transition: transform 0.08s ease, border-color 0.18s ease, background 0.18s ease, opacity 0.18s ease;
+}
+
+.primaryBtn {
+  background: linear-gradient(180deg, #1a1a1a, #101010);
+  border-color: var(--pv-border);
+}
+.primaryBtn:hover { border-color: var(--pv-gold); }
+.primaryBtn:active { transform: translateY(1px); }
+
+.secondaryBtn { background: #151515; border-color: var(--pv-border); }
+.secondaryBtn:hover { border-color: var(--pv-gold); }
+
+.dangerBtn { background: #201415; border-color: #3a1010; color: #ffb7ba; }
+.dangerBtn:hover { border-color: #b33; }
+
+.iconBtn {
+  background: transparent;
+  border: none;
+  padding: 6px 8px;
+  font-size: 1rem;
+  color: var(--pv-text);
+}
+.iconBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ---------- Album grid ---------- */
+.albumsSection { max-width: 1180px; margin: 8px auto 0; }
+
+.albumGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.albumCard {
+  background: var(--pv-surface);
+  border: 1px solid var(--pv-border);
+  border-radius: var(--pv-radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--pv-shadow);
+  transition: transform 0.12s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.albumCard:hover {
+  transform: translateY(-2px);
+  border-color: rgba(202,167,0,0.35);
+}
+
+.albumBody {
+  width: 100%;
+  display: block;
+  text-align: left;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.albumBody:focus-visible {
+  outline: 2px solid var(--pv-gold);
+  outline-offset: 2px;
+}
+
+.albumCover {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background: #0a0a0a;
+}
+.albumCoverPlaceholder {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #121212;
+  color: var(--pv-muted);
+  font-size: 0.95rem;
+  border-bottom: 1px solid var(--pv-border);
+}
+
+.albumMeta { padding: 12px 12px 10px; }
+.albumTitle {
+  margin: 0;
+  font-size: 1.06rem;
+  color: var(--pv-text);
+  letter-spacing: 0.2px;
+}
+
+.albumFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px 12px;
+}
+
+/* ---------- Modal (SCROLL INTERNO) ---------- */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 2000;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: saturate(120%) blur(4px);
+}
+
+.modal {
+  width: min(1100px, 94vw);
+  max-height: 84vh;                  /* limite verticale */
+  background: linear-gradient(180deg, #0f0f0f, #0b0b0b);
+  border: 1px solid var(--pv-border);
+  border-radius: var(--pv-radius);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  overflow: hidden;                  /* nasconde angoli tondi */
+  display: flex;                     /* layout colonna */
+  flex-direction: column;
+}
+
+.modalHeader {
+  flex: 0 0 auto;                    /* header fisso */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--pv-border);
+  position: sticky;                  /* resta in vista mentre scrolli */
+  top: 0;
+  background: inherit;               /* stesso bg della modale */
+  z-index: 1;
+}
+
+.modalBody {
+  flex: 1 1 auto;                    /* prende lo spazio restante */
+  min-height: 0;                     /* sblocca overflow nei flex */
+  padding: 14px;
+  overflow: auto;                    /* SCROLL INTERNO */
+  -webkit-overflow-scrolling: touch; /* inerzia iOS */
+}
+
+/* Scrollbar tema oro solo dentro il body della modale */
+.modalBody { scrollbar-width: thin; scrollbar-color: rgba(202,167,0,.6) transparent; }
+.modalBody::-webkit-scrollbar { width: 10px; height: 10px; }
+.modalBody::-webkit-scrollbar-track { background: transparent; }
+.modalBody::-webkit-scrollbar-thumb {
+  background: rgba(202,167,0,.6);
+  border-radius: 10px;
+  border: 2px solid rgba(0,0,0,.25);
+}
+
+/* ---------- Album detail (inside modal) ---------- */
+.albumDetail { display: grid; gap: 14px; }
+
+.dropWrap {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.dropzone {
+  flex: 1 1 360px;
+  min-height: 90px;
+  display: grid;
+  place-items: center;
+  background: #121212;
+  border: 2px dashed rgba(202,167,0,0.6);
+  border-radius: 12px;
+  color: var(--pv-muted);
+  padding: 14px;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.dropzone:hover { background: #151515; border-color: var(--pv-gold); }
+
+/* ---------- Upload queue (no rotation) ---------- */
+.queueList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+.queueItem {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  background: var(--pv-surface-2);
+  border: 1px solid var(--pv-border);
+  padding: 8px;
+  border-radius: 12px;
+}
+.queueThumb {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid var(--pv-border);
+  background: #0a0a0a;
+}
+.queueThumbPlaceholder {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: #191919;
+  color: var(--pv-muted);
+  border: 1px solid var(--pv-border);
+}
+.queueMeta {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+}
+.queueName {
+  color: var(--pv-text);
+  font-size: 0.92rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- Items grid (media inside album) ---------- */
+.itemsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+.itemCard {
+  background: #131313;
+  border: 1px solid var(--pv-border);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: border-color 0.18s ease;
+}
+.itemCard:hover { border-color: rgba(202,167,0,0.35); }
+
+.itemMedia {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  background: #0a0a0a;
+}
+.itemActions {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  justify-content: space-between;
+}
+
+/* ---------- Accessibility focus helpers ---------- */
+.primaryBtn:focus-visible,
+.secondaryBtn:focus-visible,
+.dangerBtn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(202,167,0,0.22);
+}
+.albumBody:focus-visible { outline: 2px solid var(--pv-gold); outline-offset: 2px; }
+
+/* -------- New Album Card (card vuota per creare) -------- */
+.newAlbumCard {
+  border-style: dashed;
+  border-color: var(--pv-border);
+  background: var(--pv-surface-2);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
+}
+.newAlbumCard:hover {
+  border-color: var(--pv-gold);
+  box-shadow: var(--pv-shadow);
+  transform: translateY(-2px);
+}
+
+.newAlbumBody {
+  padding: 16px;
+  display: grid;
+  grid-template-rows: auto auto auto;
+  gap: 12px;
+  align-items: center;
+  justify-items: center;
+  text-align: center;
+  min-height: 240px;
+}
+
+.newAlbumPlaceholder {
+  width: 100%;
+  aspect-ratio: 16/10;
+  border: 1px dashed var(--pv-border);
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 40px;
+  color: var(--pv-muted);
+  user-select: none;
+  background: #121212;
+}
+
+.newAlbumTitleInput {
+  width: 100%;
+  max-width: 260px;
+  background: #0f0f0f;
+  color: var(--pv-text);
+  border: 1px solid var(--pv-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.newAlbumTitleInput::placeholder { color: #8d8d8d; }
+.newAlbumTitleInput:focus-visible {
+  border-color: var(--pv-gold);
+  box-shadow: 0 0 0 3px rgba(202,167,0,0.22);
+}
+
+.circlePlusBtn {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid var(--pv-border);
+  background: var(--pv-surface);
+  color: var(--pv-text);
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.2s ease, border-color 0.2s ease, opacity 0.18s ease;
+}
+.circlePlusBtn:hover:not([disabled]) {
+  border-color: var(--pv-gold);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+  transform: translateY(-1px);
+}
+.circlePlusBtn:focus-visible {
+  outline: none;
+  border-color: var(--pv-gold);
+  box-shadow: 0 0 0 3px rgba(202,167,0,0.22);
+}
+.circlePlusBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.dragHandle {
+  border: 1px solid var(--pv-border);
+  background: var(--pv-surface-2);
+  color: var(--pv-text);
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: grab;
+  line-height: 1;
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.08s ease;
+}
+.dragHandle:hover { border-color: var(--pv-gold); }
+.dragHandle:active { cursor: grabbing; transform: scale(0.98); }
+
+.draggingCard {
+  opacity: 0.85;
+  outline: 2px dashed rgba(202,167,0,0.35);
+  outline-offset: -6px;
+}
+
+.dropTargetCard {
+  border-color: var(--pv-gold);
+  box-shadow: 0 0 0 3px rgba(202,167,0,0.2);
+}
+
+/* Copertine card: centrate, non tagliate */
+.albumCover {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+  object-position: center;
+  background: #0a0a0a;
+  display: block;
+}
+
+/* Disabilita click/open quando si rinomina inline */
+.albumBodyDisabled { cursor: default; }
+
+/* Input titolo inline dentro la card */
+.albumTitleInput {
+  width: 100%;
+  background: #0f0f0f;
+  color: var(--pv-text);
+  border: 1px solid var(--pv-border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.albumTitleInput:focus-visible {
+  border-color: var(--pv-gold);
+  box-shadow: 0 0 0 3px rgba(202,167,0,0.22);
+}

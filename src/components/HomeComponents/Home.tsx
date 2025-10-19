@@ -5,13 +5,14 @@ import DescriptionSection from './DescriptionSection';
 import CardsSection from './CardsSection';
 import AlternatingContentSection from './AlternatingContentSection';
 import './Home.module.css';
+import Banner from '../Banner/Banner';
 
 const Home: React.FC = () => {
   return (
     <div className="home-container">
       <Header />
+      <Banner />
       <DescriptionSection />
-      {/*<ImageCarousel />*/}
       <CardsSection />
       <AlternatingContentSection />
       <Footer />

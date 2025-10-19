@@ -100,7 +100,7 @@ const MultiInput: React.FC<PropsContainer> = ({ onSendData }) => {
                 <p className={classes["textMultiInput"]}>Inserisci i file PDF qui</p>
             </div>
             <div className={classes["sottotitoloMultiInput"]}>
-                <p className={classes["title"]}>o trascina e lascia il file PDF qui</p>
+                <p className={classes["title"]}>o trascina e lascia i file PDF qui</p>
             </div>
             <div className={classes["containerPDFMultiInput"]}>
                 {files.map((file, index) => (

@@ -19,6 +19,15 @@ import MultiInput from "../MultiInputComponents/MultiInput";
 import classes from "../A3/A3PagePrint.module.css";
 import RiepilogoOrdineA3 from "../RiepilogoOrdineComponents/RiepilogoOrdineA3";
 import { onAuthStateChanged } from "firebase/auth";
+import Banner from "../Banner/Banner";
+
+// Formatter € (aggiunta)
+const fmtEuro = (n?: number | string) =>
+    typeof n === "number"
+        ? n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        : Number(n || 0).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+//Constants
 
 const inchiostroEnum = { BIANCOENERO: 0, COLORE: 1 };
 const paginaEnum = { FRONTE_RETRO: 0, FRONTE: 1 };
@@ -56,8 +65,6 @@ const A3PagePrint = () => {
         colore: 0.13,
         plastificazione: 0.30
     });
-
-
 
     useEffect(() => {
         const costiRef = doc(db, "configA3", "costi");
@@ -134,6 +141,9 @@ const A3PagePrint = () => {
         setNumeroPaginePDF(totalPages);
     }, []);
 
+    const setCopiesHandler = useCallback((value: number) => {
+        setNumeroCopie(value);
+    }, []);
 
     // Calculate total order
     useEffect(() => {
@@ -165,28 +175,59 @@ const A3PagePrint = () => {
             return totale.toFixed(2);
         };
 
-
         if (numeroPaginePDF > 0) setPreventivo(calcoloPreventivo());
         if (numeroPDF === 0) setPreventivo("0.00");
     }, [costi, inchiostro, pagina, numeroPaginePDF, numeroCopie, plastificazione, grammatura, numeroPDF]);
 
-    const setCopiesHandler = useCallback((value: number) => {
-        setNumeroCopie(value);
-    }, []);
+    // --- Helpers quantità per A3 ---
+    // n° fogli per copia: se fronte-retro => ceil(pagine/2), altrimenti = pagine
+    const computeNFogliPerCopiaA3 = (pagineTot: number, paginaMode: number) => {
+        const fogli = paginaMode === paginaEnum.FRONTE_RETRO ? Math.ceil(pagineTot / 2) : pagineTot;
+        return Math.max(0, fogli);
+    };
 
-    const submitFormHandler = useCallback(async (event?: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    // 🔁 AGGIORNATO: ora accetta (event) oppure (paymentPayload, event)
+    const submitFormHandler = useCallback(async (arg1?: any, arg2?: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+        // 🆕 normalizza parametri senza rompere l’esistente
+        const isPaymentPayload = (o: any) => o && typeof o === "object" && ("method" in o);
+        const payment = isPaymentPayload(arg1)
+            ? (arg1 as {
+                method: "CASH" | "PAYPAL";
+                confirmed: boolean;
+                amount?: number;
+                orderId?: string;
+                captureId?: string;
+                payerEmail?: string;
+                breakdown?: {
+                    imponibile: number;
+                    iva: number;
+                    trasporto: number;
+                    feePayPal: number;
+                };
+            })
+            : undefined;
+        const event = isPaymentPayload(arg1) ? arg2 : (arg1 as React.MouseEvent<HTMLButtonElement, MouseEvent> | undefined);
+
         event?.preventDefault();
+
+        // 🔐 Allineamento ad A4: richiedi login
+        if (!auth.currentUser) {
+            alert("Per effettuare un ordine è necessario effettuare il login.");
+            window.location.href = "/login";
+            return;
+        }
         setFormSubmitting(true);
-        if (fileData.length === 0 || !data.isValid) { // Controlla se ci sono file
-            setFormSubmitting(false); // Assicurati di impostare formSubmitting su false se non ci sono file
+
+        if (fileData.length === 0 || !data.isValid) {
+            setFormSubmitting(false);
             return;
         }
 
         const id = v4();
-        const paths: string[] = []; // Array per memorizzare i percorsi dei file
-        const urls: string[] = []; // Array per memorizzare gli URL dei file
+        const paths: string[] = [];
+        const urls: string[] = [];
 
-        // Carica i file uno per uno
+        // Upload file
         for (const { file } of fileData) {
             const path = `PDF/${data.surname + data.name + "|" + file.name.trim().replace(".pdf", "").replace(/\s/g, "").replace(/\(/g, "[").replace(/\)/g, "]") + "|" + id}.pdf`;
             paths.push(path);
@@ -197,22 +238,48 @@ const A3PagePrint = () => {
             urls.push(url);
         }
 
-        // Crea il messaggio con i link dei file
+        // ✅ Messaggio con numero di pagine accanto al link
         const fileLinks = urls.map((url, index) => {
             const pages = fileData[index].pages;
             return `- [File ${index + 1} - ${pages} pagine](${url.replace(/\(/g, "[").replace(/\)/g, "]")})`;
         }).join("\n");
 
+        // 🆕 calcolo descrizioni pagamento (fallback se non passato)
+        const metodoPagamento =
+            payment?.method === "PAYPAL"
+                ? "PayPal"
+                : payment?.method === "CASH"
+                    ? "Contanti"
+                    : "n/d";
+
+        const statoPagamento =
+            payment?.method === "PAYPAL"
+                ? (payment.confirmed ? "Pagato (conferma utente)" : "Non verificato")
+                : payment?.method === "CASH"
+                    ? "Da saldare alla consegna"
+                    : "Non specificato";
+
+        // 🧮 Quantità necessarie per StoricoDati (costi interni)
+        const nFogliPerCopia = computeNFogliPerCopiaA3(numeroPaginePDF, pagina);
+        const nFogli = nFogliPerCopia * Math.max(1, numeroCopie);
+
+        // chiavi comode per i filtri "Campo/Match" degli extra A3
+        const isColore = inchiostro === inchiostroEnum.COLORE;
+        const inchiostroKey = isColore ? "colore" : "biancoenero";
+        const grammaturaKey = (grammatura === grammaturaEnum.CARTONCINO) ? "cartoncino" : "normale";
+        const plastificazioneKey = (plastificazione === plastificazioneEnum.SI) ? "si" : "no";
+
+
         const dataToUpload = {
             id: id,
-            paths: paths,
+            path: paths,
             nome: data.name,
             cognome: data.surname,
             email: data.email,
             telefono: data.telephoneNumber,
             corsoLaurea: data.corsoLaurea,
             annoAccademico: data.annoAccademico,
-            files: urls,
+            file: urls,
             grammatura: grammatura === grammaturaEnum.CARTONCINO ? "Cartoncino" : "Normale",
             colore: inchiostro === inchiostroEnum.COLORE ? "Colore" : "Bianco e nero",
             pagina: pagina === 1 ? "Fronte" : "Fronte-retro",
@@ -223,51 +290,75 @@ const A3PagePrint = () => {
             copie: numeroCopie,
             prezzo: preventivo,
             timestamp: serverTimestamp(),
+            tipo: "A3",                 // aggiunto (non rimuove nulla)
+            uid: auth.currentUser?.uid, // aggiunto (non rimuove nulla)
+            // Se vuoi salvarli anche su Firestore, decommenta:
+            // metodoPagamento,
+            // statoPagamento,
+            // ✅ NUOVI CAMPI (usati da StoricoDati per i costi interni)
+            nFogli,                  // <-- importantissimo per i per_foglio
+            nFogliPerCopia,          // (facoltativo ma utile)
+            inchiostro: inchiostroKey,       // "colore" | "biancoenero"
+            grammaturaKey,                   // "normale" | "cartoncino"
+            plastificazioneKey,
         };
-
-        if (auth.currentUser) {
-            const userRef = doc(db, "users", auth.currentUser.uid);
-            await updateDoc(userRef, {
-                displayName: dataToUpload.nome,
-                cognome: dataToUpload.cognome,
-                email: dataToUpload.email,
-                telefono: dataToUpload.telefono,
-                corsoLaurea: dataToUpload.corsoLaurea,
-                annoAccademico: dataToUpload.annoAccademico,
-            });
-        }
-
         const collectionRef = collection(db, "StampePDFA3");
         const PDFref = doc(collectionRef, id);
+
+
         setDoc(PDFref, dataToUpload)
             .then(async () => {
-                await setDoc(doc(db, "ArchivioOrdini", id), {
-                    uid: auth.currentUser?.uid,
-                    tipo: "A3",
-                    prezzo: parseFloat(preventivo), // 👈 assicurati che sia numero
-                    timestamp: serverTimestamp(),
-                    nome: dataToUpload.nome,
-                    cognome: dataToUpload.cognome,
-                    email: dataToUpload.email,
-                    telefono: dataToUpload.telefono,
-                    corsoLaurea: dataToUpload.corsoLaurea,
-                    annoAccademico: dataToUpload.annoAccademico,
-                    files: dataToUpload.files,
-                });
-
+                // 🔄 AGGIORNA I DATI UTENTE SU RACCOLTA "users"
+                if (auth.currentUser) {
+                    const userRef = doc(db, "users", auth.currentUser.uid);
+                    await updateDoc(userRef, {
+                        displayName: dataToUpload.nome,
+                        cognome: dataToUpload.cognome,
+                        email: dataToUpload.email,
+                        telefono: dataToUpload.telefono,
+                        corsoLaurea: dataToUpload.corsoLaurea,
+                        annoAccademico: dataToUpload.annoAccademico,
+                    });
+                }
 
                 setFormSubmitting(false);
                 setFormSubmitted(true);
 
-                //salvataggio dati in ArchivioOrdini
-                const { files, paths, ...rest } = dataToUpload;
-                const datiSnelli = {
+                // 🆕 Totale finale: usa payment.amount (IVA+trasporto+fee) con fallback al preventivo
+                const totaleFinale =
+                    typeof payment?.amount === "number" ? payment.amount : Number(preventivo);
+
+                // ✅ CREA versione ridotta dell'ordine senza file PDF
+                const { file, path, ...rest } = dataToUpload;
+                const datiSnelliti = {
                     ...rest,
-                    timestamp: serverTimestamp(), // Reimposta il timestamp
+                    totaleFinale,                             // già presente
+                    metodoPagamento,                          // ✅ nuovo
+                    trasporto: payment?.breakdown?.trasporto ?? 0,    // ✅ nuovo
+                    imponibile: payment?.breakdown?.imponibile ?? undefined, // ✅ nuovo
+                    iva: payment?.breakdown?.iva ?? undefined,         // ✅ nuovo
+                    paypalFee: payment?.breakdown?.feePayPal ?? 0,     // ✅ nuovo
+                    timestamp: serverTimestamp(),
+                    // ✅ ripetizione campi tecnici
+                    nFogli,
+                    nFogliPerCopia,
+                    inchiostro: inchiostroKey,
+                    grammaturaKey,
+                    plastificazioneKey,
                 };
 
-                await setDoc(doc(db, "ArchivioOrdini", id), datiSnelli);
-                // Invia il messaggio a Telegram
+
+
+                await setDoc(doc(db, "ArchivioOrdini", id), datiSnelliti);
+
+
+                // 🧾 Dettagli PayPal facoltativi
+                const extraPP =
+                    payment?.method === "PAYPAL"
+                        ? `\n🧾 *PayPal OrderID*: ${payment.orderId ?? "-"}\n🧾 *CaptureID*: ${payment.captureId ?? "-"}\n👤 *Payer*: ${payment.payerEmail ?? "-"}\n`
+                        : "";
+
+                // 🆕 Messaggio Telegram aggiornato con Totale finale
                 const messageText = `
 =====================
   *NUOVO ORDINE A3*
@@ -290,24 +381,25 @@ ${fileLinks}
 📐 *Layout*: ${dataToUpload.layout}
 *Plastificazione*: ${dataToUpload.plastificazione}
 🔢 *Copie*: ${dataToUpload.copie}
-💰💰 *Prezzo*: ${preventivo}€ 💰💰
-`;
+
+💳 *Metodo di pagamento*: ${metodoPagamento}
+✅ *Stato pagamento*: ${statoPagamento}
+💰 *Totale finale*: ${fmtEuro(totaleFinale)} €
+${extraPP}`.trim();
                 const apiUrl = `https://api.telegram.org/bot${TOKENA3}/sendMessage`;
-                const data = {
+                const payload = {
                     chat_id: CHAT_IDA3,
                     text: messageText,
                     parse_mode: "Markdown",
                 };
-                const requestOptions = {
+
+                fetch(apiUrl, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(data),
-                };
-                fetch(apiUrl, requestOptions)
+                    body: JSON.stringify(payload),
+                })
                     .then((response) => {
-                        if (response.ok) {
-                            console.log("Messaggio inviato con successo");
-                        } else {
+                        if (!response.ok) {
                             console.log("Errore durante l'invio del messaggio:", response.statusText);
                         }
                     })
@@ -320,9 +412,21 @@ ${fileLinks}
                 setFormError(true);
                 setFormSubmitting(false);
             });
-    }, [data.annoAccademico, data.corsoLaurea, data.email, data.isValid, data.name, data.surname, data.telephoneNumber, fileData, grammatura, inchiostro, layout, numeroCopie, numeroPDF, numeroPaginePDF, pagina, plastificazione, preventivo]);
-
-
+    },
+        [
+            data,
+            fileData,
+            grammatura,
+            inchiostro,
+            layout,
+            numeroCopie,
+            numeroPDF,
+            numeroPaginePDF,
+            pagina,
+            plastificazione,
+            preventivo
+        ]
+    );
 
     useEffect(() => {
         if (formSubmitted) {
@@ -336,7 +440,7 @@ ${fileLinks}
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (user) {
-                setIsLoggedIn(true); // 👈 AGGIUNTO
+                setIsLoggedIn(true);
                 const docRef = doc(db, "users", user.uid);
                 const userSnap = await getDoc(docRef);
 
@@ -353,7 +457,7 @@ ${fileLinks}
                     });
                 }
             } else {
-                setIsLoggedIn(false); // 👈 AGGIUNTO
+                setIsLoggedIn(false);
             }
         });
 
@@ -363,6 +467,7 @@ ${fileLinks}
     return (
         <div className="container">
             <Header />
+            <Banner />
             <Intro
                 title={"STAMPA I TUOI DOCUMENTI A3"}
                 text={"In questa pagina potrai ordinare la stampa del tuo documento, inserisci le caratteristiche disponibili nelle varie sezioni per poter avere dei documenti cartacei di qualità."}
@@ -508,19 +613,14 @@ ${fileLinks}
                         layout={layout === 0 ? "Orizzontale" : layout === 1 ? "Verticale" : "Auto"}
                         plastificazione={plastificazione === 0 ? "Si" : "No"}
                         prezzo={preventivo}
-                        onConfirmOrder={submitFormHandler} // Da completare se necessario
+                        onConfirmOrder={submitFormHandler} // compatibile con (payload, event) o solo (event)
                         disabled={!data.isValid || fileData.length === 0 || formSubmitting}
                         loading={formSubmitting}
                         submitted={formSubmitted}
                     />
                 </div>
             </div>
-
             <Footer />
-            {/*<Modal totalOrder={preventivo} onSubmit={submitFormHandler} disabled={!data.isValid || !file} />
-            
-            {(formSubmitted || formSubmitting) && <FinalModal onConfirm={closeFinalModalHandler} loading={formSubmitting ? "submitting" : "submitted"} />}
-            {formError && <FinalModal onConfirm={closeFinalModalHandler} loading={"error"} />}*/}
         </div>
     );
 };

@@ -1,0 +1,335 @@
+/* ====== Layout base ====== */
+.container {
+  max-width: 1100px;
+  margin: 0 auto 0;
+  padding: 20px 20px;
+  color: #fff;
+}
+
+.intro { text-align: center; margin-bottom: 28px; }
+.intro h1 { font-size: 2.2rem; color: var(--color-gold); margin: 0 0 8px; }
+.subtitle { color: #cfcfcf; font-size: 1.05rem; }
+
+/* ====== Sezione form ====== */
+.config h2 {
+  text-align: center;
+  color: var(--color-gold);
+  margin: 6px 0 18px;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 24px;
+}
+@media (max-width: 920px) {
+  .formGrid { grid-template-columns: 1fr; }
+}
+
+.formCol {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.field label {
+  color: var(--color-gold);
+  font-weight: 600;
+}
+
+/* righe a 2 colonne dove serve (copie / consegna+indirizzo / data) */
+.fieldRowWrap {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 920px) {
+  .fieldRowWrap { grid-template-columns: 1fr; }
+}
+
+/* riga privacy (legacy: tenuta per compatibilità) */
+.fieldRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ====== Inputs ====== */
+.select,
+.input,
+.textarea {
+  background: #0e0e0f;
+  color: #fff;
+  border: 1px solid #2a2a2d;
+  border-radius: 10px;
+  padding: 10px 12px;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+.textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+.input[type="file"] {
+  padding: 12px;
+}
+.select:focus,
+.input:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--color-gold);
+  box-shadow: 0 0 0 3px rgba(199, 157, 15, 0.2);
+}
+
+/* Checkbox in linea (legacy: non più usata nella col DX ma la manteniamo) */
+.checkLine {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Lista file */
+.fileList {
+  margin-top: 8px;
+  color: #d7d7d7;
+  font-size: .95rem;
+  list-style: none;
+  padding: 0;
+}
+.fileList li {
+  padding: 4px 0;
+  border-bottom: 1px dashed #2b2b2e;
+}
+
+/* Hint testi */
+.userHint { color: #e7e7e7; }
+.userHintDim { color: #9b9b9b; }
+.hint { color: #9b9b9b; font-size: .9rem; }
+
+/* ====== Anteprima 3D (card) ====== */
+.preview3dCard {
+  background: #0d0d0f;
+  border: 1px solid #242428;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.preview3dHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid #242428;
+}
+.preview3dHeader h3 {
+  margin: 0;
+  color: #ddd;
+  font-size: 1rem;
+}
+.preview3dFooter {
+  padding: 8px 12px;
+  color: #9e9e9e;
+  font-size: .9rem;
+  border-top: 1px solid #242428;
+}
+
+/* ====== Pulsanti / invio ====== */
+.buttonPrimary,
+.button {
+  cursor: pointer;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  padding: 10px 14px;
+  font-weight: 600;
+}
+
+/* ⚠️ DUPLICATE: mantenuta come legacy; la versione attiva è più sotto */
+ /*
+.buttonPrimary {
+  background: var(--color-gold);
+  color: #000;
+}
+.buttonPrimary:disabled {
+  filter: grayscale(.6);
+  opacity: .7;
+  cursor: not-allowed;
+}
+*/
+
+.button {
+  background: #1a1a1d;
+  border: 1px solid #2a2a2f;
+  color: #fff;
+}
+.button:hover { background: #202025; }
+
+.submitRow {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* ⚠️ DUPLICATE: legacy; la versione attiva di .success è più sotto */
+ /*
+.success {
+  color: #7CFC7C;
+  font-weight: 700;
+}
+*/
+
+/* ====== Spaziature generali ====== */
+.intro + .config { margin-top: 12px; }
+
+/* ===== Bobine colore ===== */
+.spoolGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+@media (max-width: 920px) {
+  .spoolGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 520px) {
+  .spoolGrid { grid-template-columns: 1fr; }
+}
+
+.spool {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #121214;
+  border: 1px solid #2a2a2f;
+  border-radius: 10px;
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: border-color .2s ease, box-shadow .2s ease, transform .02s ease;
+}
+.spool:hover {
+  border-color: var(--color-gold);
+}
+.spool:active {
+  transform: translateY(1px);
+}
+.spoolActive {
+  outline: 2px solid var(--color-gold);
+  box-shadow: 0 0 0 3px rgba(199, 157, 15, 0.15) inset;
+}
+
+.swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.25);
+  box-shadow: inset 0 0 0 2px rgba(0,0,0,.1);
+}
+.spoolLabel {
+  color: #ddd;
+  font-size: .95rem;
+  line-height: 1.2;
+}
+
+/* ====== Colonna DX (privacy + CTA + dati) ====== */
+.sideCard {
+  background: #111;
+  border: 1px solid #2a2a2a;
+  border-radius: 16px;
+  padding: 16px 18px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.25);
+}
+
+.privacyRow {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  line-height: 1.35;
+  margin-bottom: 10px;
+}
+
+.checkboxInput {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: var(--color-gold, #caa700);
+}
+
+.privacyText {
+  color: #e9e9e9;
+  font-size: 0.98rem;
+}
+.privacyText a {
+  color: var(--color-gold, #caa700);
+  text-decoration: underline;
+}
+
+.ctaRow {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 6px 0 12px;
+  flex-wrap: wrap;
+}
+
+/* ▼ versione attiva e completa di .buttonPrimary */
+.buttonPrimary {
+  background: var(--color-gold, #caa700);
+  color: #111;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .2s ease, opacity .2s ease;
+}
+.buttonPrimary:hover:enabled {
+  transform: translateY(-1px);
+  box-shadow: 0 0 18px rgba(202,167,0,.35);
+}
+.buttonPrimary:disabled {
+  /* manteniamo anche il comportamento "legacy" */
+  filter: grayscale(.6);
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+.ctaHint {
+  color: #bdbdbd;
+  font-size: .92rem;
+}
+
+/* ▼ versione attiva di .success */
+.success {
+  color: #9be880;
+  font-weight: 700;
+  font-size: .95rem;
+}
+
+.userInfoBox {
+  margin-top: 4px;
+  padding: 10px 12px;
+  border: 1px dashed #3a3a3a;
+  border-radius: 12px;
+  background: #0f0f0f;
+  font-size: .95rem;
+  color: #eaeaea;
+}
+.userInfoBox a {
+  color: var(--color-gold, #caa700);
+  text-decoration: none;
+  font-weight: 700;
+}
+.userInfoBox a:hover {
+  text-decoration: underline;
+}
+
+/* Mobile */
+@media (max-width: 860px) {
+  .sideCard { padding: 14px; }
+  .ctaRow { flex-direction: column; align-items: stretch; }
+  .ctaRow > .buttonPrimary { width: 100%; }
+  .ctaRow > .success, .ctaRow > .ctaHint { text-align: center; }
+}
