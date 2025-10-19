@@ -1,5 +1,5 @@
 import styles from "./RiepilogoOrdine.module.css";
-import React, { useEffect, useRef, useState, useMemo } from "react";
+import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { db } from "../../backend/firebase";
 import { doc, onSnapshot } from "firebase/firestore";
 
@@ -27,28 +27,24 @@ type RiepilogoA3Props = {
   numeroCopie: number;
   numeroPDF: number;
   numeroPagine: number;
-  prezzo: string; // es: "12,50" o "12.50"
+  prezzo: string; // "12,50" o "12.50"
   onConfirmOrder: (payment: PaymentPayload) => Promise<void>;
   disabled?: boolean;
   loading?: boolean;
   submitted?: boolean;
 
-  /** fallback locali se il doc Firestore non esiste/incompleto */
-  ivaRate?: number;           // default 0.22 (22%)
-  transportFeeEuro?: number;  // default 0
-  paypalPercent?: number;     // default 0.0349 (3.49%)
-  paypalFixed?: number;       // default 0.35 (€)
+  ivaRate?: number;
+  transportFeeEuro?: number;
+  paypalPercent?: number;
+  paypalFixed?: number;
 
-  /** opzionali: se il backend richiede header */
-  authToken?: string;         // es. JWT
-  csrfToken?: string;         // se usi protezione CSRF
+  authToken?: string;
+  csrfToken?: string;
 };
 
-// ===== ENV (Create React App) =====
 const PAYPAL_CLIENT_ID = process.env.REACT_APP_PAYPAL_CLIENT_ID as string;
 const API_BASE = process.env.REACT_APP_API_BASE_URL || "";
 
-// accetta "12,50" o "12.50"
 function parseEuro(prezzo: string): number {
   const normalized = prezzo.replace(",", ".").replace(/[^\d.]/g, "");
   const val = parseFloat(normalized);
@@ -58,13 +54,8 @@ const round2 = (n: number) => Math.round(n * 100) / 100;
 const euro = (n: number) =>
   n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-declare global {
-  interface Window {
-    paypal?: any;
-  }
-}
+declare global { interface Window { paypal?: any; } }
 
-// Firestore config path
 const FEES_COLLECTION = "configTasse";
 const FEES_DOC = "fees";
 
@@ -99,13 +90,10 @@ const RiepilogoOrdineA3 = ({
   csrfToken,
 }: RiepilogoA3Props) => {
   const [progress, setProgress] = useState(0);
-
-  // stato pagamenti
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "paypal" | null>(null);
   const [paypalReady, setPaypalReady] = useState(false);
   const paypalButtonsContainerRef = useRef<HTMLDivElement | null>(null);
 
-  /* ======= Tasse da Firestore (live) con fallback ai props ======= */
   const [fees, setFees] = useState<Fees>({
     ivaRate,
     transportFeeEuro,
@@ -131,7 +119,6 @@ const RiepilogoOrdineA3 = ({
     return () => unsub();
   }, [ivaRate, transportFeeEuro, paypalPercent, paypalFixed]);
 
-  /* ======= Calcoli economici ======= */
   const totals = useMemo(() => {
     const base = round2(parseEuro(prezzo));
     const iva = round2(base * fees.ivaRate);
@@ -143,25 +130,16 @@ const RiepilogoOrdineA3 = ({
         ? round2(subTotale * fees.paypalPercent + fees.paypalFixed)
         : 0;
 
-    const totaleContanti = subTotale; // niente fee PayPal
+    const totaleContanti = subTotale;
     const totalePayPal = round2(subTotale + feePP);
-
-    const totaleDaAddebitare =
-      paymentMethod === "paypal" ? totalePayPal : totaleContanti;
+    const totaleDaAddebitare = paymentMethod === "paypal" ? totalePayPal : totaleContanti;
 
     return {
-      base,
-      iva,
-      trasporto,
-      subTotale,
-      feePP,
-      totaleContanti,
-      totalePayPal,
-      totaleDaAddebitare,
+      base, iva, trasporto, subTotale, feePP, totaleContanti, totalePayPal, totaleDaAddebitare,
     };
   }, [prezzo, fees, paymentMethod]);
 
-  // Carica lo script PayPal quando serve
+  // Carica PayPal SDK
   useEffect(() => {
     if (paymentMethod !== "paypal") return;
 
@@ -176,24 +154,22 @@ const RiepilogoOrdineA3 = ({
     }
 
     const script = document.createElement("script");
-    script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(
-      PAYPAL_CLIENT_ID
-    )}&currency=EUR&intent=capture&components=buttons`;
+    script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(PAYPAL_CLIENT_ID)}&currency=EUR&intent=capture&components=buttons`;
     script.async = true;
     script.onload = () => setPaypalReady(true);
     script.onerror = () => console.error("Impossibile caricare PayPal SDK");
     document.body.appendChild(script);
   }, [paymentMethod]);
 
-  // Helper fetch JSON robusto
-  const fetchJSON = async <T,>(url: string, body: any): Promise<T> => {
+  // Helper fetch JSON robusto, memoizzato
+  const fetchJSON = useCallback(async <T,>(url: string, body: any): Promise<T> => {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (authToken) headers["Authorization"] = `Bearer ${authToken}`;
     if (csrfToken) headers["X-CSRF-Token"] = csrfToken;
 
     const res = await fetch(url, {
       method: "POST",
-      credentials: "include", // <-- manda cookie di sessione
+      credentials: "include",
       headers,
       body: JSON.stringify(body),
     });
@@ -209,13 +185,12 @@ const RiepilogoOrdineA3 = ({
       console.error(`Risposta non JSON da ${url}:`, text.slice(0, 500));
       throw new Error("Risposta non JSON dal server");
     }
-  };
+  }, [authToken, csrfToken]);
 
   // Render PayPal Buttons
   useEffect(() => {
     if (paymentMethod !== "paypal" || !paypalReady || !paypalButtonsContainerRef.current || submitted) return;
 
-    // pulizia container
     paypalButtonsContainerRef.current.innerHTML = "";
 
     const Buttons = window.paypal?.Buttons;
@@ -224,7 +199,6 @@ const RiepilogoOrdineA3 = ({
     const instance = Buttons({
       style: { layout: "vertical" },
 
-      // 1) Crea l'ordine sul backend
       createOrder: async () => {
         const data = await fetchJSON<{ orderId: string }>(
           `${API_BASE}/api/paypal/create-order`,
@@ -239,7 +213,6 @@ const RiepilogoOrdineA3 = ({
         return data.orderId;
       },
 
-      // 2) Approve → cattura sul backend, poi conferma ordine
       onApprove: async (data: any) => {
         try {
           const cap = await fetchJSON<{
@@ -265,8 +238,8 @@ const RiepilogoOrdineA3 = ({
                 imponibile: totals.base,
                 iva: totals.iva,
                 trasporto: totals.trasporto,
-                feePayPal: totals.feePP
-              }
+                feePayPal: totals.feePP,
+              },
             });
           } else {
             alert("Pagamento non completato: " + cap.status);
@@ -286,9 +259,9 @@ const RiepilogoOrdineA3 = ({
     instance.render(paypalButtonsContainerRef.current);
 
     return () => {
-      try { instance.close(); } catch { /* noop */ }
+      try { instance.close(); } catch { /* no-op */ }
     };
-  }, [paymentMethod, paypalReady, submitted, totals, onConfirmOrder, authToken, csrfToken]);
+  }, [paymentMethod, paypalReady, submitted, totals, onConfirmOrder, fetchJSON]);
 
   const handleConfirmOrderCash = async () => {
     await onConfirmOrder({
@@ -299,15 +272,15 @@ const RiepilogoOrdineA3 = ({
         imponibile: totals.base,
         iva: totals.iva,
         trasporto: totals.trasporto,
-        feePayPal: 0
-      }
+        feePayPal: 0,
+      },
     });
   };
 
   const handlePayCash = () => setPaymentMethod("cash");
   const handlePayPaypal = () => setPaymentMethod("paypal");
 
-  // Barra di caricamento (solo UI)
+  // Barra di caricamento (solo invio ordine)
   useEffect(() => {
     if (loading) {
       let current = 0;
@@ -325,12 +298,10 @@ const RiepilogoOrdineA3 = ({
 
   useEffect(() => { if (submitted) setProgress(100); }, [submitted]);
 
-  const confirmDisabledCash =
-    disabled || loading || submitted || paymentMethod !== "cash";
-
   return (
     <div className={styles["riepilogo-container"]}>
       <h3 className={styles["riepilogo-title"]}>📋 Riepilogo Ordine A3</h3>
+
       <div className={`${styles["price-card"]} ${styles["details-card"]}`}>
         <div className={styles["price-header"]}>Dettagli ordine</div>
 
@@ -368,7 +339,7 @@ const RiepilogoOrdineA3 = ({
         </div>
       </div>
 
-      {/* Breakdown economico */}
+      {/* --- Breakdown economico --- */}
       <div className={`${styles["price-card"]} ${styles["price-left"]}`}>
         <div className={styles["price-row"]}>
           <span className={styles["price-label"]}>Imponibile</span>
@@ -416,7 +387,7 @@ const RiepilogoOrdineA3 = ({
         <button
           type="button"
           className={`${styles["pay-button"]} ${paymentMethod === "cash" ? styles["selected"] : ""}`}
-          onClick={() => setPaymentMethod("cash")}
+          onClick={handlePayCash}
           aria-pressed={paymentMethod === "cash"}
         >
           💵 Contanti
@@ -426,7 +397,7 @@ const RiepilogoOrdineA3 = ({
         <button
           type="button"
           className={`${styles["pay-button"]} ${paymentMethod === "paypal" ? styles["selected"] : ""}`}
-          onClick={() => setPaymentMethod("paypal")}
+          onClick={handlePayPaypal}
           aria-pressed={paymentMethod === "paypal"}
         >
           🟦 PayPal
@@ -448,19 +419,7 @@ const RiepilogoOrdineA3 = ({
       {!loading && !submitted && paymentMethod === "cash" && (
         <button
           className={styles["confirm-button"]}
-          onClick={async () => {
-            await onConfirmOrder({
-              method: "CASH",
-              confirmed: false,
-              amount: totals.totaleContanti,
-              breakdown: {
-                imponibile: totals.base,
-                iva: totals.iva,
-                trasporto: totals.trasporto,
-                feePayPal: 0
-              }
-            });
-          }}
+          onClick={handleConfirmOrderCash}
           disabled={disabled || loading || submitted || paymentMethod !== "cash"}
         >
           ✅ Conferma Ordine

@@ -1,5 +1,5 @@
 import styles from "./RiepilogoOrdine.module.css";
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { db } from "../../backend/firebase";
 import { doc, onSnapshot } from "firebase/firestore";
 
@@ -34,14 +34,14 @@ type RiepilogoProps = {
   loading?: boolean;
 
   /** default usati come fallback se il doc Firestore non esiste o è incompleto */
-  ivaRate?: number;           // default 0.22 (22%)
-  transportFeeEuro?: number;  // default 0
-  paypalPercent?: number;     // default 0.0349 (3.49%)
-  paypalFixed?: number;       // default 0.35 (€)
+  ivaRate?: number;
+  transportFeeEuro?: number;
+  paypalPercent?: number;
+  paypalFixed?: number;
 
   /** opzionali: per backend protetti senza cookie */
-  authToken?: string;         // es. JWT
-  csrfToken?: string;         // se usi protezione CSRF
+  authToken?: string; // JWT
+  csrfToken?: string; // protezione CSRF
 };
 
 const PAYPAL_CLIENT_ID = process.env.REACT_APP_PAYPAL_CLIENT_ID as string;
@@ -88,7 +88,6 @@ const RiepilogoOrdine = ({
   paypalPercent = 0.0349,
   paypalFixed = 0.35,
 
-  /** opzionali */
   authToken,
   csrfToken,
 }: RiepilogoProps) => {
@@ -151,6 +150,10 @@ const RiepilogoOrdine = ({
       setPaypalReady(true);
       return;
     }
+    if (!PAYPAL_CLIENT_ID) {
+      console.error("PAYPAL_CLIENT_ID mancante");
+      return;
+    }
     const script = document.createElement("script");
     script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(PAYPAL_CLIENT_ID)}&currency=EUR&intent=capture&components=buttons`;
     script.async = true;
@@ -159,22 +162,21 @@ const RiepilogoOrdine = ({
     document.body.appendChild(script);
   }, [paymentMethod]);
 
-  // Helper fetch JSON robusto (gestisce HTML/redirect/CSRF)
-  const fetchJSON = async <T,>(url: string, body: any): Promise<T> => {
+  // Helper fetch JSON robusto, memoizzato
+  const fetchJSON = useCallback(async <T,>(url: string, body: any): Promise<T> => {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (authToken) headers["Authorization"] = `Bearer ${authToken}`;
     if (csrfToken) headers["X-CSRF-Token"] = csrfToken;
 
     const res = await fetch(url, {
       method: "POST",
-      credentials: "include", // <-- manda i cookie di sessione
+      credentials: "include", // cookie di sessione
       headers,
       body: JSON.stringify(body),
     });
 
     const text = await res.text();
     if (!res.ok) {
-      // se il backend ha risposto HTML (redirect/login/errore), lo vediamo subito
       console.error(`HTTP ${res.status} su ${url}. Body:`, text.slice(0, 500));
       throw new Error(`Request failed (${res.status})`);
     }
@@ -184,13 +186,12 @@ const RiepilogoOrdine = ({
       console.error(`Risposta non JSON da ${url}:`, text.slice(0, 500));
       throw new Error("Risposta non JSON dal server");
     }
-  };
+  }, [authToken, csrfToken]);
 
   // Render PayPal Buttons
   useEffect(() => {
     if (paymentMethod !== "paypal" || !paypalReady || !paypalButtonsContainerRef.current || submitted) return;
 
-    // pulizia container (evita doppie istanze)
     paypalButtonsContainerRef.current.innerHTML = "";
 
     const Buttons = window.paypal?.Buttons;
@@ -263,8 +264,7 @@ const RiepilogoOrdine = ({
     return () => {
       try { instance.close(); } catch { /* noop */ }
     };
-    // NB: totals cambia quando selezioni PayPal (per fee) → va bene, il pulsante si riallinea
-  }, [paymentMethod, paypalReady, submitted, totals, onConfirmOrder, authToken, csrfToken]);
+  }, [paymentMethod, paypalReady, submitted, totals, onConfirmOrder, fetchJSON]);
 
   const handleConfirmOrderCash = async () => {
     await onConfirmOrder({
@@ -299,11 +299,7 @@ const RiepilogoOrdine = ({
     }
   }, [loading]);
 
-  useEffect(() => {
-    if (submitted) setProgress(100);
-  }, [submitted]);
-
-  const confirmDisabledCash = disabled || loading || submitted || paymentMethod !== "cash";
+  useEffect(() => { if (submitted) setProgress(100); }, [submitted]);
 
   return (
     <div className={styles["riepilogo-container"]}>
