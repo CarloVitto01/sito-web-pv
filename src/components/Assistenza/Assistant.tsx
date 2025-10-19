@@ -35,10 +35,137 @@ type AssistantWidgetProps = {
 };
 
 const DEFAULT_FAQS: FaqItem[] = [
-  { id: "a4-a3-diff", question: "Differenze tra stampa A4 e A3", answer: "L’A4 è 210×297 mm, l’A3 297×420 mm. I costi variano per inchiostro/grammatura/plastificazione. Nel riepilogo ordine vedi prezzo aggiornato in tempo reale." },
-  { id: "pagamenti", question: "Posso pagare con PayPal o contanti?", answer: "Sì, accettiamo PayPal online e contanti al ritiro. Con PayPal il totale include eventuali fee visualizzate nel riepilogo." },
-  { id: "consegne", question: "Tempi di consegna", answer: "Tipicamente 24–48h per stampe standard. L’assistente ti mostra una stima nel riepilogo ordine; urgenze? Scrivici nel ticket." },
+  /* ======= STAMPE A4 / A3 ======= */
+  {
+    id: "stampe-differenze",
+    question: "Qual è la differenza tra stampa A4 e A3?",
+    answer:
+      "L’A4 misura 210×297 mm, l’A3 297×420 mm. Le A3 costano di più per via di inchiostro e grammatura. Puoi scegliere colore, bianco/nero e plastificazione dal modulo ordine, con prezzo aggiornato in tempo reale."
+  },
+  {
+    id: "stampe-preventivo",
+    question: "Posso vedere il preventivo prima di confermare la stampa?",
+    answer:
+      "Sì, nel riepilogo dell’ordine il prezzo viene calcolato automaticamente in base a numero di pagine, colori, rilegatura e altre opzioni selezionate."
+  },
+  {
+    id: "stampe-consegna",
+    question: "In quanto tempo riceverò le stampe?",
+    answer:
+      "In genere entro 24–48 ore per stampe standard. Per grandi quantità o rilegature speciali i tempi vengono comunicati tramite WhatsApp."
+  },
+  {
+    id: "stampe-rilegatura",
+    question: "Offrite diversi tipi di rilegatura?",
+    answer:
+      "Certo. Puoi scegliere tra spirale, anelli o fascetta. Ogni tipo ha un costo visibile nel gestionale stampe e si aggiorna in automatico."
+  },
+  {
+    id: "stampe-formato-pdf",
+    question: "Che file posso caricare per la stampa?",
+    answer:
+      "Accettiamo PDF multipli, anche uniti. Assicurati che ogni file abbia dimensioni A4 o A3 e margini corretti; il sistema conteggia automaticamente le pagine."
+  },
+
+  /* ======= SITI WEB ======= */
+  {
+    id: "web-tipologie",
+    question: "Che tipi di siti web realizzate?",
+    answer:
+      "Offriamo template personalizzabili: **facciata**, **portfolio**, **e-commerce**, **blog**, **catalogo** e **istituzionale**. Ogni progetto è responsive, ottimizzato SEO e gestibile da pannello."
+  },
+  {
+    id: "web-preventivo",
+    question: "Come funziona il preventivo per un sito web?",
+    answer:
+      "Puoi inviare una *Richiesta Sito Web* dall’apposita sezione: inserisci tipo di sito, pagine desiderate e budget indicativo. Ti rispondiamo con una proposta dettagliata entro 48 ore."
+  },
+  {
+    id: "web-tempistiche",
+    question: "Quanto tempo serve per sviluppare un sito?",
+    answer:
+      "Dipende dalla complessità: un sito vetrina richiede 1-2 settimane, un e-commerce completo circa 3-4 settimane."
+  },
+  {
+    id: "web-manutenzione",
+    question: "Offrite anche manutenzione o aggiornamenti?",
+    answer:
+      "Sì, includiamo un piano base di manutenzione. Puoi attivare piani aggiuntivi per backup automatici, aggiornamenti di contenuti e supporto tecnico mensile."
+  },
+
+  /* ======= STAMPE 3D ======= */
+  {
+    id: "3d-formati",
+    question: "Quali file accettate per la stampa 3D?",
+    answer:
+      "I formati supportati sono **.STL**, **.OBJ** e **.3MF**. Carica il modello dal modulo *Richiesta Stampa 3D*, dove puoi visualizzare anteprima e dimensioni rilevate."
+  },
+  {
+    id: "3d-materiali",
+    question: "Che materiali utilizzate per la stampa 3D?",
+    answer:
+      "Stampiamo principalmente in PLA. Offriamo la possibilità di selezionare il colore tra quelli disponibili. Per materiali speciali o richieste particolari, contattaci direttamente."
+  },
+  {
+    id: "3d-preventivo",
+    question: "Come viene calcolato il prezzo di una stampa 3D?",
+    answer:
+      "Il prezzo dipende da peso, materiale, infill e tempo macchina. Il costo complessivo ti verrà comunicato via WhatsApp dopo aver esaminato il modello caricato."
+  },
+  {
+    id: "3d-ritiro",
+    question: "Posso ritirare di persona il pezzo stampato?",
+    answer:
+      "Sì, puoi ritirarlo in sede oppure richiedere spedizione. Le opzioni di ritiro/spedizione verranno stabilite al momento della conferma tramite WhatsApp."
+  },
+
+  /* ======= FOTO & VIDEO ======= */
+  {
+    id: "foto-servizi",
+    question: "Che servizi fotografici offrite?",
+    answer:
+      "Servizi foto per eventi, prodotti, book personali e cerimonie. Puoi consultare le gallery nella sezione *Foto & Video* e richiedere un preventivo personalizzato."
+  },
+  {
+    id: "video-servizi",
+    question: "Realizzate anche video promozionali o eventi?",
+    answer:
+      "Sì. Produciamo video per aziende, spot social e riprese eventi. Offriamo anche montaggio e correzione colore professionale."
+  },
+  {
+    id: "foto-privacy",
+    question: "Le foto e i video vengono pubblicati online?",
+    answer:
+      "Solo se ci autorizzi. Tutti i contenuti restano privati finché non concedi il consenso alla pubblicazione sul portfolio Photo & Vision."
+  },
+
+  /* ======= PAGAMENTI / ACCOUNT ======= */
+  {
+    id: "pagamenti",
+    question: "Quali metodi di pagamento accettate?",
+    answer:
+      "PayPal, carte di credito e contanti al ritiro. Con PayPal vengono applicate eventuali fee indicate nel riepilogo dell’ordine."
+  },
+  {
+    id: "fattura",
+    question: "Posso richiedere fattura?",
+    answer:
+      "Sì, ti basterà inviare una richiesta tramite WhatsApp o tramite Ticket nella scheda 'Richiesta'. Riceverai la fattura via email dopo la conferma del pagamento."
+  },
+  {
+    id: "account-modifica",
+    question: "Posso modificare i miei dati dopo la registrazione?",
+    answer:
+      "Certo. Accedi alla pagina *Il mio Account* dal menu e aggiorna nome, email o numero di telefono. Le modifiche vengono salvate in tempo reale."
+  },
+  {
+    id: "assistenza-contatto",
+    question: "Come posso contattare l’assistenza?",
+    answer:
+      "Puoi scrivere direttamente qui nell’assistente virtuale (scheda *Richiesta*). In alternativa, trovi i recapiti in fondo alla pagina del sito."
+  }
 ];
+
 
 const AssistantWidget: React.FC<AssistantWidgetProps> = ({
   faqs = DEFAULT_FAQS,
@@ -241,7 +368,6 @@ ${safe(payload.message)}
             <div className={styles.tabs}>
               <button className={`${styles.tab} ${tab === "faq" ? styles.active : ""}`} onClick={() => setTab("faq")}>FAQ</button>
               <button className={`${styles.tab} ${tab === "ticket" ? styles.active : ""}`} onClick={() => setTab("ticket")}>Richiesta</button>
-              <button className={`${styles.tab} ${tab === "shortcuts" ? styles.active : ""}`} onClick={() => setTab("shortcuts")} title="Scorciatoie da tastiera">⌨︎</button>
             </div>
           </div>
 
@@ -402,19 +528,11 @@ ${safe(payload.message)}
                 </p>
               </section>
             )}
-
-            {tab === "shortcuts" && (
-              <section className={styles.kb}>
-                <div><kbd>Alt</kbd> + <kbd>/</kbd> — Apri/chiudi assistente</div>
-                <div><kbd>Esc</kbd> — Chiudi assistente</div>
-                <div>Navigazione da tastiera completa sulle schede e campi input</div>
-              </section>
-            )}
           </div>
 
           {/* Footer / privacy */}
           <div className={styles.footer}>
-            Servizio clienti • <a href="/privacy" aria-label="Privacy Policy">Privacy</a>
+            Assistenza clienti<a href="/privacy" aria-label="Privacy Policy">Privacy</a>
           </div>
         </div>
       )}

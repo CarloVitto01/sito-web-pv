@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { db } from "../../backend/firebase";
 import { doc, onSnapshot, setDoc } from "firebase/firestore";
-import styles from "../GestionaleA4/A4Gestionale.module.css"; // riusa lo stesso stile dei costi A4
+import styles from "./TasseGestionale.module.css";
 import Header from "../../components/HeaderComponents/Header";
 
 type Tasse = {

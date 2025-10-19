@@ -318,7 +318,23 @@ const A4PagePrint = () => {
     }
   }, [inchiostro, pagina, layout, rilegatura, intervalloPagine, numeroPaginePDF, numeroCopie, numeroPDF, rilegaturaUnica, costi]);
 
-  //Send data to the Firebase server
+  // --- Helpers per quantità interne ---
+  const computeNFogliPerCopia = (pagineSelezionate: number, paginaMode: number, layoutMode: number) => {
+    // pagina: fronte-retro dimezza
+    let fogli = paginaMode === paginaEnum.FRONTE_RETRO ? Math.ceil(pagineSelezionate / 2) : pagineSelezionate;
+    // layout: 2-in-1 dimezza (arrotondando per eccesso)
+    if (layoutMode === layoutEnum.DUEPAGORIZZ || layoutMode === layoutEnum.DUEPAGVERT) {
+      fogli = Math.ceil(fogli / 2);
+    }
+    return Math.max(0, fogli);
+  };
+
+  const computeFascicoli = (copie: number, rilegaturaUnicaVal: number) => {
+    // rispecchia StoricoDati.numFascicoli: se unica -> 1, altrimenti = copie
+    const isUnica = rilegaturaUnicaVal === rilegaturaUnicaEnum.SI;
+    return isUnica ? 1 : Math.max(1, copie);
+  };
+
 
   // 🆕 accetta sia (event) sia (paymentPayload, event)
   const submitFormHandler = useCallback(async (arg1?: any, arg2?: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
@@ -332,6 +348,12 @@ const A4PagePrint = () => {
         orderId?: string;
         captureId?: string;
         payerEmail?: string;
+        breakdown?: {
+          imponibile: number;
+          iva: number;
+          trasporto: number;
+          feePayPal: number;
+        };
       })
       : undefined;
     const event = isPaymentPayload(arg1) ? arg2 : (arg1 as React.MouseEvent<HTMLButtonElement, MouseEvent> | undefined);
@@ -375,8 +397,8 @@ const A4PagePrint = () => {
       payment?.method === "PAYPAL"
         ? "PayPal"
         : payment?.method === "CASH"
-          ? "Contanti (alla consegna)"
-          : "Non specificato";
+          ? "Contanti"
+          : "n/d";
 
     const statoPagamento =
       payment?.method === "PAYPAL"
@@ -384,6 +406,17 @@ const A4PagePrint = () => {
         : payment?.method === "CASH"
           ? "Da saldare alla consegna"
           : "Non specificato";
+
+
+    // 🧮 quantità interne (per StoricoDati)
+    const nFogliPerCopia = computeNFogliPerCopia(intervalloPagine, pagina, layout);
+    const nFogli = nFogliPerCopia * Math.max(1, numeroCopie);
+    const fascicoli = computeFascicoli(numeroCopie, rilegaturaUnica);
+
+    // split colore/BN per aiutare eventuali debug (Storico li calcola da solo comunque)
+    const isColore = inchiostro === inchiostroEnum.COLORE;
+    const nColore = isColore ? nFogli : 0;
+    const nBN = isColore ? 0 : nFogli;
 
     const dataToUpload = {
       id: id,
@@ -423,6 +456,10 @@ const A4PagePrint = () => {
       timestamp: serverTimestamp(),
       tipo: "A4", // ✅ aggiunto per filtro gestionale
       uid: auth.currentUser?.uid,
+      nFogli,                 // <-- importantissimo
+      nFogliPerCopia,         // (facoltativo, ma utile)
+      fascicoli,              // per costi "per_fascicolo"
+      inchiostro: isColore ? "colore" : "biancoenero",
       // (facoltativo) potresti anche salvare questi due campi:
       // metodoPagamento,
       // statoPagamento,
@@ -457,8 +494,18 @@ const A4PagePrint = () => {
         const { file, path, ...rest } = dataToUpload;
         const datiSnelliti = {
           ...rest,
-          totaleFinale,
-          timestamp: serverTimestamp(), // Reimposta il timestamp
+          totaleFinale,                             // già presente
+          metodoPagamento,                          // ✅ nuovo
+          trasporto: payment?.breakdown?.trasporto ?? 0,    // ✅ nuovo
+          imponibile: payment?.breakdown?.imponibile ?? undefined, // ✅ nuovo
+          iva: payment?.breakdown?.iva ?? undefined,         // ✅ nuovo
+          paypalFee: payment?.breakdown?.feePayPal ?? 0,     // ✅ nuovo
+          timestamp: serverTimestamp(),
+          // ✅ ripeti anche qui i campi tecnici
+          nFogli,
+          nFogliPerCopia,
+          fascicoli,
+          inchiostro: isColore ? "colore" : "biancoenero",
         };
 
         await setDoc(doc(db, "ArchivioOrdini", id), datiSnelliti);

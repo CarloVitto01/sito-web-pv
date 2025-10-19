@@ -3,7 +3,7 @@ import styles from './DescriptionSection.module.css';
 const DescriptionSection: React.FC = () => (
   <section className={styles.container}>
     <h1 className={styles.title}>
-      Trasformiamo Idee in Immagini, Visioni in Realtà
+      Beyond the <span className={styles.gold}>Photo</span>, into the <span className={styles.gold}>Vision</span>
     </h1>
     <p className={styles.text}>
       Photo and Vision è il sito pensato per semplificarti la vita, offrendo servizi su misura per ogni esigenza visiva e creativa. Specializzato in stampe professionali nei formati A4 e A3, servizi fotografici e video, e molto altro ancora, Photo and Vision si rivolge a studenti, professionisti, aziende e privati che cercano qualità, velocità e comodità.
@@ -12,4 +12,5 @@ const DescriptionSection: React.FC = () => (
     </p>
   </section>
 );
+
 export default DescriptionSection;

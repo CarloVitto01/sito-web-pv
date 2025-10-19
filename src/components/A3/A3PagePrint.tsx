@@ -179,6 +179,12 @@ const A3PagePrint = () => {
         if (numeroPDF === 0) setPreventivo("0.00");
     }, [costi, inchiostro, pagina, numeroPaginePDF, numeroCopie, plastificazione, grammatura, numeroPDF]);
 
+    // --- Helpers quantità per A3 ---
+    // n° fogli per copia: se fronte-retro => ceil(pagine/2), altrimenti = pagine
+    const computeNFogliPerCopiaA3 = (pagineTot: number, paginaMode: number) => {
+        const fogli = paginaMode === paginaEnum.FRONTE_RETRO ? Math.ceil(pagineTot / 2) : pagineTot;
+        return Math.max(0, fogli);
+    };
 
     // 🔁 AGGIORNATO: ora accetta (event) oppure (paymentPayload, event)
     const submitFormHandler = useCallback(async (arg1?: any, arg2?: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
@@ -192,6 +198,12 @@ const A3PagePrint = () => {
                 orderId?: string;
                 captureId?: string;
                 payerEmail?: string;
+                breakdown?: {
+                    imponibile: number;
+                    iva: number;
+                    trasporto: number;
+                    feePayPal: number;
+                };
             })
             : undefined;
         const event = isPaymentPayload(arg1) ? arg2 : (arg1 as React.MouseEvent<HTMLButtonElement, MouseEvent> | undefined);
@@ -237,8 +249,8 @@ const A3PagePrint = () => {
             payment?.method === "PAYPAL"
                 ? "PayPal"
                 : payment?.method === "CASH"
-                    ? "Contanti (alla consegna)"
-                    : "Non specificato";
+                    ? "Contanti"
+                    : "n/d";
 
         const statoPagamento =
             payment?.method === "PAYPAL"
@@ -246,6 +258,17 @@ const A3PagePrint = () => {
                 : payment?.method === "CASH"
                     ? "Da saldare alla consegna"
                     : "Non specificato";
+
+        // 🧮 Quantità necessarie per StoricoDati (costi interni)
+        const nFogliPerCopia = computeNFogliPerCopiaA3(numeroPaginePDF, pagina);
+        const nFogli = nFogliPerCopia * Math.max(1, numeroCopie);
+
+        // chiavi comode per i filtri "Campo/Match" degli extra A3
+        const isColore = inchiostro === inchiostroEnum.COLORE;
+        const inchiostroKey = isColore ? "colore" : "biancoenero";
+        const grammaturaKey = (grammatura === grammaturaEnum.CARTONCINO) ? "cartoncino" : "normale";
+        const plastificazioneKey = (plastificazione === plastificazioneEnum.SI) ? "si" : "no";
+
 
         const dataToUpload = {
             id: id,
@@ -272,6 +295,12 @@ const A3PagePrint = () => {
             // Se vuoi salvarli anche su Firestore, decommenta:
             // metodoPagamento,
             // statoPagamento,
+            // ✅ NUOVI CAMPI (usati da StoricoDati per i costi interni)
+            nFogli,                  // <-- importantissimo per i per_foglio
+            nFogliPerCopia,          // (facoltativo ma utile)
+            inchiostro: inchiostroKey,       // "colore" | "biancoenero"
+            grammaturaKey,                   // "normale" | "cartoncino"
+            plastificazioneKey,
         };
         const collectionRef = collection(db, "StampePDFA3");
         const PDFref = doc(collectionRef, id);
@@ -303,9 +332,22 @@ const A3PagePrint = () => {
                 const { file, path, ...rest } = dataToUpload;
                 const datiSnelliti = {
                     ...rest,
-                    totaleFinale,
-                    timestamp: serverTimestamp(), // Reimposta il timestamp
+                    totaleFinale,                             // già presente
+                    metodoPagamento,                          // ✅ nuovo
+                    trasporto: payment?.breakdown?.trasporto ?? 0,    // ✅ nuovo
+                    imponibile: payment?.breakdown?.imponibile ?? undefined, // ✅ nuovo
+                    iva: payment?.breakdown?.iva ?? undefined,         // ✅ nuovo
+                    paypalFee: payment?.breakdown?.feePayPal ?? 0,     // ✅ nuovo
+                    timestamp: serverTimestamp(),
+                    // ✅ ripetizione campi tecnici
+                    nFogli,
+                    nFogliPerCopia,
+                    inchiostro: inchiostroKey,
+                    grammaturaKey,
+                    plastificazioneKey,
                 };
+
+
 
                 await setDoc(doc(db, "ArchivioOrdini", id), datiSnelliti);
 

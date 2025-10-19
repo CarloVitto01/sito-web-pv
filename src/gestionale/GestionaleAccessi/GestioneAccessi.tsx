@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { db } from '../../backend/firebase';
 import { collection, deleteDoc, doc, getDoc, getDocs, setDoc } from 'firebase/firestore';
 import Header from '../../components/HeaderComponents/Header';
@@ -16,43 +16,42 @@ const PAGINE = [
   'link',
   'gestionale-web',
   'tasse',
-  'banner'
+  'banner',
 ];
+
+type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
 const GestioneAccessi: React.FC = () => {
   const [ruoli, setRuoli] = useState<string[]>([]);
   const [ruoloSelezionato, setRuoloSelezionato] = useState<string>('');
   const [accessi, setAccessi] = useState<string[]>([]);
   const [nuovoRuolo, setNuovoRuolo] = useState<string>('');
-  const [salvato, setSalvato] = useState<boolean>(false);
+  const [saveState, setSaveState] = useState<SaveState>('idle');
   const [ruoliUsati, setRuoliUsati] = useState<Set<string>>(new Set());
   const [ruoloEliminato, setRuoloEliminato] = useState<string | null>(null);
 
-
+  // Mappa per gestione case-insensitive
+  const ruoliLower = useMemo(() => new Set(ruoli.map(r => r.toLowerCase())), [ruoli]);
 
   useEffect(() => {
     const fetchRuoli = async () => {
       const ruoliUtenti = new Set<string>();
-      const snapshotUtenti = await getDocs(collection(db, "users"));
+      const snapshotUtenti = await getDocs(collection(db, 'users'));
       snapshotUtenti.forEach((docSnap) => {
-        const data = docSnap.data();
-        if (data.ruolo) ruoliUtenti.add(data.ruolo);
+        const data = docSnap.data() as any;
+        if (data.ruolo) ruoliUtenti.add(String(data.ruolo));
       });
 
-      setRuoliUsati(ruoliUtenti); // 👈 Salva i ruoli usati realmente
+      setRuoliUsati(ruoliUtenti);
 
       const ruoliAccessi = new Set<string>();
-      const snapshotAccessi = await getDocs(collection(db, "ruoliPagineAccesso"));
+      const snapshotAccessi = await getDocs(collection(db, 'ruoliPagineAccesso'));
       snapshotAccessi.forEach((docSnap) => {
         ruoliAccessi.add(docSnap.id);
       });
 
-      const unioneRuoli = new Set([
-        ...Array.from(ruoliUtenti),
-        ...Array.from(ruoliAccessi),
-      ]);
-
-      setRuoli(Array.from(unioneRuoli));
+      const unioneRuoli = new Set([...Array.from(ruoliUtenti), ...Array.from(ruoliAccessi)]);
+      setRuoli(Array.from(unioneRuoli).sort((a, b) => a.localeCompare(b)));
     };
 
     fetchRuoli();
@@ -63,7 +62,7 @@ const GestioneAccessi: React.FC = () => {
       if (!ruoloSelezionato) return;
       const snap = await getDoc(doc(db, 'ruoliPagineAccesso', ruoloSelezionato));
       if (snap.exists()) {
-        setAccessi(snap.data().accessoPagine || []);
+        setAccessi((snap.data() as any).accessoPagine || []);
       } else {
         setAccessi([]);
       }
@@ -72,40 +71,66 @@ const GestioneAccessi: React.FC = () => {
   }, [ruoloSelezionato]);
 
   const toggleAccesso = (pagina: string) => {
-    setAccessi(prev =>
-      prev.includes(pagina)
-        ? prev.filter(p => p !== pagina)
-        : [...prev, pagina]
-    );
+    setAccessi((prev) => (prev.includes(pagina) ? prev.filter((p) => p !== pagina) : [...prev, pagina]));
   };
 
   const salvaAccessi = async () => {
     if (!ruoloSelezionato) return;
-    await setDoc(doc(db, 'ruoliPagineAccesso', ruoloSelezionato), {
-      accessoPagine: accessi,
-    });
-    setSalvato(true);
-    setTimeout(() => setSalvato(false), 2000);
-  };
-
-  const creaNuovoRuolo = () => {
-    const ruolo = nuovoRuolo.trim();
-    if (ruolo && !ruoli.includes(ruolo)) {
-      setRuoli(prev => [...prev, ruolo]);
-      setNuovoRuolo('');
+    try {
+      setSaveState('saving');
+      await setDoc(
+        doc(db, 'ruoliPagineAccesso', ruoloSelezionato),
+        { accessoPagine: accessi },
+        { merge: true }
+      );
+      setSaveState('saved');
+      setTimeout(() => setSaveState('idle'), 2500);
+    } catch (e) {
+      console.error(e);
+      setSaveState('error');
+      setTimeout(() => setSaveState('idle'), 3000);
     }
   };
 
+  const creaNuovoRuolo = async () => {
+    const ruolo = nuovoRuolo.trim();
+    if (!ruolo) return;
+    if (ruoliLower.has(ruolo.toLowerCase())) {
+      // già presente (anche con case diverso) → selezionalo
+      setRuoloSelezionato(ruolo);
+      setNuovoRuolo('');
+      return;
+    }
+    // Aggiungi localmente
+    setRuoli((prev) => [...prev, ruolo].sort((a, b) => a.localeCompare(b)));
+    setNuovoRuolo('');
+    setRuoloSelezionato(ruolo);
+    // Crea doc vuoto (così compare anche su Firestore)
+    try {
+      await setDoc(doc(db, 'ruoliPagineAccesso', ruolo), { accessoPagine: [] }, { merge: true });
+    } catch (e) {
+      console.error('Errore creazione ruolo:', e);
+    }
+  };
 
   const eliminaRuolo = async (ruolo: string) => {
-    await deleteDoc(doc(db, "ruoliPagineAccesso", ruolo));
-    setRuoli(prev => prev.filter(r => r !== ruolo));
+    // Non eliminare se in uso dagli utenti reali
+    if (ruoliUsati.has(ruolo)) return;
 
+    try {
+      await deleteDoc(doc(db, 'ruoliPagineAccesso', ruolo));
+    } catch (e) {
+      console.error('Errore eliminazione ruolo:', e);
+    }
+
+    setRuoli((prev) => prev.filter((r) => r !== ruolo));
     if (ruolo === ruoloSelezionato) setRuoloSelezionato('');
 
     setRuoloEliminato(ruolo);
-    setTimeout(() => setRuoloEliminato(null), 2000); // ✔️ sparisce dopo 2 secondi
+    setTimeout(() => setRuoloEliminato(null), 2000);
   };
+
+  const selectedCount = accessi.length;
 
   return (
     <div>
@@ -113,7 +138,15 @@ const GestioneAccessi: React.FC = () => {
       <div className={styles.container}>
         <h2 className={styles.title}>🔐 Gestione Accessi per Ruolo</h2>
 
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '20px' }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: '10px',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            marginBottom: '20px',
+          }}
+        >
           <select
             value={ruoloSelezionato}
             onChange={(e) => setRuoloSelezionato(e.target.value)}
@@ -127,7 +160,6 @@ const GestioneAccessi: React.FC = () => {
             ))}
           </select>
 
-
           <input
             type="text"
             placeholder="Crea nuovo ruolo..."
@@ -139,26 +171,29 @@ const GestioneAccessi: React.FC = () => {
           <button onClick={creaNuovoRuolo} className={styles.button}>
             ➕ Aggiungi ruolo
           </button>
+
           {!ruoliUsati.has(ruoloSelezionato) && ruoloSelezionato && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <button
                 onClick={() => eliminaRuolo(ruoloSelezionato)}
                 className={styles.button}
                 style={{ backgroundColor: '#a00', color: '#fff' }}
+                title="Elimina ruolo (solo se non assegnato ad alcun utente)"
               >
                 🗑 Elimina ruolo
               </button>
-              {ruoloEliminato === ruoloSelezionato && (
-                <span style={{ color: 'limegreen' }}>✔️</span>
-              )}
+              {ruoloEliminato === ruoloSelezionato && <span style={{ color: 'limegreen' }}>✔️</span>}
             </div>
           )}
         </div>
 
-
         {ruoloSelezionato && (
           <div className={styles.box}>
-            <h3>Pagine accessibili per <span className={styles.highlight}>{ruoloSelezionato}</span></h3>
+            <h3>
+              Pagine accessibili per <span className={styles.highlight}>{ruoloSelezionato}</span>{' '}
+              <small style={{ opacity: 0.8 }}>({selectedCount}/{PAGINE.length} selezionate)</small>
+            </h3>
+
             <ul className={styles.pageList}>
               {PAGINE.map((pagina) => (
                 <li key={pagina}>
@@ -174,10 +209,29 @@ const GestioneAccessi: React.FC = () => {
               ))}
             </ul>
 
-            <button onClick={salvaAccessi} className={styles.button}>
-              💾 Salva Accessi
-            </button>
-            {salvato && <span style={{ marginLeft: 10, color: 'limegreen' }}>✔️</span>}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 12 }}>
+              <button
+                onClick={salvaAccessi}
+                className={styles.button}
+                disabled={saveState === 'saving'}
+              >
+                {saveState === 'saving' ? '⏳ Salvataggio…' : '💾 Salva Accessi'}
+              </button>
+
+              <div
+                aria-live="polite"
+                role="status"
+                style={{
+                  minHeight: 24,
+                  fontWeight: 600,
+                  opacity: saveState === 'saved' || saveState === 'error' ? 1 : 0,
+                  transition: 'opacity .25s ease',
+                }}
+              >
+                {saveState === 'saved' && <span>✅ Salvato</span>}
+                {saveState === 'error' && <span>⚠️ Errore nel salvataggio</span>}
+              </div>
+            </div>
           </div>
         )}
       </div>

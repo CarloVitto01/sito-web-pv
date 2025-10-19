@@ -9,7 +9,13 @@ type PaymentPayload = {
   orderId?: string;
   captureId?: string;
   payerEmail?: string;
-  amount?: number; // totale finale addebitato (IVA+trasporto+eventuale fee PayPal)
+  amount?: number;
+  breakdown?: {
+    imponibile: number;
+    iva: number;
+    trasporto: number;
+    feePayPal: number;
+  };
 };
 
 type RiepilogoProps = {
@@ -204,6 +210,12 @@ const RiepilogoOrdine = ({
               captureId: cap.captureId,
               payerEmail: cap.payerEmail,
               amount: Number(cap.amount),
+              breakdown: {
+                imponibile: totals.base,
+                iva: totals.iva,
+                trasporto: totals.trasporto,
+                feePayPal: totals.feePP
+              }
             });
           } else {
             alert("Pagamento non completato: " + cap.status);
@@ -233,7 +245,13 @@ const RiepilogoOrdine = ({
     await onConfirmOrder({
       method: "CASH",
       confirmed: false,
-      amount: totals.totaleContanti, // imponibile + IVA + trasporto
+      amount: totals.totaleContanti,
+      breakdown: {
+        imponibile: totals.base,
+        iva: totals.iva,
+        trasporto: totals.trasporto,
+        feePayPal: 0
+      }
     });
   };
 

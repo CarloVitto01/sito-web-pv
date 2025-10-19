@@ -3,7 +3,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { auth, db } from "../../../backend/firebase";
 import { collection, doc, getDoc, getDocs, query, updateDoc, where } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
-// ✅ Adatta il path se diverso
 import "./AccountPage.css";
 import Header from "../../HeaderComponents/Header";
 import Footer from "../../FooterComponents/Footer";
@@ -20,6 +19,16 @@ const parsePrice = (val: any) => {
     return isNaN(n) ? 0 : n;
   }
   return 0;
+};
+
+const fmtDate = (isoLike: string | Date | undefined | null) => {
+  try {
+    const d = typeof isoLike === "string" ? new Date(isoLike) : isoLike instanceof Date ? isoLike : null;
+    if (!d || isNaN(d.getTime())) return "-";
+    return new Intl.DateTimeFormat("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" }).format(d);
+  } catch {
+    return "-";
+  }
 };
 
 // 👇 Tipo degli ordini letti da ArchivioOrdini
@@ -58,12 +67,9 @@ const AccountPage: React.FC = () => {
       }
 
       const docRef = doc(db, "users", user.uid);
-      const archiveQuery = query(
-        collection(db, "ArchivioOrdini"),
-        where("uid", "==", user.uid)
-      );
+      const archiveQuery = query(collection(db, "ArchivioOrdini"), where("uid", "==", user.uid));
 
-      const archiveSnapshot = await getDocs(archiveQuery);
+      const [archiveSnapshot, docSnap] = await Promise.all([getDocs(archiveQuery), getDoc(docRef)]);
 
       // 👇 Mapping + normalizzazione timestamp + calcolo ms per sort
       const userOrders: Order[] = archiveSnapshot.docs.map((d) => {
@@ -73,7 +79,7 @@ const AccountPage: React.FC = () => {
         let ms = 0;
 
         if (data?.timestamp?.toDate) {
-          const dt = data.timestamp.toDate() as Date;
+          const dt = (data.timestamp as FirestoreTimestampLike).toDate!();
           tsISO = dt.toISOString();
           ms = dt.getTime();
         } else if (typeof data?.timestamp === "string") {
@@ -94,17 +100,15 @@ const AccountPage: React.FC = () => {
 
       // 🔽 Ordina dal più recente (ms desc)
       userOrders.sort((a, b) => (b._tsMillis ?? 0) - (a._tsMillis ?? 0));
-
       setOrders(userOrders);
 
       // Calcolo totale speso (fallback totaleFinale → prezzo)
       const total = userOrders.reduce((sum, o) => {
-        const v = (o.totaleFinale ?? o.prezzo);
+        const v = o.totaleFinale ?? o.prezzo;
         return sum + parsePrice(v);
       }, 0);
       setTotalSpent(total);
 
-      const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const ud = docSnap.data();
         setUserData(ud);
@@ -120,9 +124,7 @@ const AccountPage: React.FC = () => {
   // 🔁 Se cambia il numero di ordini e la pagina corrente “sfora”, torna all’ultima pagina valida
   const totalPages = Math.max(1, Math.ceil(orders.length / PAGE_SIZE));
   useEffect(() => {
-    if (page > totalPages) {
-      setPage(totalPages);
-    }
+    if (page > totalPages) setPage(totalPages);
   }, [orders.length, totalPages, page]);
 
   // 📄 Slice per paginazione
@@ -149,167 +151,183 @@ const AccountPage: React.FC = () => {
       delete updatedData.corsoLaurea;
       delete updatedData.annoAccademico;
 
-      setUserData((prev: any) => ({
-        ...prev,
-        corsoLaurea: "",
-        annoAccademico: "",
-      }));
+      setUserData((prev: any) => ({ ...prev, corsoLaurea: "", annoAccademico: "" }));
     }
 
     try {
       await updateDoc(doc(db, "users", user.uid), updatedData);
       setSuccess("Dati aggiornati con successo!");
-    } catch {
+    } catch (err) {
       setError("Errore durante l'aggiornamento.");
     }
   };
 
-  if (loading) return <p>Caricamento in corso...</p>;
+  const handlePasswordReset = () => {
+    const user = auth.currentUser;
+    if (!user?.email) return;
+    import("firebase/auth").then(({ sendPasswordResetEmail }) => {
+      sendPasswordResetEmail(auth, user.email!)
+        .then(() => setSuccess("Email per il cambio password inviata!"))
+        .catch(() => setError("Errore durante l'invio dell'email."));
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="account-loading">
+        <div className="pv-spinner" aria-label="Caricamento" />
+        <p>Caricamento in corso…</p>
+      </div>
+    );
+  }
 
   return (
     <>
       <Header />
       <div className="account-page">
-        <div className="account-container">
-          <h2>Il Mio Account</h2>
-          <form onSubmit={handleUpdate}>
-            <label>Nome:</label>
-            <input name="displayName" value={userData?.displayName || ""} onChange={handleChange} required />
+        <div className="account-shell">
+          {/* HEADER SUMMARY */}
+          <section className="account-hero">
+            <div className="hero-left">
+              <h1>Il Mio Account</h1>
+              <p className="hero-sub">Gestisci i tuoi dati e rivedi gli ordini effettuati su <span className="pv">Photo &amp; Vision</span>.</p>
+              <div className="hero-stats">
+                <div className="stat-card" role="status" aria-label={`Ordini effettuati: ${orders.length}`}>
+                  <div className="stat-value">{orders.length}</div>
+                  <div className="stat-label">Ordini</div>
+                </div>
+                <div className="stat-card" role="status" aria-label={`Totale speso: €${fmtEuro(totalSpent)}`}>
+                  <div className="stat-value">€{fmtEuro(totalSpent)}</div>
+                  <div className="stat-label">Totale speso</div>
+                </div>
+              </div>
+            </div>
+            <div className="hero-right">
+              <button type="button" className="btn-ghost" onClick={() => navigate("/")}>🏠 Home</button>
+              <button type="button" className="btn-gold" onClick={handlePasswordReset}>🔑 Cambia Password</button>
+            </div>
+          </section>
 
-            <label>Cognome:</label>
-            <input name="cognome" value={userData?.cognome || ""} onChange={handleChange} required />
+          {(success || error) && (
+            <div className={`alert ${success ? "alert-success" : "alert-error"}`} role="alert">
+              {success || error}
+            </div>
+          )}
 
-            <label>Email:</label>
-            <input value={auth.currentUser?.email || ""} readOnly />
+          {/* TWO-COLUMN LAYOUT */}
+          <div className="account-grid">
+            {/* LEFT: FORM */}
+            <section className="card pv-form" aria-labelledby="dati-personali">
+              <h2 id="dati-personali">Dati personali</h2>
+              <form onSubmit={handleUpdate} className="form-grid">
+                <label>
+                  <span>Nome</span>
+                  <input name="displayName" value={userData?.displayName || ""} onChange={handleChange} required />
+                </label>
 
-            <button
-              type="button"
-              className="home-button"
-              onClick={() => {
-                const user = auth.currentUser;
-                if (user?.email) {
-                  import("firebase/auth").then(({ sendPasswordResetEmail }) => {
-                    sendPasswordResetEmail(auth, user.email!)
-                      .then(() => setSuccess("Email per il cambio password inviata!"))
-                      .catch(() => setError("Errore durante l'invio dell'email."));
-                  });
-                }
-              }}
-            >
-              Cambia Password
-            </button>
-            <br />
-            <label>Telefono:</label>
-            <input name="telefono" value={userData?.telefono || ""} onChange={handleChange} required />
+                <label>
+                  <span>Cognome</span>
+                  <input name="cognome" value={userData?.cognome || ""} onChange={handleChange} required />
+                </label>
 
-            <div className="account-checkbox-wrapper">
-              <label htmlFor="isStudente">Sei uno studente universitario (Ecotekne)?</label>
-              <input
-                type="checkbox"
-                id="isStudente"
-                checked={isStudente}
-                onChange={async (e) => {
-                  const checked = e.target.checked;
-                  setIsStudente(checked);
+                <label>
+                  <span>Email</span>
+                  <input value={auth.currentUser?.email || ""} readOnly />
+                </label>
 
-                  if (!checked) {
-                    setUserData((prev: any) => ({
-                      ...prev,
-                      corsoLaurea: "",
-                      annoAccademico: "",
-                    }));
+                <label>
+                  <span>Telefono</span>
+                  <input name="telefono" value={userData?.telefono || ""} onChange={handleChange} required />
+                </label>
 
-                    const user = auth.currentUser;
-                    if (user) {
-                      try {
-                        await updateDoc(doc(db, "users", user.uid), {
-                          corsoLaurea: "",
-                          annoAccademico: "",
-                        });
-                      } catch {
-                        // noop
+                <div className="switch-row">
+                  <label htmlFor="isStudente" className="switch-label">Studente universitario (Ecotekne)?</label>
+                  <input type="checkbox" id="isStudente" className="switch" checked={isStudente} onChange={async (e) => {
+                    const checked = e.target.checked;
+                    setIsStudente(checked);
+
+                    if (!checked) {
+                      setUserData((prev: any) => ({ ...prev, corsoLaurea: "", annoAccademico: "" }));
+                      const user = auth.currentUser;
+                      if (user) {
+                        try {
+                          await updateDoc(doc(db, "users", user.uid), { corsoLaurea: "", annoAccademico: "" });
+                        } catch { }
                       }
                     }
-                  }
-                }}
-              />
-            </div>
-
-            {isStudente && (
-              <>
-                <label>Corso di Laurea:</label>
-                <input name="corsoLaurea" value={userData?.corsoLaurea || ""} onChange={handleChange} />
-
-                <label>Anno Accademico:</label>
-                <input name="annoAccademico" value={userData?.annoAccademico || ""} onChange={handleChange} />
-              </>
-            )}
-
-            <div className="button-row">
-              <button type="submit" className="home-button">Aggiorna Dati</button>
-              <button type="button" className="home-button" onClick={() => navigate("/")}>Vai in Home</button>
-            </div>
-
-            {success && <p className="success-message">{success}</p>}
-            {error && <p className="error-message">{error}</p>}
-          </form>
-
-          <div className="orders-summary">
-            <h3>Ordini Effettuati: {orders.length}</h3>
-            <h4>Totale Speso: €{fmtEuro(totalSpent)}</h4>
-
-            {orders.length === 0 ? (
-              <p>Nessun ordine trovato.</p>
-            ) : (
-              <>
-                <ul>
-                  {paginatedOrders.map((order) => (
-                    <li key={order.id} style={{ marginBottom: "1rem" }}>
-                      <div>
-                        <strong>Tipo:</strong> {order.tipo ?? "-"}{" | "}
-                        <strong>Totale:</strong>{" "}
-                        €{fmtEuro(parsePrice(order.totaleFinale ?? order.prezzo))}{" | "}
-                        <strong>Data:</strong>{" "}
-                        {typeof order.timestamp === "string"
-                          ? new Date(order.timestamp).toLocaleDateString("it-IT", {
-                              day: "2-digit",
-                              month: "2-digit",
-                              year: "numeric",
-                            })
-                          : order.timestamp?.toDate?.().toLocaleDateString("it-IT", {
-                              day: "2-digit",
-                              month: "2-digit",
-                              year: "numeric",
-                            }) ?? "-"}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-
-                {/* Navigazione semplice: 10 per pagina */}
-                <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 12 }}>
-                  <button
-                    className="home-button"
-                    type="button"
-                    disabled={page <= 1}
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  >
-                    ◀︎ Precedenti
-                  </button>
-                  <span style={{ opacity: 0.9 }}>
-                    Pagina {page} di {totalPages}
-                  </span>
-                  <button
-                    className="home-button"
-                    type="button"
-                    disabled={page >= totalPages}
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  >
-                    Successivi ▶︎
-                  </button>
+                  }} />
                 </div>
-              </>
-            )}
+
+                {isStudente && (
+                  <>
+                    <label>
+                      <span>Corso di Laurea</span>
+                      <input name="corsoLaurea" value={userData?.corsoLaurea || ""} onChange={handleChange} />
+                    </label>
+
+                    <label>
+                      <span>Anno Accademico</span>
+                      <input name="annoAccademico" value={userData?.annoAccademico || ""} onChange={handleChange} />
+                    </label>
+                  </>
+                )}
+
+                <div className="form-actions">
+                  <button type="submit" className="btn-gold">💾 Aggiorna Dati</button>
+                </div>
+              </form>
+            </section>
+
+            {/* RIGHT: ORDERS */}
+            <section className="card pv-orders" aria-labelledby="storico-ordini">
+              <div className="orders-head">
+                <h2 id="storico-ordini">Storico ordini</h2>
+                <span className="orders-count" aria-label={`Totale ordini: ${orders.length}`}>{orders.length}</span>
+              </div>
+
+              {orders.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-ill" aria-hidden>🗂️</div>
+                  <p>Nessun ordine trovato.</p>
+                </div>
+              ) : (
+                <>
+                  <ul className="orders-list">
+                    {paginatedOrders.map((order) => {
+                      const total = fmtEuro(parsePrice(order.totaleFinale ?? order.prezzo));
+                      const dateStr = typeof order.timestamp === "string"
+                        ? fmtDate(order.timestamp)
+                        : fmtDate(order.timestamp?.toDate?.());
+                      return (
+                        <li key={order.id} className="order-item">
+                          <div className="order-icon" aria-hidden>🧾</div>
+                          <div className="order-main">
+                            <div className="order-top">
+                              <span className="order-type">{order.tipo ?? "Ordine"}</span>
+                              <span className="order-total">€{total}</span>
+                            </div>
+                            <div className="order-meta">
+                              <span className="badge">{dateStr}</span>
+                              {order?.stato && <span className={`badge ${String(order.stato).toLowerCase()}`}>{String(order.stato)}</span>}
+                            </div>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+
+                  <div className="pagination">
+                    <button className="btn-ghost" type="button" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
+                      ◀︎ Precedenti
+                    </button>
+                    <span className="page-info">Pagina {page} di {totalPages}</span>
+                    <button className="btn-ghost" type="button" disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>
+                      Successivi ▶︎
+                    </button>
+                  </div>
+                </>
+              )}
+            </section>
           </div>
         </div>
       </div>
