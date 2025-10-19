@@ -112,6 +112,30 @@ const StoricoDati: React.FC = () => {
 
   const [docsA4, setDocsA4] = useState<any[]>([]);
   const [docsA3, setDocsA3] = useState<any[]>([]);
+// ⬇️ subito dopo gli state: ivaRate, ppPercent, ppFixed, transportFeeEuro, unitA4, unitA3, extrasA4, extrasA3
+const configRef = useRef({
+  ivaRate,
+  ppPercent,
+  ppFixed,
+  transportFeeEuro,
+  unitA4,
+  unitA3,
+  extrasA4,
+  extrasA3,
+});
+
+useEffect(() => {
+  configRef.current = {
+    ivaRate,
+    ppPercent,
+    ppFixed,
+    transportFeeEuro,
+    unitA4,
+    unitA3,
+    extrasA4,
+    extrasA3,
+  };
+}, [ivaRate, ppPercent, ppFixed, transportFeeEuro, unitA4, unitA3, extrasA4, extrasA3]);
 
 
   // ------- Helpers -------
@@ -480,71 +504,186 @@ const getRowMillis = useCallback((row: any) => {
    * Calcolo coerente per un ordine (usa i campi salvati quando esistono).
    * Margine: (lordo - trasporto) - IVA - costi interni - fee PayPal
    */
-  const computeMetrics = (row: any, tipo: "A4" | "A3") => {
-    const ts = row.timestamp?.toDate?.();
-    const metodo = detectMetodo(row);
-    const delta = getManualDelta(row);
+  const computeMetrics = useCallback((row: any, tipo: "A4" | "A3") => {
+  const cfg = configRef.current;
 
-    const br = row?.breakdown;
+  // Helpers *locali* che usano cfg (così non servono deps esterne)
+  const _detectMetodo = (r: any): "PayPal" | "Contanti" | "n/d" => {
+    const raw = (r?.metodoPagamento ?? r?.metodo ?? "").toString().toLowerCase();
+    if (raw.includes("paypal")) return "PayPal";
+    if (raw.includes("cash") || raw.includes("contanti")) return "Contanti";
+    if (r?.orderId || r?.captureId || r?.payerEmail) return "PayPal";
+    if (typeof r?.statoPagamento === "string" && r.statoPagamento.toLowerCase().includes("consegna")) return "Contanti";
+    return "n/d";
+  };
 
-    if (br && typeof br === "object") {
-      const lordoBase =
-        Number.isFinite(br.totaleFinale)
-          ? Number(br.totaleFinale)
-          : Number((br.imponibile || 0) + (br.iva || 0) + (br.trasporto || 0));
+  const _detectTransport = (r: any): number => {
+    if (Number.isFinite(r?.breakdown?.trasporto)) return Number(r.breakdown.trasporto);
+    if (Number.isFinite(r?.trasporto)) return Number(r.trasporto);
+    if (Number.isFinite(r?.totaleFinale)) return 0;
+    return cfg.transportFeeEuro;
+  };
 
-      const lordoEff = lordoBase + delta;
+  const _getLordo = (r: any): number => {
+    if (Number.isFinite(r?.breakdown?.totaleFinale)) return Number(r.breakdown.totaleFinale);
+    if (Number.isFinite(r?.totaleFinale)) return Number(r.totaleFinale);
+    const imp = Number.isFinite(r?.imponibile)
+      ? Number(r.imponibile)
+      : (Number.isFinite(r?.breakdown?.imponibile) ? Number(r.breakdown.imponibile) : 0);
+    const tr = _detectTransport(r);
+    return imp * (1 + cfg.ivaRate) + tr;
+  };
 
-      const dettaglio: DettaglioRow = {
-        Cliente: `${row.nome || ""} ${row.cognome || ""}`.trim(),
-        Data: ts?.toLocaleString("it-IT") || "",
-        Metodo: metodo,
-        "Prezzo Lordo (€)": lordoBase.toFixed(2),
-        "Variazione (€)": delta ? delta.toFixed(2) : "",
-        "Lordo (effettivo) (€)": lordoEff.toFixed(2),
-        "Imponibile (€)": Number(br.imponibile || 0).toFixed(2),
-        "IVA (€)": Number(br.iva || 0).toFixed(2),
-        "Fee PayPal (€)": Number(br.feePayPal || 0).toFixed(2),
-        "Trasporto (€)": Number(br.trasporto || 0).toFixed(2),
-        "Costi interni (€)": Number(br.costiInterni || 0).toFixed(2),
-        nFogli: Number.isFinite(br.nFogli) ? Number(br.nFogli) : "",
-        "Margine netto (€)": (
-          (lordoEff - Number(br.trasporto || 0) - Number(br.iva || 0) - Number(br.costiInterni || 0) - Number(br.feePayPal || 0))
-        ).toFixed(2),
-        Note: getManualReason(row),
-        Congelato: "Sì",
-      };
+  const _paypalFeeOf = (r: any, lordo: number, metodo: string) => {
+    if (Number.isFinite(r?.breakdown?.feePayPal)) return Number(r.breakdown.feePayPal);
+    if (Number.isFinite(r?.paypalFee)) return Number(r.paypalFee);
+    return metodo === "PayPal" ? lordo * cfg.ppPercent + cfg.ppFixed : 0;
+  };
 
-      return { dettaglio, lordoEff };
+  const _sumNFogli = (data: any) => {
+    if (Number.isFinite(data?.nFogli)) return Number(data.nFogli);
+    if (Array.isArray(data?.righe)) {
+      return data.righe.reduce((acc: number, r: any) => acc + (Number(r?.fogli) || 0), 0);
+    }
+    const pagine = Number(data?.pagineTotali ?? data?.pagine ?? 0);
+    const fronteRetro = String(data?.pagina || "").toLowerCase().includes("retro");
+    let fogli = pagine > 0 ? (fronteRetro ? pagine / 2 : pagine) : 0;
+    const copie = Number(data?.copie ?? data?.numeroCopie ?? 1);
+    if (copie > 1) fogli *= copie;
+    return Math.round(fogli) || 0;
+  };
+
+  const _getCopie = (r: any) => Number(r?.copie ?? r?.numeroCopie ?? 1) || 1;
+
+  const _splitColoriBN = (r: any, nFogli: number) => {
+    const paginaStr = String(r?.pagina ?? r?.gestionePagina ?? "").toLowerCase();
+    const isFronteRetro = paginaStr.includes("retro");
+    const sidesPerSheet = isFronteRetro ? 2 : 1;
+    const inkStr = String(r?.inchiostro ?? r?.colore ?? "").toLowerCase();
+    if (inkStr.includes("color")) {
+      return { nColore: nFogli * sidesPerSheet, nBN: 0 };
+    }
+    return { nColore: 0, nBN: nFogli * sidesPerSheet };
+  };
+
+  const _isRilegaturaUnicaA4 = (r: any) => {
+    const unica = String(r?.rilegaturaUnica ?? "").toLowerCase();
+    return ["si", "sì", "true", "on", "1"].some((k) => unica.includes(k));
+  };
+  const _numFascicoliA4 = (r: any) => (_isRilegaturaUnicaA4(r) ? 1 : _getCopie(r));
+
+  const _quantitaRilegaturaA4 = (r: any) => {
+    const s = `${r?.rilegatura ?? ""} ${r?.fascetta ?? ""}`.toLowerCase();
+    const fascicoli = _numFascicoliA4(r);
+    return {
+      nAnelli: s.includes("anelli") ? fascicoli : 0,
+      nSpirali: s.includes("spirale") ? fascicoli : 0,
+      nFascetta: s.includes("fascetta") ? fascicoli : 0,
+      nCiappature: s.includes("ciappatura") || s.includes("punti") ? fascicoli : 0,
+    };
+  };
+
+  const _calcCostiInterni = (tipoLoc: "A4" | "A3", lordo: number, nFogli: number, r: any) => {
+    if (Number.isFinite(r?.breakdown?.costiInterni)) return Number(r.breakdown.costiInterni);
+
+    if (tipoLoc === "A3") {
+      const { nColore, nBN } = _splitColoriBN(r, nFogli);
+      let tot =
+        (cfg.unitA3.foglio || 0) * (nFogli || 0) +
+        (cfg.unitA3.colore || 0) * (nColore || 0) +
+        (cfg.unitA3.biancoNero || 0) * (nBN || 0);
+
+      const plastStr = String(r?.plastificazioneKey ?? r?.plastificazione ?? "").toLowerCase();
+      const doPlast = plastStr.includes("si");
+      if (doPlast && (cfg.unitA3.plastificazione || 0) > 0) {
+        const nPagine = (Number(r?.pagine ?? r?.pagineTotali ?? 0) || 0) * (Number(r?.copie ?? r?.numeroCopie ?? 1) || 1);
+        tot += (cfg.unitA3.plastificazione || 0) * nPagine;
+      }
+
+      if (Array.isArray(cfg.extrasA3)) {
+        const copie = _getCopie(r);
+        for (const x of cfg.extrasA3) {
+          if (!x?.attivo) continue;
+          const rawUnita = String(x?.unita ?? "").toLowerCase();
+          const val = Number(x?.costo ?? 0) || 0;
+
+          const campo = (x?.campo ?? "").toString().trim();
+          const match = (x?.match ?? "").toString().trim().toLowerCase();
+
+          if (!campo || !match) {
+            if (!rawUnita.includes("percent")) continue;
+            tot += lordo * (val / 100);
+            continue;
+          }
+
+          const sorgente = (r?.[campo] ?? "").toString().toLowerCase();
+          if (!sorgente.includes(match)) continue;
+
+          if (rawUnita.includes("percent")) tot += lordo * (val / 100);
+          else if (rawUnita.includes("ordine")) tot += val;
+          else if (rawUnita.includes("fascicolo")) tot += val * (copie || 0);
+          else if (rawUnita.includes("foglio")) tot += val * (nFogli || 0);
+        }
+      }
+
+      return Number.isFinite(tot) ? tot : 0;
     }
 
-    // ----- Legacy (non congelato) -----
-    const lordoBase = getLordo(row);
-    const trasporto = detectTransport(row);
+    // A4
+    const { nColore, nBN } = _splitColoriBN(r, nFogli);
+    const { nAnelli, nSpirali, nFascetta, nCiappature } = _quantitaRilegaturaA4(r);
+    const fascicoli = _numFascicoliA4(r);
 
-    let imponibile: number | undefined =
-      Number.isFinite(row?.imponibile) ? Number(row.imponibile)
-        : Number.isFinite(row?.breakdown?.imponibile) ? Number(row.breakdown.imponibile)
-          : undefined;
+    let tot =
+      (cfg.unitA4.foglio || 0) * (nFogli || 0) +
+      (cfg.unitA4.colore || 0) * (nColore || 0) +
+      (cfg.unitA4.biancoNero || 0) * (nBN || 0) +
+      (cfg.unitA4.anelli || 0) * (nAnelli || 0) +
+      (cfg.unitA4.spirale || 0) * (nSpirali || 0) +
+      (cfg.unitA4.fascetta || 0) * (nFascetta || 0) +
+      (cfg.unitA4.ciappatura || 0) * (nCiappature || 0);
 
-    let iva: number | undefined =
-      Number.isFinite(row?.iva) ? Number(row.iva)
-        : Number.isFinite(row?.breakdown?.iva) ? Number(row.breakdown.iva)
-          : undefined;
+    if (Array.isArray(cfg.extrasA4)) {
+      for (const x of cfg.extrasA4) {
+        if (!x?.attivo) continue;
+        const rawUnita = String(x?.unita ?? "").toLowerCase();
+        const val = Number(x?.costo ?? 0) || 0;
 
-    if (!Number.isFinite(imponibile) || !Number.isFinite(iva)) {
-      const base = Math.max(lordoBase - trasporto, 0);
-      const imp = base / (1 + ivaRate);
-      imponibile = imp;
-      iva = base - imp;
+        const campo = (x?.campo ?? "").toString().trim();
+        const match = (x?.match ?? "").toString().trim().toLowerCase();
+
+        if (!campo || !match) {
+          if (!rawUnita.includes("percent")) continue;
+          tot += lordo * (val / 100);
+          continue;
+        }
+
+        const sorgente = (r?.[campo] ?? "").toString().toLowerCase();
+        if (!sorgente.includes(match)) continue;
+
+        if (rawUnita.includes("percent")) tot += lordo * (val / 100);
+        else if (rawUnita.includes("ordine")) tot += val;
+        else if (rawUnita.includes("fascicolo")) tot += val * (fascicoli || 0);
+        else if (rawUnita.includes("foglio")) tot += val * (nFogli || 0);
+      }
     }
 
-    const nFogli = sumNFogli(row);
-    const fee = paypalFeeOf(row, lordoBase, metodo);
-    const interni = calcCostiInterni(tipo, lordoBase, nFogli, row);
+    return Number.isFinite(tot) ? tot : 0;
+  };
+
+  // ====== INIZIO LOGICA ORIGINALE ======
+  const ts = row.timestamp?.toDate?.();
+  const metodo = _detectMetodo(row);
+  const delta = getManualDelta(row);
+  const br = row?.breakdown;
+
+  if (br && typeof br === "object") {
+    const lordoBase =
+      Number.isFinite(br.totaleFinale)
+        ? Number(br.totaleFinale)
+        : Number((br.imponibile || 0) + (br.iva || 0) + (br.trasporto || 0));
 
     const lordoEff = lordoBase + delta;
-    const margineEff = (lordoEff - trasporto) - (iva || 0) - interni - fee;
 
     const dettaglio: DettaglioRow = {
       Cliente: `${row.nome || ""} ${row.cognome || ""}`.trim(),
@@ -553,19 +692,70 @@ const getRowMillis = useCallback((row: any) => {
       "Prezzo Lordo (€)": lordoBase.toFixed(2),
       "Variazione (€)": delta ? delta.toFixed(2) : "",
       "Lordo (effettivo) (€)": lordoEff.toFixed(2),
-      "Imponibile (€)": (imponibile || 0).toFixed(2),
-      "IVA (€)": (iva || 0).toFixed(2),
-      "Fee PayPal (€)": fee.toFixed(2),
-      "Trasporto (€)": trasporto.toFixed(2),
-      "Costi interni (€)": interni.toFixed(2),
-      nFogli: nFogli || "",
-      "Margine netto (€)": margineEff.toFixed(2),
-      Note: getManualReason(row) || (nFogli ? "" : "nFogli assente: per_foglio=0"),
-      Congelato: "No",
+      "Imponibile (€)": Number(br.imponibile || 0).toFixed(2),
+      "IVA (€)": Number(br.iva || 0).toFixed(2),
+      "Fee PayPal (€)": Number(br.feePayPal || 0).toFixed(2),
+      "Trasporto (€)": Number(br.trasporto || 0).toFixed(2),
+      "Costi interni (€)": Number(br.costiInterni || 0).toFixed(2),
+      nFogli: Number.isFinite(br.nFogli) ? Number(br.nFogli) : "",
+      "Margine netto (€)": (
+        (lordoEff - Number(br.trasporto || 0) - Number(br.iva || 0) - Number(br.costiInterni || 0) - Number(br.feePayPal || 0))
+      ).toFixed(2),
+      Note: getManualReason(row),
+      Congelato: "Sì",
     };
-
     return { dettaglio, lordoEff };
+  }
+
+  // ----- Legacy (non congelato) -----
+  const lordoBase = _getLordo(row);
+  const trasporto = _detectTransport(row);
+
+  let imponibile: number | undefined =
+    Number.isFinite(row?.imponibile) ? Number(row.imponibile)
+      : Number.isFinite(row?.breakdown?.imponibile) ? Number(row.breakdown.imponibile)
+        : undefined;
+
+  let iva: number | undefined =
+    Number.isFinite(row?.iva) ? Number(row.iva)
+      : Number.isFinite(row?.breakdown?.iva) ? Number(row.breakdown.iva)
+        : undefined;
+
+  if (!Number.isFinite(imponibile) || !Number.isFinite(iva)) {
+    const base = Math.max(lordoBase - trasporto, 0);
+    const imp = base / (1 + cfg.ivaRate);
+    imponibile = imp;
+    iva = base - imp;
+  }
+
+  const nFogli = _sumNFogli(row);
+  const fee = _paypalFeeOf(row, lordoBase, metodo);
+  const interni = _calcCostiInterni(tipo, lordoBase, nFogli, row);
+
+  const lordoEff = lordoBase + delta;
+  const margineEff = (lordoEff - trasporto) - (iva || 0) - interni - fee;
+
+  const dettaglio: DettaglioRow = {
+    Cliente: `${row.nome || ""} ${row.cognome || ""}`.trim(),
+    Data: ts?.toLocaleString("it-IT") || "",
+    Metodo: metodo,
+    "Prezzo Lordo (€)": lordoBase.toFixed(2),
+    "Variazione (€)": delta ? delta.toFixed(2) : "",
+    "Lordo (effettivo) (€)": lordoEff.toFixed(2),
+    "Imponibile (€)": (imponibile || 0).toFixed(2),
+    "IVA (€)": (iva || 0).toFixed(2),
+    "Fee PayPal (€)": fee.toFixed(2),
+    "Trasporto (€)": trasporto.toFixed(2),
+    "Costi interni (€)": interni.toFixed(2),
+    nFogli: nFogli || "",
+    "Margine netto (€)": margineEff.toFixed(2),
+    Note: getManualReason(row) || (nFogli ? "" : "nFogli assente: per_foglio=0"),
+    Congelato: "No",
   };
+
+  return { dettaglio, lordoEff };
+}, []);
+
 
   // ------- Export (COMPLETO: 3 fogli) -------
   const exportOrdini = async (tipo: "A4" | "A3") => {
@@ -742,16 +932,7 @@ const getRowMillis = useCallback((row: any) => {
     setDocsA3([]);
     setTotaleA3(0);
   }
-}, [
-  filtroTipo,
-  matchesUtente,
-  withinDateRange,
-  // i calcoli dipendono da queste config (usate da computeMetrics -> calcCostiInterni, ecc.)
-  ivaRate, ppPercent, ppFixed, transportFeeEuro,
-  unitA4, unitA3, extrasA4, extrasA3,
-  // helper stabile
-  getRowMillis,
-]);
+}, [filtroTipo, matchesUtente, withinDateRange, computeMetrics]);
 
 
   // Trigger automatico iniziale quando le config sono pronte
