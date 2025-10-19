@@ -3,6 +3,7 @@ package it.pv.payments.controller;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -10,6 +11,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import it.pv.payments.paypal.PaypalService;
 
+@CrossOrigin(origins = {"https://photoandvision.it", "https://www.photoandvision.it"}, 
+             allowCredentials = "true") // togli se non usi cookie
 @RestController
 @RequestMapping("/api/paypal")
 public class PaypalController {

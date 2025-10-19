@@ -33,19 +33,20 @@ type RiepilogoProps = {
   submitted?: boolean;
   loading?: boolean;
 
-  /** default usati come fallback se il doc Firestore non esiste o è incompleto */
   ivaRate?: number;
   transportFeeEuro?: number;
   paypalPercent?: number;
   paypalFixed?: number;
 
-  /** opzionali: per backend protetti senza cookie */
-  authToken?: string; // JWT
-  csrfToken?: string; // protezione CSRF
+  authToken?: string; // JWT opzionale
+  csrfToken?: string; // CSRF opzionale
 };
+
+type PayPalApproveData = { orderID: string };
 
 const PAYPAL_CLIENT_ID = process.env.REACT_APP_PAYPAL_CLIENT_ID as string;
 const API_BASE = process.env.REACT_APP_API_BASE_URL || "";
+const API = (API_BASE || "").replace(/\/+$/, ""); // toglie eventuale "/" finale
 
 function parseEuro(prezzo: string): number {
   const normalized = prezzo.replace(",", ".").replace(/[^\d.]/g, "");
@@ -96,7 +97,10 @@ const RiepilogoOrdine = ({
   const [paypalReady, setPaypalReady] = useState(false);
   const paypalButtonsContainerRef = useRef<HTMLDivElement | null>(null);
 
-  // === Tasse live da Firestore con fallback ===
+  if (!API) {
+    console.warn("REACT_APP_API_BASE_URL non impostata. Configura l'endpoint API e ricompila.");
+  }
+
   const [fees, setFees] = useState<Fees>({
     ivaRate,
     transportFeeEuro,
@@ -127,14 +131,11 @@ const RiepilogoOrdine = ({
     const iva = round2(base * fees.ivaRate);
     const trasporto = round2(fees.transportFeeEuro);
     const subTotale = round2(base + iva + trasporto);
-
     const feePP = paymentMethod === "paypal"
       ? round2(subTotale * fees.paypalPercent + fees.paypalFixed)
       : 0;
-
     const totaleContanti = subTotale;
     const totalePayPal = round2(subTotale + feePP);
-
     const totaleDaAddebitare = paymentMethod === "paypal" ? totalePayPal : totaleContanti;
 
     return {
@@ -162,15 +163,16 @@ const RiepilogoOrdine = ({
     document.body.appendChild(script);
   }, [paymentMethod]);
 
-  // Helper fetch JSON robusto, memoizzato
-  const fetchJSON = useCallback(async <T,>(url: string, body: any): Promise<T> => {
+  // Helper fetch JSON robusto
+  const fetchJSON = useCallback(async <T,>(url: string, body: unknown): Promise<T> => {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (authToken) headers["Authorization"] = `Bearer ${authToken}`;
+    if (authToken) headers.Authorization = `Bearer ${authToken}`;
     if (csrfToken) headers["X-CSRF-Token"] = csrfToken;
 
     const res = await fetch(url, {
       method: "POST",
-      credentials: "include", // cookie di sessione
+      // se NON usi cookie/sessione, commenta la riga seguente:
+      // credentials: "include",
       headers,
       body: JSON.stringify(body),
     });
@@ -200,14 +202,10 @@ const RiepilogoOrdine = ({
     const instance = Buttons({
       style: { layout: "vertical" },
 
-      // 1) Crea ordine lato backend
       createOrder: async () => {
         const data = await fetchJSON<{ orderId: string }>(
-          `${API_BASE}/api/paypal/create-order`,
-          {
-            amount: totals.totaleDaAddebitare.toFixed(2),
-            currency: "EUR",
-          }
+          `${API}/api/paypal/create-order`,
+          { amount: totals.totaleDaAddebitare.toFixed(2), currency: "EUR" }
         );
         if (!data?.orderId || typeof data.orderId !== "string") {
           throw new Error("Risposta backend priva di orderId");
@@ -215,8 +213,7 @@ const RiepilogoOrdine = ({
         return data.orderId;
       },
 
-      // 2) Approve → cattura lato backend → conferma ordine app
-      onApprove: async (data: any) => {
+      onApprove: async (data: PayPalApproveData) => {
         try {
           const cap = await fetchJSON<{
             status: string;
@@ -225,7 +222,7 @@ const RiepilogoOrdine = ({
             payerEmail?: string;
             amount?: string | number;
           }>(
-            `${API_BASE}/api/paypal/capture-order`,
+            `${API}/api/paypal/capture-order`,
             { orderId: data.orderID }
           );
 
@@ -247,13 +244,13 @@ const RiepilogoOrdine = ({
           } else {
             alert("Pagamento non completato: " + cap.status);
           }
-        } catch (e: any) {
+        } catch (e) {
           console.error(e);
           alert("Si è verificato un errore durante il pagamento.");
         }
       },
 
-      onError: (err: any) => {
+      onError: (err: unknown) => {
         console.error("PayPal error:", err);
         alert("Errore PayPal. Riprova.");
       },
@@ -264,7 +261,8 @@ const RiepilogoOrdine = ({
     return () => {
       try { instance.close(); } catch { /* noop */ }
     };
-  }, [paymentMethod, paypalReady, submitted, totals, onConfirmOrder, fetchJSON]);
+  // dipendenze minimali: cambia solo quando serve
+  }, [paymentMethod, paypalReady, submitted, totals.totaleDaAddebitare, totals.base, totals.iva, totals.trasporto, totals.feePP, onConfirmOrder, fetchJSON]);
 
   const handleConfirmOrderCash = async () => {
     await onConfirmOrder({
@@ -389,7 +387,7 @@ const RiepilogoOrdine = ({
         <button
           type="button"
           className={`${styles["pay-button"]} ${paymentMethod === "cash" ? styles["selected"] : ""}`}
-          onClick={handlePayCash}
+          onClick={() => setPaymentMethod("cash")}
           aria-pressed={paymentMethod === "cash"}
         >
           💵 Contanti
@@ -399,7 +397,7 @@ const RiepilogoOrdine = ({
         <button
           type="button"
           className={`${styles["pay-button"]} ${paymentMethod === "paypal" ? styles["selected"] : ""}`}
-          onClick={handlePayPaypal}
+          onClick={() => setPaymentMethod("paypal")}
           aria-pressed={paymentMethod === "paypal"}
         >
           🟦 PayPal
@@ -422,7 +420,7 @@ const RiepilogoOrdine = ({
         <button
           className={styles["confirm-button"]}
           onClick={handleConfirmOrderCash}
-          disabled={disabled || loading || submitted || paymentMethod !== "cash"}
+          disabled={disabled || loading || submitted}
         >
           ✅ Conferma Ordine
         </button>

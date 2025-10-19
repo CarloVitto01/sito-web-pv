@@ -42,6 +42,8 @@ type RiepilogoA3Props = {
   csrfToken?: string;
 };
 
+type PayPalApproveData = { orderID: string };
+
 const PAYPAL_CLIENT_ID = process.env.REACT_APP_PAYPAL_CLIENT_ID as string;
 const API_BASE = process.env.REACT_APP_API_BASE_URL || "";
 
@@ -94,6 +96,10 @@ const RiepilogoOrdineA3 = ({
   const [paypalReady, setPaypalReady] = useState(false);
   const paypalButtonsContainerRef = useRef<HTMLDivElement | null>(null);
 
+  if (!API_BASE) {
+    console.warn("REACT_APP_API_BASE_URL non impostata. Configura l'endpoint API e ricompila.");
+  }
+
   const [fees, setFees] = useState<Fees>({
     ivaRate,
     transportFeeEuro,
@@ -124,12 +130,9 @@ const RiepilogoOrdineA3 = ({
     const iva = round2(base * fees.ivaRate);
     const trasporto = round2(fees.transportFeeEuro);
     const subTotale = round2(base + iva + trasporto);
-
-    const feePP =
-      paymentMethod === "paypal"
-        ? round2(subTotale * fees.paypalPercent + fees.paypalFixed)
-        : 0;
-
+    const feePP = paymentMethod === "paypal"
+      ? round2(subTotale * fees.paypalPercent + fees.paypalFixed)
+      : 0;
     const totaleContanti = subTotale;
     const totalePayPal = round2(subTotale + feePP);
     const totaleDaAddebitare = paymentMethod === "paypal" ? totalePayPal : totaleContanti;
@@ -161,15 +164,16 @@ const RiepilogoOrdineA3 = ({
     document.body.appendChild(script);
   }, [paymentMethod]);
 
-  // Helper fetch JSON robusto, memoizzato
-  const fetchJSON = useCallback(async <T,>(url: string, body: any): Promise<T> => {
+  // Helper fetch JSON robusto
+  const fetchJSON = useCallback(async <T,>(url: string, body: unknown): Promise<T> => {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (authToken) headers["Authorization"] = `Bearer ${authToken}`;
+    if (authToken) headers.Authorization = `Bearer ${authToken}`;
     if (csrfToken) headers["X-CSRF-Token"] = csrfToken;
 
     const res = await fetch(url, {
       method: "POST",
-      credentials: "include",
+      // se NON usi cookie/sessione, commenta la riga seguente:
+      // credentials: "include",
       headers,
       body: JSON.stringify(body),
     });
@@ -202,10 +206,7 @@ const RiepilogoOrdineA3 = ({
       createOrder: async () => {
         const data = await fetchJSON<{ orderId: string }>(
           `${API_BASE}/api/paypal/create-order`,
-          {
-            amount: totals.totaleDaAddebitare.toFixed(2),
-            currency: "EUR",
-          }
+          { amount: totals.totaleDaAddebitare.toFixed(2), currency: "EUR" }
         );
         if (!data?.orderId || typeof data.orderId !== "string") {
           throw new Error("Risposta backend priva di orderId");
@@ -213,7 +214,7 @@ const RiepilogoOrdineA3 = ({
         return data.orderId;
       },
 
-      onApprove: async (data: any) => {
+      onApprove: async (data: PayPalApproveData) => {
         try {
           const cap = await fetchJSON<{
             status: string;
@@ -244,13 +245,13 @@ const RiepilogoOrdineA3 = ({
           } else {
             alert("Pagamento non completato: " + cap.status);
           }
-        } catch (e: any) {
+        } catch (e) {
           console.error(e);
           alert("Si è verificato un errore durante il pagamento.");
         }
       },
 
-      onError: (err: any) => {
+      onError: (err: unknown) => {
         console.error("PayPal error:", err);
         alert("Errore PayPal. Riprova.");
       },
@@ -261,7 +262,18 @@ const RiepilogoOrdineA3 = ({
     return () => {
       try { instance.close(); } catch { /* no-op */ }
     };
-  }, [paymentMethod, paypalReady, submitted, totals, onConfirmOrder, fetchJSON]);
+  }, [
+    paymentMethod,
+    paypalReady,
+    submitted,
+    totals.totaleDaAddebitare,
+    totals.base,
+    totals.iva,
+    totals.trasporto,
+    totals.feePP,
+    onConfirmOrder,
+    fetchJSON,
+  ]);
 
   const handleConfirmOrderCash = async () => {
     await onConfirmOrder({
@@ -276,9 +288,6 @@ const RiepilogoOrdineA3 = ({
       },
     });
   };
-
-  const handlePayCash = () => setPaymentMethod("cash");
-  const handlePayPaypal = () => setPaymentMethod("paypal");
 
   // Barra di caricamento (solo invio ordine)
   useEffect(() => {
@@ -387,7 +396,7 @@ const RiepilogoOrdineA3 = ({
         <button
           type="button"
           className={`${styles["pay-button"]} ${paymentMethod === "cash" ? styles["selected"] : ""}`}
-          onClick={handlePayCash}
+          onClick={() => setPaymentMethod("cash")}
           aria-pressed={paymentMethod === "cash"}
         >
           💵 Contanti
@@ -397,7 +406,7 @@ const RiepilogoOrdineA3 = ({
         <button
           type="button"
           className={`${styles["pay-button"]} ${paymentMethod === "paypal" ? styles["selected"] : ""}`}
-          onClick={handlePayPaypal}
+          onClick={() => setPaymentMethod("paypal")}
           aria-pressed={paymentMethod === "paypal"}
         >
           🟦 PayPal
@@ -420,7 +429,7 @@ const RiepilogoOrdineA3 = ({
         <button
           className={styles["confirm-button"]}
           onClick={handleConfirmOrderCash}
-          disabled={disabled || loading || submitted || paymentMethod !== "cash"}
+          disabled={disabled || loading || submitted}
         >
           ✅ Conferma Ordine
         </button>
