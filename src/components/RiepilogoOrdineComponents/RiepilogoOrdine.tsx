@@ -387,7 +387,7 @@ const RiepilogoOrdine = ({
         <button
           type="button"
           className={`${styles["pay-button"]} ${paymentMethod === "cash" ? styles["selected"] : ""}`}
-          onClick={() => setPaymentMethod("cash")}
+          onClick={handlePayCash}
           aria-pressed={paymentMethod === "cash"}
         >
           💵 Contanti
@@ -397,7 +397,7 @@ const RiepilogoOrdine = ({
         <button
           type="button"
           className={`${styles["pay-button"]} ${paymentMethod === "paypal" ? styles["selected"] : ""}`}
-          onClick={() => setPaymentMethod("paypal")}
+          onClick={handlePayPaypal}
           aria-pressed={paymentMethod === "paypal"}
         >
           🟦 PayPal
