@@ -27,7 +27,7 @@ type RiepilogoProps = {
   intervalloPagine: string;
   numeroCopie: number;
   numeroPDF: number;
-  prezzo: string; // imponibile base: "12.50" o "12,50"
+  prezzo: string;
   onConfirmOrder: (payment: PaymentPayload) => Promise<void>;
   disabled?: boolean;
   submitted?: boolean;
@@ -38,6 +38,10 @@ type RiepilogoProps = {
   transportFeeEuro?: number;  // default 0
   paypalPercent?: number;     // default 0.0349 (3.49%)
   paypalFixed?: number;       // default 0.35 (€)
+
+  /** opzionali: per backend protetti senza cookie */
+  authToken?: string;         // es. JWT
+  csrfToken?: string;         // se usi protezione CSRF
 };
 
 const PAYPAL_CLIENT_ID = process.env.REACT_APP_PAYPAL_CLIENT_ID as string;
@@ -52,9 +56,7 @@ const round2 = (n: number) => Math.round(n * 100) / 100;
 const euro = (n: number) =>
   n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-declare global {
-  interface Window { paypal?: any; }
-}
+declare global { interface Window { paypal?: any; } }
 
 const FEES_COLLECTION = "configTasse";
 const FEES_DOC = "fees";
@@ -81,20 +83,21 @@ const RiepilogoOrdine = ({
   submitted = false,
   loading = false,
 
-  // fallback locali (usati solo se il doc non esiste/è incompleto)
   ivaRate = 0.22,
   transportFeeEuro = 1,
   paypalPercent = 0.0349,
   paypalFixed = 0.35,
+
+  /** opzionali */
+  authToken,
+  csrfToken,
 }: RiepilogoProps) => {
   const [progress, setProgress] = useState(0);
-  const [/*loadingStarted*/, setLoadingStarted] = useState(false);
-
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "paypal" | null>(null);
   const [paypalReady, setPaypalReady] = useState(false);
   const paypalButtonsContainerRef = useRef<HTMLDivElement | null>(null);
 
-  // === 🔗 Tasse da Firestore (live) con fallback ai default passati via props ===
+  // === Tasse live da Firestore con fallback ===
   const [fees, setFees] = useState<Fees>({
     ivaRate,
     transportFeeEuro,
@@ -114,7 +117,6 @@ const RiepilogoOrdine = ({
           paypalFixed: typeof d.paypalFixed === "number" ? d.paypalFixed : paypalFixed,
         });
       } else {
-        // se il doc non c'è, usa i fallback delle props
         setFees({ ivaRate, transportFeeEuro, paypalPercent, paypalFixed });
       }
     });
@@ -127,30 +129,22 @@ const RiepilogoOrdine = ({
     const trasporto = round2(fees.transportFeeEuro);
     const subTotale = round2(base + iva + trasporto);
 
-    const feePP =
-      paymentMethod === "paypal"
-        ? round2(subTotale * fees.paypalPercent + fees.paypalFixed)
-        : 0;
+    const feePP = paymentMethod === "paypal"
+      ? round2(subTotale * fees.paypalPercent + fees.paypalFixed)
+      : 0;
 
-    const totaleContanti = subTotale; // niente fee PayPal
+    const totaleContanti = subTotale;
     const totalePayPal = round2(subTotale + feePP);
 
-    const totaleDaAddebitare =
-      paymentMethod === "paypal" ? totalePayPal : totaleContanti;
+    const totaleDaAddebitare = paymentMethod === "paypal" ? totalePayPal : totaleContanti;
 
     return {
-      base,
-      iva,
-      trasporto,
-      subTotale,
-      feePP,
-      totaleContanti,
-      totalePayPal,
-      totaleDaAddebitare,
+      base, iva, trasporto, subTotale,
+      feePP, totaleContanti, totalePayPal, totaleDaAddebitare,
     };
   }, [prezzo, fees, paymentMethod]);
 
-  // Carica lo script PayPal quando serve
+  // Carica SDK PayPal solo quando serve
   useEffect(() => {
     if (paymentMethod !== "paypal") return;
     if (window.paypal) {
@@ -158,17 +152,45 @@ const RiepilogoOrdine = ({
       return;
     }
     const script = document.createElement("script");
-    script.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_CLIENT_ID}&currency=EUR&intent=capture`;
+    script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(PAYPAL_CLIENT_ID)}&currency=EUR&intent=capture&components=buttons`;
     script.async = true;
     script.onload = () => setPaypalReady(true);
     script.onerror = () => console.error("Impossibile caricare PayPal SDK");
     document.body.appendChild(script);
   }, [paymentMethod]);
 
-  // Render dei PayPal Buttons quando SDK pronto
+  // Helper fetch JSON robusto (gestisce HTML/redirect/CSRF)
+  const fetchJSON = async <T,>(url: string, body: any): Promise<T> => {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (authToken) headers["Authorization"] = `Bearer ${authToken}`;
+    if (csrfToken) headers["X-CSRF-Token"] = csrfToken;
+
+    const res = await fetch(url, {
+      method: "POST",
+      credentials: "include", // <-- manda i cookie di sessione
+      headers,
+      body: JSON.stringify(body),
+    });
+
+    const text = await res.text();
+    if (!res.ok) {
+      // se il backend ha risposto HTML (redirect/login/errore), lo vediamo subito
+      console.error(`HTTP ${res.status} su ${url}. Body:`, text.slice(0, 500));
+      throw new Error(`Request failed (${res.status})`);
+    }
+    try {
+      return JSON.parse(text) as T;
+    } catch {
+      console.error(`Risposta non JSON da ${url}:`, text.slice(0, 500));
+      throw new Error("Risposta non JSON dal server");
+    }
+  };
+
+  // Render PayPal Buttons
   useEffect(() => {
     if (paymentMethod !== "paypal" || !paypalReady || !paypalButtonsContainerRef.current || submitted) return;
 
+    // pulizia container (evita doppie istanze)
     paypalButtonsContainerRef.current.innerHTML = "";
 
     const Buttons = window.paypal?.Buttons;
@@ -177,31 +199,35 @@ const RiepilogoOrdine = ({
     const instance = Buttons({
       style: { layout: "vertical" },
 
-      // 1) Crea l'ordine sul tuo backend (importo già comprensivo di IVA, trasporto e fee PayPal)
+      // 1) Crea ordine lato backend
       createOrder: async () => {
-        const res = await fetch(`${API_BASE}/api/paypal/create-order`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        const data = await fetchJSON<{ orderId: string }>(
+          `${API_BASE}/api/paypal/create-order`,
+          {
             amount: totals.totaleDaAddebitare.toFixed(2),
             currency: "EUR",
-          }),
-        });
-        if (!res.ok) throw new Error("Errore create-order");
-        const data = await res.json(); // { orderId }
+          }
+        );
+        if (!data?.orderId || typeof data.orderId !== "string") {
+          throw new Error("Risposta backend priva di orderId");
+        }
         return data.orderId;
       },
 
-      // 2) Approve → cattura sul backend, poi conferma ordine
+      // 2) Approve → cattura lato backend → conferma ordine app
       onApprove: async (data: any) => {
         try {
-          const res = await fetch(`${API_BASE}/api/paypal/capture-order`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ orderId: data.orderID }),
-          });
-          if (!res.ok) throw new Error("Errore capture-order");
-          const cap = await res.json();
+          const cap = await fetchJSON<{
+            status: string;
+            orderId?: string;
+            captureId?: string;
+            payerEmail?: string;
+            amount?: string | number;
+          }>(
+            `${API_BASE}/api/paypal/capture-order`,
+            { orderId: data.orderID }
+          );
+
           if (cap.status === "COMPLETED") {
             await onConfirmOrder({
               method: "PAYPAL",
@@ -214,8 +240,8 @@ const RiepilogoOrdine = ({
                 imponibile: totals.base,
                 iva: totals.iva,
                 trasporto: totals.trasporto,
-                feePayPal: totals.feePP
-              }
+                feePayPal: totals.feePP,
+              },
             });
           } else {
             alert("Pagamento non completato: " + cap.status);
@@ -235,13 +261,12 @@ const RiepilogoOrdine = ({
     instance.render(paypalButtonsContainerRef.current);
 
     return () => {
-      try { instance.close(); } catch { }
+      try { instance.close(); } catch { /* noop */ }
     };
-  }, [paymentMethod, paypalReady, submitted, totals, onConfirmOrder]);
+    // NB: totals cambia quando selezioni PayPal (per fee) → va bene, il pulsante si riallinea
+  }, [paymentMethod, paypalReady, submitted, totals, onConfirmOrder, authToken, csrfToken]);
 
   const handleConfirmOrderCash = async () => {
-    setProgress(0);
-    setLoadingStarted(true);
     await onConfirmOrder({
       method: "CASH",
       confirmed: false,
@@ -250,15 +275,15 @@ const RiepilogoOrdine = ({
         imponibile: totals.base,
         iva: totals.iva,
         trasporto: totals.trasporto,
-        feePayPal: 0
-      }
+        feePayPal: 0,
+      },
     });
   };
 
   const handlePayCash = () => setPaymentMethod("cash");
   const handlePayPaypal = () => setPaymentMethod("paypal");
 
-  // Barra di caricamento
+  // Barra di caricamento (solo UI)
   useEffect(() => {
     if (loading) {
       let current = 0;
@@ -283,7 +308,8 @@ const RiepilogoOrdine = ({
   return (
     <div className={styles["riepilogo-container"]}>
       <h3 className={styles["riepilogo-title"]}>📋 Riepilogo Ordine A4</h3>
-      {/* --- Dettagli ordine (stile identico al riepilogo pagamento) --- */}
+
+      {/* Dettagli ordine */}
       <div className={`${styles["price-card"]} ${styles["details-card"]}`}>
         <div className={styles["price-header"]}>Dettagli ordine</div>
 
@@ -291,45 +317,37 @@ const RiepilogoOrdine = ({
           <span className={styles["price-label"]}>Numero PDF</span>
           <span className={styles["price-value"]}>{numeroPDF}</span>
         </div>
-
         <div className={styles["price-row"]}>
           <span className={styles["price-label"]}>Inchiostro</span>
           <span className={styles["price-value"]}>{inchiostro}</span>
         </div>
-
         <div className={styles["price-row"]}>
           <span className={styles["price-label"]}>Layout</span>
           <span className={styles["price-value"]}>{layout}</span>
         </div>
-
         <div className={styles["price-row"]}>
           <span className={styles["price-label"]}>Gestione pagina</span>
           <span className={styles["price-value"]}>{pagina}</span>
         </div>
-
         <div className={styles["price-row"]}>
           <span className={styles["price-label"]}>Rilegatura</span>
           <span className={styles["price-value"]}>{rilegatura}</span>
         </div>
-
         <div className={styles["price-row"]}>
           <span className={styles["price-label"]}>Rilegatura unica</span>
           <span className={styles["price-value"]}>{rilegaturaUnica}</span>
         </div>
-
         <div className={styles["price-row"]}>
           <span className={styles["price-label"]}>Intervallo pagine</span>
           <span className={styles["price-value"]}>{intervalloPagine}</span>
         </div>
-
         <div className={styles["price-row"]}>
           <span className={styles["price-label"]}>Numero copie</span>
           <span className={styles["price-value"]}>{numeroCopie}</span>
         </div>
       </div>
 
-
-      {/* --- Breakdown economico --- */}
+      {/* Breakdown economico */}
       <div className={`${styles["price-card"]} ${styles["price-left"]}`}>
         <div className={styles["price-row"]}>
           <span className={styles["price-label"]}>Imponibile</span>
@@ -337,9 +355,7 @@ const RiepilogoOrdine = ({
         </div>
 
         <div className={styles["price-row"]}>
-          <span className={styles["price-label"]}>
-            IVA ({Math.round(fees.ivaRate * 100)}%)
-          </span>
+          <span className={styles["price-label"]}>IVA ({Math.round(fees.ivaRate * 100)}%)</span>
           <span className={styles["price-value"]}>{euro(totals.iva)} €</span>
         </div>
 
@@ -410,7 +426,7 @@ const RiepilogoOrdine = ({
         <button
           className={styles["confirm-button"]}
           onClick={handleConfirmOrderCash}
-          disabled={confirmDisabledCash}
+          disabled={disabled || loading || submitted || paymentMethod !== "cash"}
         >
           ✅ Conferma Ordine
         </button>
