@@ -46,6 +46,7 @@ type PayPalApproveData = { orderID: string };
 
 const PAYPAL_CLIENT_ID = process.env.REACT_APP_PAYPAL_CLIENT_ID as string;
 const API_BASE = process.env.REACT_APP_API_BASE_URL || "";
+const API = (API_BASE || "").replace(/\/+$/, ""); // toglie eventuale "/" finale
 
 function parseEuro(prezzo: string): number {
   const normalized = prezzo.replace(",", ".").replace(/[^\d.]/g, "");
@@ -205,7 +206,7 @@ const RiepilogoOrdineA3 = ({
 
       createOrder: async () => {
         const data = await fetchJSON<{ orderId: string }>(
-          `${API_BASE}/api/paypal/create-order`,
+          `${API}/api/paypal/create-order`,
           { amount: totals.totaleDaAddebitare.toFixed(2), currency: "EUR" }
         );
         if (!data?.orderId || typeof data.orderId !== "string") {
@@ -223,7 +224,7 @@ const RiepilogoOrdineA3 = ({
             payerEmail?: string;
             amount?: string | number;
           }>(
-            `${API_BASE}/api/paypal/capture-order`,
+            `${API}/api/paypal/capture-order`,
             { orderId: data.orderID }
           );
 

@@ -13,7 +13,7 @@ import { doc, onSnapshot } from "firebase/firestore";
 import Banner from "../Banner/Banner";
 
 // Base API
-const API_BASE = "/api";
+const API = (process.env.REACT_APP_API_BASE_URL || "https://api.photoandvision.it").replace(/\/+$/, "");
 
 // ======= PayPal config (ENV) =======
 const PAYPAL_CLIENT_ID = process.env.REACT_APP_PAYPAL_CLIENT_ID as string;
@@ -357,7 +357,7 @@ const QRCodeGenerator: React.FC = () => {
     const instance = Buttons({
       style: { layout: "vertical" },
       createOrder: async () => {
-        const res = await fetch(`${API_BASE}/paypal/create-order`, {
+        const res = await fetch(`${API}/paypal/create-order`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -377,7 +377,7 @@ const QRCodeGenerator: React.FC = () => {
       },
       onApprove: async (data: any) => {
         try {
-          const res = await fetch(`${API_BASE}/paypal/capture-order`, {
+          const res = await fetch(`${API}/paypal/capture-order`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ orderId: data.orderID }),
