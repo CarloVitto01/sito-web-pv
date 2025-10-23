@@ -329,6 +329,39 @@
   font-size: 1.05rem;
 }
 
+/* griglia slot */
+.slots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+
+}
+
+/* card slot */
+.slot-card {
+  background: var(--pv-card, #1b1b1b);
+  border: 1px solid var(--pv-stroke, rgba(222,181,0,.35));
+  border-radius: 12px;
+  padding: 10px 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+.slot-card:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,0,0,.25); }
+.slot-selected {
+  border-color: var(--pv-gold, #deb500);
+  box-shadow: 0 0 0 2px rgba(222,181,0,.25) inset;
+}
+
+.slot-day { display:block; font-weight:600; }
+.slot-time { display:block; opacity:.9; font-size:.95rem; }
+
+.delivery-card { margin-top: 12px; }
+
+
+
+
 /* Mobile: stringi un po' lo spacing */
 @media (max-width: 560px) {
   .price-row {

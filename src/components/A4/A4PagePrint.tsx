@@ -31,8 +31,6 @@ const fmtEuro = (n?: number | string) =>
     ? n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     : Number(n || 0).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-//Constants
-
 //Enum
 const inchiostroEnum = {
   BIANCOENERO: 0,
@@ -104,8 +102,6 @@ const A4PagePrint = () => {
     spirale: 2,
   });
 
-
-  //Prevent scrolling when modal is open
   useEffect(() => {
     const costiRef = doc(db, "configA4", "costi");
     const unsub = onSnapshot(costiRef, (snap) => {
@@ -144,7 +140,6 @@ const A4PagePrint = () => {
   }, [formSubmitted, formSubmitting, formError]);
 
   //Form Data Handling
-
   const setDataHandler = useCallback((data: FormData) => {
     setData({
       name: data.name,
@@ -190,14 +185,11 @@ const A4PagePrint = () => {
     setNumeroPaginePDF(totalPages);
   }, []);
 
-
   //Intervallo Pagine Handling
   const setRangePagesHandler = useCallback(
     (value: RangePagesData) => {
       if (value.all) {
-        // ✅ Resetto il testo dell'intervallo
         setDaA("Tutte");
-
         if (numeroPaginePDF) {
           setIntervalloPagine(numeroPaginePDF);
         } else {
@@ -215,7 +207,6 @@ const A4PagePrint = () => {
           return;
         }
 
-        // ✅ Aggiorno il testo Da-A
         setDaA(`${from}-${to}`);
 
         let range = to - from + 1;
@@ -235,13 +226,11 @@ const A4PagePrint = () => {
     }
   }, [numeroPDF, numeroPaginePDF]);
 
-
   const setCopiesHandler = useCallback((value: number) => {
     setNumeroCopie(value);
   }, []);
 
   //Calculate total order
-
   useEffect(() => {
     const calcoloPreventivo = () => {
       let totale = 0;
@@ -320,9 +309,7 @@ const A4PagePrint = () => {
 
   // --- Helpers per quantità interne ---
   const computeNFogliPerCopia = (pagineSelezionate: number, paginaMode: number, layoutMode: number) => {
-    // pagina: fronte-retro dimezza
     let fogli = paginaMode === paginaEnum.FRONTE_RETRO ? Math.ceil(pagineSelezionate / 2) : pagineSelezionate;
-    // layout: 2-in-1 dimezza (arrotondando per eccesso)
     if (layoutMode === layoutEnum.DUEPAGORIZZ || layoutMode === layoutEnum.DUEPAGVERT) {
       fogli = Math.ceil(fogli / 2);
     }
@@ -330,31 +317,35 @@ const A4PagePrint = () => {
   };
 
   const computeFascicoli = (copie: number, rilegaturaUnicaVal: number) => {
-    // rispecchia StoricoDati.numFascicoli: se unica -> 1, altrimenti = copie
     const isUnica = rilegaturaUnicaVal === rilegaturaUnicaEnum.SI;
     return isUnica ? 1 : Math.max(1, copie);
   };
 
-
   // 🆕 accetta sia (event) sia (paymentPayload, event)
   const submitFormHandler = useCallback(async (arg1?: any, arg2?: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-    // 🆕 normalizza parametri senza rompere l’esistente
     const isPaymentPayload = (o: any) => o && typeof o === "object" && ("method" in o);
     const payment = isPaymentPayload(arg1)
       ? (arg1 as {
-        method: "CASH" | "PAYPAL";
-        confirmed: boolean;
-        amount?: number;
-        orderId?: string;
-        captureId?: string;
-        payerEmail?: string;
-        breakdown?: {
-          imponibile: number;
-          iva: number;
-          trasporto: number;
-          feePayPal: number;
-        };
-      })
+          method: "CASH" | "PAYPAL";
+          confirmed: boolean;
+          amount?: number;
+          orderId?: string;
+          captureId?: string;
+          payerEmail?: string;
+          breakdown?: {
+            imponibile: number;
+            iva: number;
+            trasporto: number;
+            feePayPal: number;
+          };
+          // 🆕 consegna
+          delivery?: {
+            dateISO: string;
+            dayLabel: string;
+            timeRange: string;
+            weekday: number; // 1..7
+          };
+        })
       : undefined;
     const event = isPaymentPayload(arg1) ? arg2 : (arg1 as React.MouseEvent<HTMLButtonElement, MouseEvent> | undefined);
 
@@ -407,14 +398,18 @@ const A4PagePrint = () => {
           ? "Da saldare alla consegna"
           : "Non specificato";
 
-
     // 🧮 quantità interne (per StoricoDati)
     const nFogliPerCopia = computeNFogliPerCopia(intervalloPagine, pagina, layout);
     const nFogli = nFogliPerCopia * Math.max(1, numeroCopie);
     const fascicoli = computeFascicoli(numeroCopie, rilegaturaUnica);
-
-    // split colore/BN per aiutare eventuali debug (Storico li calcola da solo comunque)
     const isColore = inchiostro === inchiostroEnum.COLORE;
+
+    // 🆕 consegna
+    const delivery = payment?.delivery;
+    const deliveryDayLabel = delivery?.dayLabel ?? undefined;
+    const deliveryTimeRange = delivery?.timeRange ?? undefined;
+    const deliveryDateISO = delivery?.dateISO ?? undefined;
+    const deliveryWeekday = delivery?.weekday ?? undefined;
 
     const dataToUpload = {
       id: id,
@@ -452,15 +447,17 @@ const A4PagePrint = () => {
       copie: numeroCopie,
       prezzo: preventivo,
       timestamp: serverTimestamp(),
-      tipo: "A4", // ✅ aggiunto per filtro gestionale
+      tipo: "A4",
       uid: auth.currentUser?.uid,
-      nFogli,                 // <-- importantissimo
-      nFogliPerCopia,         // (facoltativo, ma utile)
-      fascicoli,              // per costi "per_fascicolo"
+      nFogli,
+      nFogliPerCopia,
+      fascicoli,
       inchiostro: isColore ? "colore" : "biancoenero",
-      // (facoltativo) potresti anche salvare questi due campi:
-      // metodoPagamento,
-      // statoPagamento,
+      // 🆕 consegna: salvo anche sull'ordine principale
+      deliveryDayLabel,
+      deliveryTimeRange,
+      deliveryDateISO,
+      deliveryWeekday,
     };
 
     const collectionRef = collection(db, "StampePDFA4");
@@ -492,18 +489,22 @@ const A4PagePrint = () => {
         const { file, path, ...rest } = dataToUpload;
         const datiSnelliti = {
           ...rest,
-          totaleFinale,                             // già presente
-          metodoPagamento,                          // ✅ nuovo
-          trasporto: payment?.breakdown?.trasporto ?? 0,    // ✅ nuovo
-          imponibile: payment?.breakdown?.imponibile ?? undefined, // ✅ nuovo
-          iva: payment?.breakdown?.iva ?? undefined,         // ✅ nuovo
-          paypalFee: payment?.breakdown?.feePayPal ?? 0,     // ✅ nuovo
+          totaleFinale,
+          metodoPagamento,
+          trasporto: payment?.breakdown?.trasporto ?? 0,
+          imponibile: payment?.breakdown?.imponibile ?? undefined,
+          iva: payment?.breakdown?.iva ?? undefined,
+          paypalFee: payment?.breakdown?.feePayPal ?? 0,
           timestamp: serverTimestamp(),
-          // ✅ ripeti anche qui i campi tecnici
           nFogli,
           nFogliPerCopia,
           fascicoli,
           inchiostro: isColore ? "colore" : "biancoenero",
+          // 🆕 consegna anche nell'archivio
+          deliveryDayLabel,
+          deliveryTimeRange,
+          deliveryDateISO,
+          deliveryWeekday,
         };
 
         await setDoc(doc(db, "ArchivioOrdini", id), datiSnelliti);
@@ -514,7 +515,12 @@ const A4PagePrint = () => {
             ? `\n🧾 *PayPal OrderID*: ${payment.orderId ?? "-"}\n🧾 *CaptureID*: ${payment.captureId ?? "-"}\n👤 *Payer*: ${payment.payerEmail ?? "-"}\n`
             : "";
 
-        // 🆕 Messaggio Telegram aggiornato con Totale finale
+        // 🆕 Blocchetto consegna per Telegram
+        const deliveryBlock = delivery
+          ? `\n🚚 *Consegna*: ${deliveryDayLabel} • ${deliveryTimeRange}\n`
+          : "";
+
+        // 🆕 Messaggio Telegram aggiornato con Consegna + Totale finale
         const messageText = `
 =====================
   *NUOVO ORDINE A4*
@@ -538,7 +544,7 @@ ${fileLinks}
 📒 *Rilegatura unica*: ${dataToUpload.rilegaturaUnica}
 *Pagine*: ${dataToUpload.pagine}
 🔢 *Copie*: ${dataToUpload.copie}
-
+${deliveryBlock}
 💳 *Metodo di pagamento*: ${metodoPagamento}
 ✅ *Stato pagamento*: ${statoPagamento}
 💰 *Totale finale*: ${fmtEuro(totaleFinale)} €
@@ -582,13 +588,14 @@ ${extraPP}`.trim();
     numeroCopie,
     rilegatura,
     rilegaturaUnica,
-    daA]);
+    daA
+  ]);
 
   useEffect(() => {
     if (formSubmitted) {
       const timeout = setTimeout(() => {
-        window.location.reload(); // 🔄 ricarica la pagina
-      }, 3000); // ⏱️ attende 3 secondi prima del refresh
+        window.location.reload();
+      }, 3000);
       return () => clearTimeout(timeout);
     }
   }, [formSubmitted]);
@@ -635,7 +642,6 @@ ${extraPP}`.trim();
         disabled={!isLoggedIn}
         readOnlyFields={isLoggedIn}
       />
-
 
       <SingleDelimiter />
       <MultiInput onSendData={setPDFHandler} />
@@ -750,38 +756,38 @@ ${extraPP}`.trim();
                   {
                     title: "Anelli",
                     imageSrc: require("../../assets/images/Anelli.png"),
-                    disabled: numeroPaginePDF > 670 && intervalloPagine > 670, // Aggiungi la proprietà disabled
+                    disabled: numeroPaginePDF > 670 && intervalloPagine > 670,
                     errorMessage: "Limite di 670 pagine",
                   },
                   {
                     title: "Spirale",
                     imageSrc: require("../../assets/images/Spirale.png"),
-                    disabled: numeroPaginePDF > 500 && intervalloPagine > 500, // Aggiungi la proprietà disabled
+                    disabled: numeroPaginePDF > 500 && intervalloPagine > 500,
                     errorMessage: "Limite di 500 pagine",
                   },
                   {
                     title: "Fascetta",
                     imageSrc: require("../../assets/images/Fascetta.png"),
-                    disabled: numeroPaginePDF > 80 && intervalloPagine > 80, // Aggiungi la proprietà disabled
+                    disabled: numeroPaginePDF > 80 && intervalloPagine > 80,
                     errorMessage: "Limite di 80 pagine",
                   },
                   {
                     title: "Ciappatura",
                     imageSrc: require("../../assets/images/Ciappatura.png"),
-                    disabled: numeroPaginePDF > 35 && intervalloPagine > 35, // Mantieni la logica di disabilitazione
+                    disabled: numeroPaginePDF > 35 && intervalloPagine > 35,
                     errorMessage: "Limite di 40 pagine"
                   },
                   {
                     title: "Nessuna",
                     imageSrc: require("../../assets/images/No_rilegatura.png"),
-                    disabled: false, // Aggiungi la proprietà disabled
+                    disabled: false,
                     errorMessage: "",
                   },
                 ],
-                [numeroPaginePDF, intervalloPagine] // Aggiungi numeroPaginePDF come dipendenza
+                [numeroPaginePDF, intervalloPagine]
               )}
               defaultValue="Anelli"
-              onSendData={newValue} // Assicurati che newValue sia una funzione valida
+              onSendData={newValue}
             />
 
           </div>
