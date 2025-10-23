@@ -17,6 +17,7 @@ const PAGINE = [
   'gestionale-web',
   'tasse',
   'banner',
+  'consegna',
 ];
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';

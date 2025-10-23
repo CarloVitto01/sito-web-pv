@@ -16,6 +16,12 @@ type PaymentPayload = {
     trasporto: number;
     feePayPal: number;
   };
+  delivery?: {
+    dateISO: string;          // es. 2025-10-27T12:00:00+02:00
+    dayLabel: string;         // es. "Lunedì 27 Ott"
+    timeRange: string;        // "12:00–13:00"
+    weekday: 1 | 2 | 3 | 4 | 5 | 6 | 7; // 1=Lun ... 7=Dom
+  };
 };
 
 type RiepilogoA3Props = {
@@ -46,7 +52,7 @@ type PayPalApproveData = { orderID: string };
 
 const PAYPAL_CLIENT_ID = process.env.REACT_APP_PAYPAL_CLIENT_ID as string;
 const API_BASE = process.env.REACT_APP_API_BASE_URL || "";
-const API = (API_BASE || "").replace(/\/+$/, ""); // toglie eventuale "/" finale
+const API = (API_BASE || "").replace(/\/+$/, "");
 
 function parseEuro(prezzo: string): number {
   const normalized = prezzo.replace(",", ".").replace(/[^\d.]/g, "");
@@ -68,6 +74,162 @@ type Fees = {
   paypalPercent: number;
   paypalFixed: number;
 };
+
+/** ======= Config consegne (da Firestore) ======= */
+type TimeRange = { start: string; end: string };
+type BlacklistRange = { from: string; to: string };
+type DeliveryConfig = {
+  weekdays: number[];            // 1..7 (1=Lun ... 7=Dom)
+  timeRanges: TimeRange[];       // una o più fasce orarie
+  slotsAhead: number;            // quanti slot totali generare
+  timezone?: string;             // es. "Europe/Rome"
+  blacklistDates?: string[];     // YYYY-MM-DD
+  blacklistRanges?: BlacklistRange[]; // intervalli inclusivi [from,to] in YYYY-MM-DD
+};
+const COLL_CONS = "configConsegne";
+const DOC_CONS = "settings";
+
+/** ======= Slot di consegna ======= */
+type Weekday = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+type DeliverySlot = {
+  id: string;
+  weekday: Weekday;      // 1..7
+  dateISO: string;       // ISO con orario start locale
+  dayLabel: string;      // "Lunedì 27 Ott"
+  timeRange: string;     // "12:00–13:00"
+};
+
+/** ======= Utility date ======= */
+const DAY_FULL_IT: Record<Weekday, string> = {
+  1: "Lunedì",
+  2: "Martedì",
+  3: "Mercoledì",
+  4: "Giovedì",
+  5: "Venerdì",
+  6: "Sabato",
+  7: "Domenica",
+};
+function pad2(n: number) { return String(n).padStart(2, "0"); }
+function itShortMonth(d: Date): string {
+  return d.toLocaleDateString("it-IT", { month: "short" }).replace(".", "");
+}
+/** ISO con offset locale, non “Z” */
+function toTZDateISO(date: Date, hour: number, minute: number): string {
+  const d = new Date(date);
+  d.setHours(hour, minute, 0, 0);
+  const tzOffsetMin = -d.getTimezoneOffset();
+  const sign = tzOffsetMin >= 0 ? "+" : "-";
+  const abs = Math.abs(tzOffsetMin);
+  const HHoff = pad2(Math.floor(abs / 60));
+  const MMoff = pad2(abs % 60);
+  const yyyy = d.getFullYear();
+  const MM = pad2(d.getMonth() + 1);
+  const DD = pad2(d.getDate());
+  const HH = pad2(d.getHours());
+  const mi = pad2(d.getMinutes());
+  const ss = pad2(d.getSeconds());
+  return `${yyyy}-${MM}-${DD}T${HH}:${mi}:${ss}${sign}${HHoff}:${MMoff}`;
+}
+/** YYYY-MM-DD in LOCALE (no UTC) */
+function ymdLocal(d: Date): string {
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+/** weekday(1..7) -> JS getDay (0..6) */
+function weekdayToJs(weekday: Weekday): number {
+  return weekday === 7 ? 0 : weekday; // 7=Dom -> 0
+}
+
+/** ======= Generazione slot: cronologica + blacklist locale + intervalli ======= */
+function buildSlotsFromConfig(cfg: DeliveryConfig): DeliverySlot[] {
+  const weekdays = (Array.isArray(cfg.weekdays) && cfg.weekdays.length ? cfg.weekdays : [1, 3, 5])
+    .map(w => Math.min(7, Math.max(1, Number(w)))) as Weekday[];
+  const timeRanges = Array.isArray(cfg.timeRanges) && cfg.timeRanges.length
+    ? cfg.timeRanges
+    : [{ start: "12:00", end: "13:00" }];
+  const slotsAhead = Math.max(1, Number(cfg.slotsAhead) || 6);
+
+  const singles = new Set(cfg.blacklistDates || []);
+  const ranges = (cfg.blacklistRanges || []).slice();
+
+  const isBlacklisted = (d: Date) => {
+    const ymd = ymdLocal(d);
+    if (singles.has(ymd)) return true;
+    return ranges.some(r => r.from <= ymd && ymd <= r.to);
+  };
+
+  const slots: DeliverySlot[] = [];
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+
+  const horizonDays = 120; // margine per molte esclusioni
+  for (let i = 0; i < horizonDays && slots.length < slotsAhead; i++) {
+    const day = new Date(now);
+    day.setDate(now.getDate() + i);
+
+    const jsDay = day.getDay(); // 0..6
+    const weekday: Weekday = (jsDay === 0 ? 7 : (jsDay as 1 | 2 | 3 | 4 | 5 | 6)) as Weekday;
+
+    // se il giorno non è previsto, passa
+    if (!weekdays.some(w => weekdayToJs(w) === jsDay)) continue;
+
+    // esclusioni
+    if (isBlacklisted(day)) continue;
+
+    for (const tr of timeRanges) {
+      const [sh, sm] = String(tr.start || "12:00").split(":").map(Number);
+      const [eh, em] = String(tr.end || "13:00").split(":").map(Number);
+      const startH = Number.isFinite(sh) ? sh : 12;
+      const startM = Number.isFinite(sm) ? sm : 0;
+      const endH = Number.isFinite(eh) ? eh : 13;
+      const endM = Number.isFinite(em) ? em : 0;
+
+      const dateISO = toTZDateISO(day, startH, startM);
+      const label = `${DAY_FULL_IT[weekday]} ${day.getDate()} ${itShortMonth(day)}`;
+      const id = `${weekday}-${ymdLocal(day)}-${pad2(startH)}${pad2(startM)}`;
+
+      slots.push({
+        id,
+        weekday,
+        dateISO,
+        dayLabel: label,
+        timeRange: `${pad2(startH)}:${pad2(startM)}–${pad2(endH)}:${pad2(endM)}`
+      });
+
+      if (slots.length >= slotsAhead) break;
+    }
+  }
+
+  return slots.slice(0, slotsAhead);
+}
+
+/** ======= Fallback statico Lun/Mer/Ven 12–13 ======= */
+const SLOT_START = { hour: 12, minute: 0 };
+const SLOT_END = { hour: 13, minute: 0 };
+
+function buildUpcomingSlotsStatic(n: number): DeliverySlot[] {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const slots: DeliverySlot[] = [];
+  const horizonDays = 120;
+  for (let i = 0; i < horizonDays && slots.length < n; i++) {
+    const day = new Date(now);
+    day.setDate(now.getDate() + i);
+    const jsDay = day.getDay();
+    const weekday: Weekday = (jsDay === 0 ? 7 : (jsDay as 1 | 2 | 3 | 4 | 5 | 6)) as Weekday;
+    if (![1, 3, 5].includes(weekday)) continue;
+
+    const dateISO = toTZDateISO(day, SLOT_START.hour, SLOT_START.minute);
+    const label = `${DAY_FULL_IT[weekday]} ${day.getDate()} ${itShortMonth(day)}`;
+    slots.push({
+      id: `${weekday}-${ymdLocal(day)}`,
+      weekday,
+      dateISO,
+      dayLabel: label,
+      timeRange: `${pad2(SLOT_START.hour)}:${pad2(SLOT_START.minute)}–${pad2(SLOT_END.hour)}:${pad2(SLOT_END.minute)}`
+    });
+  }
+  return slots.slice(0, n);
+}
 
 const RiepilogoOrdineA3 = ({
   inchiostro,
@@ -108,6 +270,51 @@ const RiepilogoOrdineA3 = ({
     paypalFixed,
   });
 
+  /** ======= Lettura live configurazione consegne dal gestionale ======= */
+  const [deliveryCfg, setDeliveryCfg] = useState<DeliveryConfig>({
+    weekdays: [1, 3, 5],
+    timeRanges: [{ start: "12:00", end: "13:00" }],
+    slotsAhead: 6,
+    timezone: "Europe/Rome",
+    blacklistDates: [],
+    blacklistRanges: [],
+  });
+
+  useEffect(() => {
+    const ref = doc(db, COLL_CONS, DOC_CONS);
+    const unsub = onSnapshot(ref, (snap) => {
+      if (snap.exists()) {
+        const d = snap.data() as Partial<DeliveryConfig>;
+        setDeliveryCfg({
+          weekdays: Array.isArray(d.weekdays) && d.weekdays.length ? (d.weekdays as number[]) : [1, 3, 5],
+          timeRanges: Array.isArray(d.timeRanges) && d.timeRanges.length ? (d.timeRanges as TimeRange[]) : [{ start: "12:00", end: "13:00" }],
+          slotsAhead: typeof d.slotsAhead === "number" ? d.slotsAhead : 6,
+          timezone: typeof d.timezone === "string" && d.timezone ? d.timezone : "Europe/Rome",
+          blacklistDates: Array.isArray(d.blacklistDates) ? (d.blacklistDates as string[]) : [],
+          blacklistRanges: Array.isArray(d.blacklistRanges) ? (d.blacklistRanges as BlacklistRange[]) : [],
+        });
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  /** ======= Slots consegna dinamici + fallback statico ======= */
+  const deliverySlotsFromCfg = useMemo<DeliverySlot[]>(
+    () => buildSlotsFromConfig(deliveryCfg),
+    [deliveryCfg]
+  );
+  const deliverySlots = useMemo<DeliverySlot[]>(
+    () => (deliverySlotsFromCfg.length ? deliverySlotsFromCfg : buildUpcomingSlotsStatic(6)),
+    [deliverySlotsFromCfg]
+  );
+
+  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
+  const selectedSlot = useMemo(
+    () => deliverySlots.find(s => s.id === selectedSlotId) || null,
+    [deliverySlots, selectedSlotId]
+  );
+
+  // ======= Tasse =======
   useEffect(() => {
     const ref = doc(db, FEES_COLLECTION, FEES_DOC);
     const unsub = onSnapshot(ref, (snap) => {
@@ -143,7 +350,7 @@ const RiepilogoOrdineA3 = ({
     };
   }, [prezzo, fees, paymentMethod]);
 
-  // Carica PayPal SDK
+  // Carica PayPal SDK quando serve
   useEffect(() => {
     if (paymentMethod !== "paypal") return;
 
@@ -173,8 +380,6 @@ const RiepilogoOrdineA3 = ({
 
     const res = await fetch(url, {
       method: "POST",
-      // se NON usi cookie/sessione, commenta la riga seguente:
-      // credentials: "include",
       headers,
       body: JSON.stringify(body),
     });
@@ -194,9 +399,19 @@ const RiepilogoOrdineA3 = ({
 
   // Render PayPal Buttons
   useEffect(() => {
-    if (paymentMethod !== "paypal" || !paypalReady || !paypalButtonsContainerRef.current || submitted) return;
+    if (paymentMethod !== "paypal" || !paypalButtonsContainerRef.current || submitted) return;
 
     paypalButtonsContainerRef.current.innerHTML = "";
+
+    if (!selectedSlot) {
+      const div = document.createElement("div");
+      div.className = styles["hint"];
+      div.textContent = "Seleziona prima uno slot di consegna per abilitare il pagamento PayPal.";
+      paypalButtonsContainerRef.current.appendChild(div);
+      return;
+    }
+
+    if (!paypalReady) return;
 
     const Buttons = window.paypal?.Buttons;
     if (!Buttons) return;
@@ -242,6 +457,14 @@ const RiepilogoOrdineA3 = ({
                 trasporto: totals.trasporto,
                 feePayPal: totals.feePP,
               },
+              delivery: selectedSlot
+                ? {
+                  dateISO: selectedSlot.dateISO,
+                  dayLabel: selectedSlot.dayLabel,
+                  timeRange: selectedSlot.timeRange,
+                  weekday: selectedSlot.weekday,
+                }
+                : undefined,
             });
           } else {
             alert("Pagamento non completato: " + cap.status);
@@ -274,9 +497,14 @@ const RiepilogoOrdineA3 = ({
     totals.feePP,
     onConfirmOrder,
     fetchJSON,
+    selectedSlot,
   ]);
 
   const handleConfirmOrderCash = async () => {
+    if (!selectedSlot) {
+      alert("Seleziona prima uno slot di consegna.");
+      return;
+    }
     await onConfirmOrder({
       method: "CASH",
       confirmed: false,
@@ -287,10 +515,16 @@ const RiepilogoOrdineA3 = ({
         trasporto: totals.trasporto,
         feePayPal: 0,
       },
+      delivery: {
+        dateISO: selectedSlot.dateISO,
+        dayLabel: selectedSlot.dayLabel,
+        timeRange: selectedSlot.timeRange,
+        weekday: selectedSlot.weekday,
+      },
     });
   };
 
-  // Barra di caricamento (solo invio ordine)
+  // Barra di caricamento (solo UI)
   useEffect(() => {
     if (loading) {
       let current = 0;
@@ -349,32 +583,42 @@ const RiepilogoOrdineA3 = ({
         </div>
       </div>
 
-      {/* --- Breakdown economico --- */}
+      {/* Consegna */}
+      <div className={`${styles["price-card"]} ${styles["delivery-card"]}`}>
+        <div className={styles["price-header"]}>
+          Consegna
+          {deliveryCfg.timeRanges?.length === 1
+            ? ` (${deliveryCfg.timeRanges[0].start}–${deliveryCfg.timeRanges[0].end})`
+            : ""}
+        </div>
+        {!selectedSlot && (
+          <p className={styles["hint"]}>Verrai contattato/a tramite WhatsApp per decidere il luogo della consegna.</p>
+        )}
+        <div className={styles["slots-grid"]} role="listbox" aria-label="Seleziona uno slot di consegna">
+          {deliverySlots.map(slot => {
+            const selected = slot.id === selectedSlotId;
+            return (
+              <button
+                key={slot.id}
+                type="button"
+                role="option"
+                aria-selected={selected}
+                className={`${styles["slot-card"]} ${selected ? styles["slot-selected"] : ""}`}
+                onClick={() => setSelectedSlotId(slot.id)}
+              >
+                <span className={styles["slot-day"]}>{slot.dayLabel}</span>
+                <span className={styles["slot-time"]}>{slot.timeRange}</span>
+              </button>
+            );
+          })}
+        </div>
+        {!selectedSlot && (
+          <p className={styles["hint"]}>Seleziona uno slot per procedere al pagamento.</p>
+        )}
+      </div>
+
+      {/* Totali */}
       <div className={`${styles["price-card"]} ${styles["price-left"]}`}>
-        <div className={styles["price-row"]}>
-          <span className={styles["price-label"]}>Imponibile</span>
-          <span className={styles["price-value"]}>{euro(totals.base)} €</span>
-        </div>
-
-        <div className={styles["price-row"]}>
-          <span className={styles["price-label"]}>
-            IVA ({Math.round(fees.ivaRate * 100)}%)
-          </span>
-          <span className={styles["price-value"]}>{euro(totals.iva)} €</span>
-        </div>
-
-        <div className={styles["price-row"]}>
-          <span className={styles["price-label"]}>Trasporto</span>
-          <span className={styles["price-value"]}>{euro(totals.trasporto)} €</span>
-        </div>
-
-        <hr className={styles["price-sep"]} />
-
-        <div className={`${styles["price-row"]} ${styles["price-subtotal"]}`}>
-          <span className={styles["price-label"]}>Subtotale (IVA incl.)</span>
-          <span className={styles["price-value"]}>{euro(totals.subTotale)} €</span>
-        </div>
-
         {paymentMethod === "paypal" && (
           <div className={`${styles["price-row"]} ${styles["price-fee-paypal"]}`}>
             <span className={styles["price-label"]}>
@@ -386,7 +630,7 @@ const RiepilogoOrdineA3 = ({
 
         <div className={`${styles["price-row"]} ${styles["price-total"]}`}>
           <span className={styles["price-label"]}>
-            Totale {paymentMethod === "paypal" ? "PayPal" : "Contanti"}
+            Totale(IVA Incl.) {paymentMethod === "paypal" ? "PayPal" : "Contanti"}
           </span>
           <span className={styles["price-value"]}>{euro(totals.totaleDaAddebitare)} €</span>
         </div>
@@ -430,7 +674,8 @@ const RiepilogoOrdineA3 = ({
         <button
           className={styles["confirm-button"]}
           onClick={handleConfirmOrderCash}
-          disabled={disabled || loading || submitted}
+          disabled={disabled || loading || submitted || !selectedSlot}
+          title={!selectedSlot ? "Seleziona uno slot di consegna" : "Conferma Ordine"}
         >
           ✅ Conferma Ordine
         </button>

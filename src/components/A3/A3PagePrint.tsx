@@ -204,6 +204,13 @@ const A3PagePrint = () => {
                     trasporto: number;
                     feePayPal: number;
                 };
+                // 🆕 consegna
+                delivery?: {
+                    dateISO: string;
+                    dayLabel: string;
+                    timeRange: string;
+                    weekday: number; // 1..7
+                };
             })
             : undefined;
         const event = isPaymentPayload(arg1) ? arg2 : (arg1 as React.MouseEvent<HTMLButtonElement, MouseEvent> | undefined);
@@ -269,6 +276,12 @@ const A3PagePrint = () => {
         const grammaturaKey = (grammatura === grammaturaEnum.CARTONCINO) ? "cartoncino" : "normale";
         const plastificazioneKey = (plastificazione === plastificazioneEnum.SI) ? "si" : "no";
 
+        // 🆕 consegna (senza mostrare ISO su Telegram, ma salvo su Firestore)
+        const delivery = payment?.delivery;
+        const deliveryDayLabel = delivery?.dayLabel ?? undefined;
+        const deliveryTimeRange = delivery?.timeRange ?? undefined;
+        const deliveryDateISO = delivery?.dateISO ?? undefined;
+        const deliveryWeekday = delivery?.weekday ?? undefined;
 
         const dataToUpload = {
             id: id,
@@ -292,19 +305,20 @@ const A3PagePrint = () => {
             timestamp: serverTimestamp(),
             tipo: "A3",                 // aggiunto (non rimuove nulla)
             uid: auth.currentUser?.uid, // aggiunto (non rimuove nulla)
-            // Se vuoi salvarli anche su Firestore, decommenta:
-            // metodoPagamento,
-            // statoPagamento,
-            // ✅ NUOVI CAMPI (usati da StoricoDati per i costi interni)
+            // ✅ CAMPI TECNICI
             nFogli,                  // <-- importantissimo per i per_foglio
             nFogliPerCopia,          // (facoltativo ma utile)
             inchiostro: inchiostroKey,       // "colore" | "biancoenero"
             grammaturaKey,                   // "normale" | "cartoncino"
             plastificazioneKey,
+            // 🆕 consegna: salvo anche sull'ordine principale
+            deliveryDayLabel,
+            deliveryTimeRange,
+            deliveryDateISO,
+            deliveryWeekday,
         };
         const collectionRef = collection(db, "StampePDFA3");
         const PDFref = doc(collectionRef, id);
-
 
         setDoc(PDFref, dataToUpload)
             .then(async () => {
@@ -345,12 +359,14 @@ const A3PagePrint = () => {
                     inchiostro: inchiostroKey,
                     grammaturaKey,
                     plastificazioneKey,
+                    // 🆕 consegna anche nell'archivio
+                    deliveryDayLabel,
+                    deliveryTimeRange,
+                    deliveryDateISO,
+                    deliveryWeekday,
                 };
 
-
-
                 await setDoc(doc(db, "ArchivioOrdini", id), datiSnelliti);
-
 
                 // 🧾 Dettagli PayPal facoltativi
                 const extraPP =
@@ -358,7 +374,12 @@ const A3PagePrint = () => {
                         ? `\n🧾 *PayPal OrderID*: ${payment.orderId ?? "-"}\n🧾 *CaptureID*: ${payment.captureId ?? "-"}\n👤 *Payer*: ${payment.payerEmail ?? "-"}\n`
                         : "";
 
-                // 🆕 Messaggio Telegram aggiornato con Totale finale
+                // 🆕 Blocchetto consegna per Telegram (senza ISO)
+                const deliveryBlock = delivery
+                  ? `\n🚚 *Consegna*: ${deliveryDayLabel} • ${deliveryTimeRange}\n`
+                  : "";
+
+                // 🆕 Messaggio Telegram aggiornato con Consegna + Totale finale
                 const messageText = `
 =====================
   *NUOVO ORDINE A3*
@@ -381,7 +402,7 @@ ${fileLinks}
 📐 *Layout*: ${dataToUpload.layout}
 *Plastificazione*: ${dataToUpload.plastificazione}
 🔢 *Copie*: ${dataToUpload.copie}
-
+${deliveryBlock}
 💳 *Metodo di pagamento*: ${metodoPagamento}
 ✅ *Stato pagamento*: ${statoPagamento}
 💰 *Totale finale*: ${fmtEuro(totaleFinale)} €
