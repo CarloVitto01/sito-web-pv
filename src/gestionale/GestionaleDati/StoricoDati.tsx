@@ -12,7 +12,7 @@ import {
   deleteField,
 } from "firebase/firestore";
 
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import styles from "./StoricoDati.module.css";
 import Header from "../../components/HeaderComponents/Header";
@@ -112,20 +112,8 @@ const StoricoDati: React.FC = () => {
 
   const [docsA4, setDocsA4] = useState<any[]>([]);
   const [docsA3, setDocsA3] = useState<any[]>([]);
-// ⬇️ subito dopo gli state: ivaRate, ppPercent, ppFixed, transportFeeEuro, unitA4, unitA3, extrasA4, extrasA3
-const configRef = useRef({
-  ivaRate,
-  ppPercent,
-  ppFixed,
-  transportFeeEuro,
-  unitA4,
-  unitA3,
-  extrasA4,
-  extrasA3,
-});
-
-useEffect(() => {
-  configRef.current = {
+  // ⬇️ subito dopo gli state: ivaRate, ppPercent, ppFixed, transportFeeEuro, unitA4, unitA3, extrasA4, extrasA3
+  const configRef = useRef({
     ivaRate,
     ppPercent,
     ppFixed,
@@ -134,8 +122,20 @@ useEffect(() => {
     unitA3,
     extrasA4,
     extrasA3,
-  };
-}, [ivaRate, ppPercent, ppFixed, transportFeeEuro, unitA4, unitA3, extrasA4, extrasA3]);
+  });
+
+  useEffect(() => {
+    configRef.current = {
+      ivaRate,
+      ppPercent,
+      ppFixed,
+      transportFeeEuro,
+      unitA4,
+      unitA3,
+      extrasA4,
+      extrasA3,
+    };
+  }, [ivaRate, ppPercent, ppFixed, transportFeeEuro, unitA4, unitA3, extrasA4, extrasA3]);
 
 
   // ------- Helpers -------
@@ -145,33 +145,33 @@ useEffect(() => {
   const getManualReason = (row: any) =>
     (row?.manualAdjustment?.reason ?? "").toString();
 
- const normalize = useCallback((s?: string) =>
-  (s ?? "")
-    .toString()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim(),
-[],);
+  const normalize = useCallback((s?: string) =>
+    (s ?? "")
+      .toString()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim(),
+    [],);
 
-const matchesUtente = useCallback((ordine: any) => {
-  const raw = ricercaUtente?.trim();
-  if (!raw) return true;
+  const matchesUtente = useCallback((ordine: any) => {
+    const raw = ricercaUtente?.trim();
+    if (!raw) return true;
 
-  const q = normalize(raw).replace(/\s+/g, " ");
-  const tokens = q.split(" ").filter(Boolean);
+    const q = normalize(raw).replace(/\s+/g, " ");
+    const tokens = q.split(" ").filter(Boolean);
 
-  const nome = normalize(ordine?.nome);
-  const cognome = normalize(ordine?.cognome);
-  const email = normalize(ordine?.email);
-  const telefono = (ordine?.telefono ?? "").toString().replace(/\D/g, "");
+    const nome = normalize(ordine?.nome);
+    const cognome = normalize(ordine?.cognome);
+    const email = normalize(ordine?.email);
+    const telefono = (ordine?.telefono ?? "").toString().replace(/\D/g, "");
 
-  const full = `${nome} ${cognome}`.trim();
-  const fullRev = `${cognome} ${nome}`.trim();
+    const full = `${nome} ${cognome}`.trim();
+    const fullRev = `${cognome} ${nome}`.trim();
 
-  const haystacks = [nome, cognome, full, fullRev, email, telefono];
-  return tokens.every((t) => haystacks.some((h) => h.includes(t)));
-}, [ricercaUtente, normalize]);
+    const haystacks = [nome, cognome, full, fullRev, email, telefono];
+    return tokens.every((t) => haystacks.some((h) => h.includes(t)));
+  }, [ricercaUtente, normalize]);
 
   const resetFiltri = () => {
     setDataInizio("");
@@ -196,18 +196,18 @@ const matchesUtente = useCallback((ordine: any) => {
   };
 
   const withinDateRange = useCallback((ts: Date | undefined | null) => {
-  const inizio = dataInizio ? new Date(dataInizio) : null;
-  const fine = dataFine ? new Date(dataFine + "T23:59:59") : null;
-  if (!ts) return false;
-  if (inizio && ts < inizio) return false;
-  if (fine && ts > fine) return false;
-  return true;
-}, [dataInizio, dataFine]);
+    const inizio = dataInizio ? new Date(dataInizio) : null;
+    const fine = dataFine ? new Date(dataFine + "T23:59:59") : null;
+    if (!ts) return false;
+    if (inizio && ts < inizio) return false;
+    if (fine && ts > fine) return false;
+    return true;
+  }, [dataInizio, dataFine]);
 
-const getRowMillis = useCallback((row: any) => {
-  const ts = row?.timestamp?.toDate?.();
-  return ts instanceof Date ? ts.getTime() : 0;
-}, []);
+  const getRowMillis = useCallback((row: any) => {
+    const ts = row?.timestamp?.toDate?.();
+    return ts instanceof Date ? ts.getTime() : 0;
+  }, []);
 
   // Apri la modale per editare
   const openEdit = (docRef: any, data: any) => {
@@ -505,104 +505,146 @@ const getRowMillis = useCallback((row: any) => {
    * Margine: (lordo - trasporto) - IVA - costi interni - fee PayPal
    */
   const computeMetrics = useCallback((row: any, tipo: "A4" | "A3") => {
-  const cfg = configRef.current;
+    const cfg = configRef.current;
 
-  // Helpers *locali* che usano cfg (così non servono deps esterne)
-  const _detectMetodo = (r: any): "PayPal" | "Contanti" | "n/d" => {
-    const raw = (r?.metodoPagamento ?? r?.metodo ?? "").toString().toLowerCase();
-    if (raw.includes("paypal")) return "PayPal";
-    if (raw.includes("cash") || raw.includes("contanti")) return "Contanti";
-    if (r?.orderId || r?.captureId || r?.payerEmail) return "PayPal";
-    if (typeof r?.statoPagamento === "string" && r.statoPagamento.toLowerCase().includes("consegna")) return "Contanti";
-    return "n/d";
-  };
-
-  const _detectTransport = (r: any): number => {
-    if (Number.isFinite(r?.breakdown?.trasporto)) return Number(r.breakdown.trasporto);
-    if (Number.isFinite(r?.trasporto)) return Number(r.trasporto);
-    if (Number.isFinite(r?.totaleFinale)) return 0;
-    return cfg.transportFeeEuro;
-  };
-
-  const _getLordo = (r: any): number => {
-    if (Number.isFinite(r?.breakdown?.totaleFinale)) return Number(r.breakdown.totaleFinale);
-    if (Number.isFinite(r?.totaleFinale)) return Number(r.totaleFinale);
-    const imp = Number.isFinite(r?.imponibile)
-      ? Number(r.imponibile)
-      : (Number.isFinite(r?.breakdown?.imponibile) ? Number(r.breakdown.imponibile) : 0);
-    const tr = _detectTransport(r);
-    return imp * (1 + cfg.ivaRate) + tr;
-  };
-
-  const _paypalFeeOf = (r: any, lordo: number, metodo: string) => {
-    if (Number.isFinite(r?.breakdown?.feePayPal)) return Number(r.breakdown.feePayPal);
-    if (Number.isFinite(r?.paypalFee)) return Number(r.paypalFee);
-    return metodo === "PayPal" ? lordo * cfg.ppPercent + cfg.ppFixed : 0;
-  };
-
-  const _sumNFogli = (data: any) => {
-    if (Number.isFinite(data?.nFogli)) return Number(data.nFogli);
-    if (Array.isArray(data?.righe)) {
-      return data.righe.reduce((acc: number, r: any) => acc + (Number(r?.fogli) || 0), 0);
-    }
-    const pagine = Number(data?.pagineTotali ?? data?.pagine ?? 0);
-    const fronteRetro = String(data?.pagina || "").toLowerCase().includes("retro");
-    let fogli = pagine > 0 ? (fronteRetro ? pagine / 2 : pagine) : 0;
-    const copie = Number(data?.copie ?? data?.numeroCopie ?? 1);
-    if (copie > 1) fogli *= copie;
-    return Math.round(fogli) || 0;
-  };
-
-  const _getCopie = (r: any) => Number(r?.copie ?? r?.numeroCopie ?? 1) || 1;
-
-  const _splitColoriBN = (r: any, nFogli: number) => {
-    const paginaStr = String(r?.pagina ?? r?.gestionePagina ?? "").toLowerCase();
-    const isFronteRetro = paginaStr.includes("retro");
-    const sidesPerSheet = isFronteRetro ? 2 : 1;
-    const inkStr = String(r?.inchiostro ?? r?.colore ?? "").toLowerCase();
-    if (inkStr.includes("color")) {
-      return { nColore: nFogli * sidesPerSheet, nBN: 0 };
-    }
-    return { nColore: 0, nBN: nFogli * sidesPerSheet };
-  };
-
-  const _isRilegaturaUnicaA4 = (r: any) => {
-    const unica = String(r?.rilegaturaUnica ?? "").toLowerCase();
-    return ["si", "sì", "true", "on", "1"].some((k) => unica.includes(k));
-  };
-  const _numFascicoliA4 = (r: any) => (_isRilegaturaUnicaA4(r) ? 1 : _getCopie(r));
-
-  const _quantitaRilegaturaA4 = (r: any) => {
-    const s = `${r?.rilegatura ?? ""} ${r?.fascetta ?? ""}`.toLowerCase();
-    const fascicoli = _numFascicoliA4(r);
-    return {
-      nAnelli: s.includes("anelli") ? fascicoli : 0,
-      nSpirali: s.includes("spirale") ? fascicoli : 0,
-      nFascetta: s.includes("fascetta") ? fascicoli : 0,
-      nCiappature: s.includes("ciappatura") || s.includes("punti") ? fascicoli : 0,
+    // Helpers *locali* che usano cfg (così non servono deps esterne)
+    const _detectMetodo = (r: any): "PayPal" | "Contanti" | "n/d" => {
+      const raw = (r?.metodoPagamento ?? r?.metodo ?? "").toString().toLowerCase();
+      if (raw.includes("paypal")) return "PayPal";
+      if (raw.includes("cash") || raw.includes("contanti")) return "Contanti";
+      if (r?.orderId || r?.captureId || r?.payerEmail) return "PayPal";
+      if (typeof r?.statoPagamento === "string" && r.statoPagamento.toLowerCase().includes("consegna")) return "Contanti";
+      return "n/d";
     };
-  };
 
-  const _calcCostiInterni = (tipoLoc: "A4" | "A3", lordo: number, nFogli: number, r: any) => {
-    if (Number.isFinite(r?.breakdown?.costiInterni)) return Number(r.breakdown.costiInterni);
+    const _detectTransport = (r: any): number => {
+      if (Number.isFinite(r?.breakdown?.trasporto)) return Number(r.breakdown.trasporto);
+      if (Number.isFinite(r?.trasporto)) return Number(r.trasporto);
+      if (Number.isFinite(r?.totaleFinale)) return 0;
+      return cfg.transportFeeEuro;
+    };
 
-    if (tipoLoc === "A3") {
-      const { nColore, nBN } = _splitColoriBN(r, nFogli);
-      let tot =
-        (cfg.unitA3.foglio || 0) * (nFogli || 0) +
-        (cfg.unitA3.colore || 0) * (nColore || 0) +
-        (cfg.unitA3.biancoNero || 0) * (nBN || 0);
+    const _getLordo = (r: any): number => {
+      if (Number.isFinite(r?.breakdown?.totaleFinale)) return Number(r.breakdown.totaleFinale);
+      if (Number.isFinite(r?.totaleFinale)) return Number(r.totaleFinale);
+      const imp = Number.isFinite(r?.imponibile)
+        ? Number(r.imponibile)
+        : (Number.isFinite(r?.breakdown?.imponibile) ? Number(r.breakdown.imponibile) : 0);
+      const tr = _detectTransport(r);
+      return imp * (1 + cfg.ivaRate) + tr;
+    };
 
-      const plastStr = String(r?.plastificazioneKey ?? r?.plastificazione ?? "").toLowerCase();
-      const doPlast = plastStr.includes("si");
-      if (doPlast && (cfg.unitA3.plastificazione || 0) > 0) {
-        const nPagine = (Number(r?.pagine ?? r?.pagineTotali ?? 0) || 0) * (Number(r?.copie ?? r?.numeroCopie ?? 1) || 1);
-        tot += (cfg.unitA3.plastificazione || 0) * nPagine;
+    const _paypalFeeOf = (r: any, lordo: number, metodo: string) => {
+      if (Number.isFinite(r?.breakdown?.feePayPal)) return Number(r.breakdown.feePayPal);
+      if (Number.isFinite(r?.paypalFee)) return Number(r.paypalFee);
+      return metodo === "PayPal" ? lordo * cfg.ppPercent + cfg.ppFixed : 0;
+    };
+
+    const _sumNFogli = (data: any) => {
+      if (Number.isFinite(data?.nFogli)) return Number(data.nFogli);
+      if (Array.isArray(data?.righe)) {
+        return data.righe.reduce((acc: number, r: any) => acc + (Number(r?.fogli) || 0), 0);
+      }
+      const pagine = Number(data?.pagineTotali ?? data?.pagine ?? 0);
+      const fronteRetro = String(data?.pagina || "").toLowerCase().includes("retro");
+      let fogli = pagine > 0 ? (fronteRetro ? pagine / 2 : pagine) : 0;
+      const copie = Number(data?.copie ?? data?.numeroCopie ?? 1);
+      if (copie > 1) fogli *= copie;
+      return Math.round(fogli) || 0;
+    };
+
+    const _getCopie = (r: any) => Number(r?.copie ?? r?.numeroCopie ?? 1) || 1;
+
+    const _splitColoriBN = (r: any, nFogli: number) => {
+      const paginaStr = String(r?.pagina ?? r?.gestionePagina ?? "").toLowerCase();
+      const isFronteRetro = paginaStr.includes("retro");
+      const sidesPerSheet = isFronteRetro ? 2 : 1;
+      const inkStr = String(r?.inchiostro ?? r?.colore ?? "").toLowerCase();
+      if (inkStr.includes("color")) {
+        return { nColore: nFogli * sidesPerSheet, nBN: 0 };
+      }
+      return { nColore: 0, nBN: nFogli * sidesPerSheet };
+    };
+
+    const _isRilegaturaUnicaA4 = (r: any) => {
+      const unica = String(r?.rilegaturaUnica ?? "").toLowerCase();
+      return ["si", "sì", "true", "on", "1"].some((k) => unica.includes(k));
+    };
+    const _numFascicoliA4 = (r: any) => (_isRilegaturaUnicaA4(r) ? 1 : _getCopie(r));
+
+    const _quantitaRilegaturaA4 = (r: any) => {
+      const s = `${r?.rilegatura ?? ""} ${r?.fascetta ?? ""}`.toLowerCase();
+      const fascicoli = _numFascicoliA4(r);
+      return {
+        nAnelli: s.includes("anelli") ? fascicoli : 0,
+        nSpirali: s.includes("spirale") ? fascicoli : 0,
+        nFascetta: s.includes("fascetta") ? fascicoli : 0,
+        nCiappature: s.includes("ciappatura") || s.includes("punti") ? fascicoli : 0,
+      };
+    };
+
+    const _calcCostiInterni = (tipoLoc: "A4" | "A3", lordo: number, nFogli: number, r: any) => {
+      if (Number.isFinite(r?.breakdown?.costiInterni)) return Number(r.breakdown.costiInterni);
+
+      if (tipoLoc === "A3") {
+        const { nColore, nBN } = _splitColoriBN(r, nFogli);
+        let tot =
+          (cfg.unitA3.foglio || 0) * (nFogli || 0) +
+          (cfg.unitA3.colore || 0) * (nColore || 0) +
+          (cfg.unitA3.biancoNero || 0) * (nBN || 0);
+
+        const plastStr = String(r?.plastificazioneKey ?? r?.plastificazione ?? "").toLowerCase();
+        const doPlast = plastStr.includes("si");
+        if (doPlast && (cfg.unitA3.plastificazione || 0) > 0) {
+          const nPagine = (Number(r?.pagine ?? r?.pagineTotali ?? 0) || 0) * (Number(r?.copie ?? r?.numeroCopie ?? 1) || 1);
+          tot += (cfg.unitA3.plastificazione || 0) * nPagine;
+        }
+
+        if (Array.isArray(cfg.extrasA3)) {
+          const copie = _getCopie(r);
+          for (const x of cfg.extrasA3) {
+            if (!x?.attivo) continue;
+            const rawUnita = String(x?.unita ?? "").toLowerCase();
+            const val = Number(x?.costo ?? 0) || 0;
+
+            const campo = (x?.campo ?? "").toString().trim();
+            const match = (x?.match ?? "").toString().trim().toLowerCase();
+
+            if (!campo || !match) {
+              if (!rawUnita.includes("percent")) continue;
+              tot += lordo * (val / 100);
+              continue;
+            }
+
+            const sorgente = (r?.[campo] ?? "").toString().toLowerCase();
+            if (!sorgente.includes(match)) continue;
+
+            if (rawUnita.includes("percent")) tot += lordo * (val / 100);
+            else if (rawUnita.includes("ordine")) tot += val;
+            else if (rawUnita.includes("fascicolo")) tot += val * (copie || 0);
+            else if (rawUnita.includes("foglio")) tot += val * (nFogli || 0);
+          }
+        }
+
+        return Number.isFinite(tot) ? tot : 0;
       }
 
-      if (Array.isArray(cfg.extrasA3)) {
-        const copie = _getCopie(r);
-        for (const x of cfg.extrasA3) {
+      // A4
+      const { nColore, nBN } = _splitColoriBN(r, nFogli);
+      const { nAnelli, nSpirali, nFascetta, nCiappature } = _quantitaRilegaturaA4(r);
+      const fascicoli = _numFascicoliA4(r);
+
+      let tot =
+        (cfg.unitA4.foglio || 0) * (nFogli || 0) +
+        (cfg.unitA4.colore || 0) * (nColore || 0) +
+        (cfg.unitA4.biancoNero || 0) * (nBN || 0) +
+        (cfg.unitA4.anelli || 0) * (nAnelli || 0) +
+        (cfg.unitA4.spirale || 0) * (nSpirali || 0) +
+        (cfg.unitA4.fascetta || 0) * (nFascetta || 0) +
+        (cfg.unitA4.ciappatura || 0) * (nCiappature || 0);
+
+      if (Array.isArray(cfg.extrasA4)) {
+        for (const x of cfg.extrasA4) {
           if (!x?.attivo) continue;
           const rawUnita = String(x?.unita ?? "").toLowerCase();
           const val = Number(x?.costo ?? 0) || 0;
@@ -621,69 +663,77 @@ const getRowMillis = useCallback((row: any) => {
 
           if (rawUnita.includes("percent")) tot += lordo * (val / 100);
           else if (rawUnita.includes("ordine")) tot += val;
-          else if (rawUnita.includes("fascicolo")) tot += val * (copie || 0);
+          else if (rawUnita.includes("fascicolo")) tot += val * (fascicoli || 0);
           else if (rawUnita.includes("foglio")) tot += val * (nFogli || 0);
         }
       }
 
       return Number.isFinite(tot) ? tot : 0;
+    };
+
+    // ====== INIZIO LOGICA ORIGINALE ======
+    const ts = row.timestamp?.toDate?.();
+    const metodo = _detectMetodo(row);
+    const delta = getManualDelta(row);
+    const br = row?.breakdown;
+
+    if (br && typeof br === "object") {
+      const lordoBase =
+        Number.isFinite(br.totaleFinale)
+          ? Number(br.totaleFinale)
+          : Number((br.imponibile || 0) + (br.iva || 0) + (br.trasporto || 0));
+
+      const lordoEff = lordoBase + delta;
+
+      const dettaglio: DettaglioRow = {
+        Cliente: `${row.nome || ""} ${row.cognome || ""}`.trim(),
+        Data: ts?.toLocaleString("it-IT") || "",
+        Metodo: metodo,
+        "Prezzo Lordo (€)": lordoBase.toFixed(2),
+        "Variazione (€)": delta ? delta.toFixed(2) : "",
+        "Lordo (effettivo) (€)": lordoEff.toFixed(2),
+        "Imponibile (€)": Number(br.imponibile || 0).toFixed(2),
+        "IVA (€)": Number(br.iva || 0).toFixed(2),
+        "Fee PayPal (€)": Number(br.feePayPal || 0).toFixed(2),
+        "Trasporto (€)": Number(br.trasporto || 0).toFixed(2),
+        "Costi interni (€)": Number(br.costiInterni || 0).toFixed(2),
+        nFogli: Number.isFinite(br.nFogli) ? Number(br.nFogli) : "",
+        "Margine netto (€)": (
+          (lordoEff - Number(br.trasporto || 0) - Number(br.iva || 0) - Number(br.costiInterni || 0) - Number(br.feePayPal || 0))
+        ).toFixed(2),
+        Note: getManualReason(row),
+        Congelato: "Sì",
+      };
+      return { dettaglio, lordoEff };
     }
 
-    // A4
-    const { nColore, nBN } = _splitColoriBN(r, nFogli);
-    const { nAnelli, nSpirali, nFascetta, nCiappature } = _quantitaRilegaturaA4(r);
-    const fascicoli = _numFascicoliA4(r);
+    // ----- Legacy (non congelato) -----
+    const lordoBase = _getLordo(row);
+    const trasporto = _detectTransport(row);
 
-    let tot =
-      (cfg.unitA4.foglio || 0) * (nFogli || 0) +
-      (cfg.unitA4.colore || 0) * (nColore || 0) +
-      (cfg.unitA4.biancoNero || 0) * (nBN || 0) +
-      (cfg.unitA4.anelli || 0) * (nAnelli || 0) +
-      (cfg.unitA4.spirale || 0) * (nSpirali || 0) +
-      (cfg.unitA4.fascetta || 0) * (nFascetta || 0) +
-      (cfg.unitA4.ciappatura || 0) * (nCiappature || 0);
+    let imponibile: number | undefined =
+      Number.isFinite(row?.imponibile) ? Number(row.imponibile)
+        : Number.isFinite(row?.breakdown?.imponibile) ? Number(row.breakdown.imponibile)
+          : undefined;
 
-    if (Array.isArray(cfg.extrasA4)) {
-      for (const x of cfg.extrasA4) {
-        if (!x?.attivo) continue;
-        const rawUnita = String(x?.unita ?? "").toLowerCase();
-        const val = Number(x?.costo ?? 0) || 0;
+    let iva: number | undefined =
+      Number.isFinite(row?.iva) ? Number(row.iva)
+        : Number.isFinite(row?.breakdown?.iva) ? Number(row.breakdown.iva)
+          : undefined;
 
-        const campo = (x?.campo ?? "").toString().trim();
-        const match = (x?.match ?? "").toString().trim().toLowerCase();
-
-        if (!campo || !match) {
-          if (!rawUnita.includes("percent")) continue;
-          tot += lordo * (val / 100);
-          continue;
-        }
-
-        const sorgente = (r?.[campo] ?? "").toString().toLowerCase();
-        if (!sorgente.includes(match)) continue;
-
-        if (rawUnita.includes("percent")) tot += lordo * (val / 100);
-        else if (rawUnita.includes("ordine")) tot += val;
-        else if (rawUnita.includes("fascicolo")) tot += val * (fascicoli || 0);
-        else if (rawUnita.includes("foglio")) tot += val * (nFogli || 0);
-      }
+    if (!Number.isFinite(imponibile) || !Number.isFinite(iva)) {
+      const base = Math.max(lordoBase - trasporto, 0);
+      const imp = base / (1 + cfg.ivaRate);
+      imponibile = imp;
+      iva = base - imp;
     }
 
-    return Number.isFinite(tot) ? tot : 0;
-  };
-
-  // ====== INIZIO LOGICA ORIGINALE ======
-  const ts = row.timestamp?.toDate?.();
-  const metodo = _detectMetodo(row);
-  const delta = getManualDelta(row);
-  const br = row?.breakdown;
-
-  if (br && typeof br === "object") {
-    const lordoBase =
-      Number.isFinite(br.totaleFinale)
-        ? Number(br.totaleFinale)
-        : Number((br.imponibile || 0) + (br.iva || 0) + (br.trasporto || 0));
+    const nFogli = _sumNFogli(row);
+    const fee = _paypalFeeOf(row, lordoBase, metodo);
+    const interni = _calcCostiInterni(tipo, lordoBase, nFogli, row);
 
     const lordoEff = lordoBase + delta;
+    const margineEff = (lordoEff - trasporto) - (iva || 0) - interni - fee;
 
     const dettaglio: DettaglioRow = {
       Cliente: `${row.nome || ""} ${row.cognome || ""}`.trim(),
@@ -692,70 +742,36 @@ const getRowMillis = useCallback((row: any) => {
       "Prezzo Lordo (€)": lordoBase.toFixed(2),
       "Variazione (€)": delta ? delta.toFixed(2) : "",
       "Lordo (effettivo) (€)": lordoEff.toFixed(2),
-      "Imponibile (€)": Number(br.imponibile || 0).toFixed(2),
-      "IVA (€)": Number(br.iva || 0).toFixed(2),
-      "Fee PayPal (€)": Number(br.feePayPal || 0).toFixed(2),
-      "Trasporto (€)": Number(br.trasporto || 0).toFixed(2),
-      "Costi interni (€)": Number(br.costiInterni || 0).toFixed(2),
-      nFogli: Number.isFinite(br.nFogli) ? Number(br.nFogli) : "",
-      "Margine netto (€)": (
-        (lordoEff - Number(br.trasporto || 0) - Number(br.iva || 0) - Number(br.costiInterni || 0) - Number(br.feePayPal || 0))
-      ).toFixed(2),
-      Note: getManualReason(row),
-      Congelato: "Sì",
+      "Imponibile (€)": (imponibile || 0).toFixed(2),
+      "IVA (€)": (iva || 0).toFixed(2),
+      "Fee PayPal (€)": fee.toFixed(2),
+      "Trasporto (€)": trasporto.toFixed(2),
+      "Costi interni (€)": interni.toFixed(2),
+      nFogli: nFogli || "",
+      "Margine netto (€)": margineEff.toFixed(2),
+      Note: getManualReason(row) || (nFogli ? "" : "nFogli assente: per_foglio=0"),
+      Congelato: "No",
     };
+
     return { dettaglio, lordoEff };
-  }
+  }, []);
 
-  // ----- Legacy (non congelato) -----
-  const lordoBase = _getLordo(row);
-  const trasporto = _detectTransport(row);
+  // Crea rapidamente un worksheet da un array di oggetti
+  const addSheetFromJson = (wb: ExcelJS.Workbook, name: string, rows: any[]) => {
+    const ws = wb.addWorksheet(name);
+    if (!rows?.length) return ws;
 
-  let imponibile: number | undefined =
-    Number.isFinite(row?.imponibile) ? Number(row.imponibile)
-      : Number.isFinite(row?.breakdown?.imponibile) ? Number(row.breakdown.imponibile)
-        : undefined;
+    const headers = Object.keys(rows[0]);
+    ws.columns = headers.map((h) => ({
+      header: h,
+      key: h,
+      width: Math.max(12, h.length + 2),
+    }));
 
-  let iva: number | undefined =
-    Number.isFinite(row?.iva) ? Number(row.iva)
-      : Number.isFinite(row?.breakdown?.iva) ? Number(row.breakdown.iva)
-        : undefined;
-
-  if (!Number.isFinite(imponibile) || !Number.isFinite(iva)) {
-    const base = Math.max(lordoBase - trasporto, 0);
-    const imp = base / (1 + cfg.ivaRate);
-    imponibile = imp;
-    iva = base - imp;
-  }
-
-  const nFogli = _sumNFogli(row);
-  const fee = _paypalFeeOf(row, lordoBase, metodo);
-  const interni = _calcCostiInterni(tipo, lordoBase, nFogli, row);
-
-  const lordoEff = lordoBase + delta;
-  const margineEff = (lordoEff - trasporto) - (iva || 0) - interni - fee;
-
-  const dettaglio: DettaglioRow = {
-    Cliente: `${row.nome || ""} ${row.cognome || ""}`.trim(),
-    Data: ts?.toLocaleString("it-IT") || "",
-    Metodo: metodo,
-    "Prezzo Lordo (€)": lordoBase.toFixed(2),
-    "Variazione (€)": delta ? delta.toFixed(2) : "",
-    "Lordo (effettivo) (€)": lordoEff.toFixed(2),
-    "Imponibile (€)": (imponibile || 0).toFixed(2),
-    "IVA (€)": (iva || 0).toFixed(2),
-    "Fee PayPal (€)": fee.toFixed(2),
-    "Trasporto (€)": trasporto.toFixed(2),
-    "Costi interni (€)": interni.toFixed(2),
-    nFogli: nFogli || "",
-    "Margine netto (€)": margineEff.toFixed(2),
-    Note: getManualReason(row) || (nFogli ? "" : "nFogli assente: per_foglio=0"),
-    Congelato: "No",
+    rows.forEach((r) => ws.addRow(r));
+    ws.getRow(1).font = { bold: true };
+    return ws;
   };
-
-  return { dettaglio, lordoEff };
-}, []);
-
 
   // ------- Export (COMPLETO: 3 fogli) -------
   const exportOrdini = async (tipo: "A4" | "A3") => {
@@ -812,13 +828,6 @@ const getRowMillis = useCallback((row: any) => {
       setTotaleA3(totLordoEff);
     }
 
-    const wb = XLSX.utils.book_new();
-    const ws1 = XLSX.utils.json_to_sheet(listSimple);
-    XLSX.utils.book_append_sheet(wb, ws1, `Ordini_${tipo}`);
-
-    const ws2 = XLSX.utils.json_to_sheet(listDetail);
-    XLSX.utils.book_append_sheet(wb, ws2, `Dettaglio_${tipo}`);
-
     const summary = [
       { Voce: `RIEPILOGO ${tipo}`, Valore: "" },
       { Voce: "Ricavi lordi (effettivi)", Valore: totLordoEff.toFixed(2) + " €" },
@@ -829,13 +838,17 @@ const getRowMillis = useCallback((row: any) => {
       { Voce: "Costi interni", Valore: totInterni.toFixed(2) + " €" },
       { Voce: "Margine netto", Valore: totMargine.toFixed(2) + " €" },
     ];
-    const ws3 = XLSX.utils.json_to_sheet(summary);
-    XLSX.utils.book_append_sheet(wb, ws3, `Riepilogo_${tipo}`);
+    const wb = new ExcelJS.Workbook();
+    addSheetFromJson(wb, `Ordini_${tipo}`, listSimple);
+    addSheetFromJson(wb, `Dettaglio_${tipo}`, listDetail);
+    addSheetFromJson(wb, `Riepilogo_${tipo}`, summary);
 
-    const buffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
     saveAs(blob, formatFilename(`storico_${tipo}_completo`));
-  };
+  }
 
   // ------- Export elenco utenti -------
   const exportUtenti = async () => {
@@ -859,80 +872,81 @@ const getRowMillis = useCallback((row: any) => {
       alert("Nessun utente trovato.");
       return;
     }
+    const wb = new ExcelJS.Workbook();
+    addSheetFromJson(wb, "Utenti", utenti);
 
-    const ws = XLSX.utils.json_to_sheet(utenti);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Utenti");
-
-    const buffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
     saveAs(blob, formatFilename("utenti_registrati"));
+
   };
 
   const generaAnteprima = useCallback(async () => {
-  const baseRef = collection(db, "ArchivioOrdini");
-  const snapshot = await getDocs(query(baseRef));
+    const baseRef = collection(db, "ArchivioOrdini");
+    const snapshot = await getDocs(query(baseRef));
 
-  const all = snapshot.docs
-    .map((d) => ({ ref: d.ref, data: d.data() }))
-    .filter(({ data }) => {
-      if (!matchesUtente(data)) return false;
-      const ts = data.timestamp?.toDate?.();
-      if (!withinDateRange(ts)) return false;
-      return true;
-    })
-    .sort((a, b) => {
-      const ta = a.data?.timestamp?.toDate?.();
-      const tb = b.data?.timestamp?.toDate?.();
-      const ma = ta instanceof Date ? ta.getTime() : 0;
-      const mb = tb instanceof Date ? tb.getTime() : 0;
-      return mb - ma;
-    });
+    const all = snapshot.docs
+      .map((d) => ({ ref: d.ref, data: d.data() }))
+      .filter(({ data }) => {
+        if (!matchesUtente(data)) return false;
+        const ts = data.timestamp?.toDate?.();
+        if (!withinDateRange(ts)) return false;
+        return true;
+      })
+      .sort((a, b) => {
+        const ta = a.data?.timestamp?.toDate?.();
+        const tb = b.data?.timestamp?.toDate?.();
+        const ma = ta instanceof Date ? ta.getTime() : 0;
+        const mb = tb instanceof Date ? tb.getTime() : 0;
+        return mb - ma;
+      });
 
-  // A4
-  if (filtroTipo === "Tutti" || filtroTipo === "A4") {
-    const rowsA4: DettaglioRow[] = [];
-    let totA4 = 0;
-    const refsA4: any[] = [];
+    // A4
+    if (filtroTipo === "Tutti" || filtroTipo === "A4") {
+      const rowsA4: DettaglioRow[] = [];
+      let totA4 = 0;
+      const refsA4: any[] = [];
 
-    for (const { ref, data } of all) {
-      if (data.tipo !== "A4") continue;
-      const { dettaglio, lordoEff } = computeMetrics(data, "A4");
-      rowsA4.push(dettaglio);
-      refsA4.push({ ref, data });
-      totA4 += lordoEff;
+      for (const { ref, data } of all) {
+        if (data.tipo !== "A4") continue;
+        const { dettaglio, lordoEff } = computeMetrics(data, "A4");
+        rowsA4.push(dettaglio);
+        refsA4.push({ ref, data });
+        totA4 += lordoEff;
+      }
+      setDetailA4(rowsA4);
+      setDocsA4(refsA4);
+      setTotaleA4(totA4);
+    } else {
+      setDetailA4([]);
+      setDocsA4([]);
+      setTotaleA4(0);
     }
-    setDetailA4(rowsA4);
-    setDocsA4(refsA4);
-    setTotaleA4(totA4);
-  } else {
-    setDetailA4([]);
-    setDocsA4([]);
-    setTotaleA4(0);
-  }
 
-  // A3
-  if (filtroTipo === "Tutti" || filtroTipo === "A3") {
-    const rowsA3: DettaglioRow[] = [];
-    let totA3 = 0;
-    const refsA3: any[] = [];
+    // A3
+    if (filtroTipo === "Tutti" || filtroTipo === "A3") {
+      const rowsA3: DettaglioRow[] = [];
+      let totA3 = 0;
+      const refsA3: any[] = [];
 
-    for (const { ref, data } of all) {
-      if (data.tipo !== "A3") continue;
-      const { dettaglio, lordoEff } = computeMetrics(data, "A3");
-      rowsA3.push(dettaglio);
-      refsA3.push({ ref, data });
-      totA3 += lordoEff;
+      for (const { ref, data } of all) {
+        if (data.tipo !== "A3") continue;
+        const { dettaglio, lordoEff } = computeMetrics(data, "A3");
+        rowsA3.push(dettaglio);
+        refsA3.push({ ref, data });
+        totA3 += lordoEff;
+      }
+      setDetailA3(rowsA3);
+      setDocsA3(refsA3);
+      setTotaleA3(totA3);
+    } else {
+      setDetailA3([]);
+      setDocsA3([]);
+      setTotaleA3(0);
     }
-    setDetailA3(rowsA3);
-    setDocsA3(refsA3);
-    setTotaleA3(totA3);
-  } else {
-    setDetailA3([]);
-    setDocsA3([]);
-    setTotaleA3(0);
-  }
-}, [filtroTipo, matchesUtente, withinDateRange, computeMetrics]);
+  }, [filtroTipo, matchesUtente, withinDateRange, computeMetrics]);
 
 
   // Trigger automatico iniziale quando le config sono pronte
