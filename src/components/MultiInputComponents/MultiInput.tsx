@@ -2,18 +2,12 @@ import React, { useState, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import classes from "./MultiInput.module.css";
 import { FileHandler } from "../../types/FileHandler";
-import { Document, Page, pdfjs } from "react-pdf";
+import { Document, Page } from "react-pdf";
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import Loading from "../LoadingComponents/Loading";
 import { GrCaretNext, GrCaretPrevious } from "react-icons/gr";
 import { AiOutlineClose } from "react-icons/ai";
-
-
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-    'pdfjs-dist/build/pdf.worker.min.mjs',
-    import.meta.url
-).toString();
 
 interface PropsContainer {
     onSendData: (value: FileHandler[], totalPages: number) => void;
