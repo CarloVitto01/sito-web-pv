@@ -10,8 +10,10 @@ import { GrCaretNext, GrCaretPrevious } from "react-icons/gr";
 import { AiOutlineClose } from "react-icons/ai";
 
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
-
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+    'pdfjs-dist/build/pdf.worker.min.mjs',
+    import.meta.url
+).toString();
 
 interface PropsContainer {
     onSendData: (value: FileHandler[], totalPages: number) => void;
@@ -169,7 +171,7 @@ const MultiInput: React.FC<PropsContainer> = ({ onSendData }) => {
                                     <GrCaretPrevious />
                                 </div>
                             </div>
-                            <span style={{color:"white"}}>Pagina {pageNumber} di {numPages[currentFileIndex]}</span>
+                            <span style={{ color: "white" }}>Pagina {pageNumber} di {numPages[currentFileIndex]}</span>
                             <div className={classes["button-container"]}>
                                 <div
                                     className={classes["artButton"]}
