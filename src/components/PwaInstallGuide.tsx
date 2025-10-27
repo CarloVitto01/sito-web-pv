@@ -1,15 +1,20 @@
 import React, { useMemo } from "react";
 import styles from "./PwaInstallGuide.module.css";
 
-function getPlatform(): "ios" | "android" | "desktop" {
+function detectPlatform(): "ios" | "android" | "desktop" {
   const ua = navigator.userAgent.toLowerCase();
-  if (/iphone|ipad|ipod/.test(ua)) return "ios";
-  if (/android/.test(ua)) return "android";
+  const isTouch = "ontouchstart" in window;
+
+  const isiOS = /iphone|ipad|ipod/.test(ua) || (isTouch && /macintosh|mac os/.test(ua));
+  const isAndroid = /android/.test(ua);
+
+  if (isiOS) return "ios";
+  if (isAndroid) return "android";
   return "desktop";
 }
 
 export default function PwaInstallGuide() {
-  const platform = useMemo(getPlatform, []);
+  const platform = useMemo(detectPlatform, []);
 
   return (
     <div className={styles.banner}>
