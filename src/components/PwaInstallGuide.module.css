@@ -1,0 +1,50 @@
+:root {
+  --pv-gold: #d4af37;
+  --pv-bg: #0b0b0b;
+  --pv-card: #111;
+  --pv-border: rgba(212, 175, 55, 0.6);
+  --pv-text: #f5f5f5;
+}
+
+.banner {
+  background: linear-gradient(180deg, rgba(17,17,17,0.92), rgba(17,17,17,0.9));
+  border: 1px solid var(--pv-border);
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  color: var(--pv-text);
+  margin: 20px auto;
+  padding: 20px;
+  max-width: 640px;
+  text-align: left;
+}
+
+.inner {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--pv-gold);
+}
+
+.subtitle {
+  font-size: 0.95rem;
+  color: #d9d9d9;
+  line-height: 1.4;
+}
+
+.list {
+  margin-left: 20px;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+}
+
+.list li b {
+  color: var(--pv-gold);
+}

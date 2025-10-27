@@ -46,8 +46,7 @@ import Assistant from './components/Assistenza/Assistant';
 import BannerGestionale from './gestionale/GestionaleBanner/BannerGestionale';
 import ConsegneGestionale from './gestionale/GestionaleConsegne/ConsegneGestionale';
 
-// ⬇️ nuovo import per il provider PWA
-import { InstallPromptProvider } from './pwa/InstallPromptContext';
+
 
 const ScrollToTop: React.FC = () => {
   const navigationType = useNavigationType();
@@ -94,63 +93,75 @@ const App: React.FC = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowSplash(false);
-    }, 5000);
+    }, 5000); // Mostra la splash per 5 secondi
     return () => clearTimeout(timer);
   }, []);
 
+  
   return (
     <Router>
       <ScrollToTop />
       {showSplash ? (
         <SplashScreen onEnd={() => setShowSplash(false)} />
       ) : (
-        // ⬇️ Avvolgiamo tutta l’app nel provider PWA
-        <InstallPromptProvider>
-          <>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/printA4" element={<A4PagePrint />} />
-              <Route path="/printA3" element={<A3PagePrint />} />
-              <Route path="/comingSoon" element={<ComingSoon />} />
-              <Route path="/contatti-servizi-foto-video" element={<ContattiServiziFotoVideo />} />
-              <Route path="/gestionaleA4" element={<ProtectedRoute page="gestionaleA4" element={<A4Gestionale />} />} />
-              <Route path="/gestionaleA3" element={<ProtectedRoute page="gestionaleA3" element={<A3Gestionale />} />} />
-              <Route path="/utentiGestionale" element={<ProtectedRoute page="utentiGestionale" element={<UtentiGestionale />} />} />
-              <Route path="/storicoDati" element={<ProtectedRoute page="storicoDati" element={<StoricoDati />} />} />
-              <Route path="/foto-video-gestionale" element={<ProtectedRoute page="foto-video-gestionale" element={<FotoVideoGestionale />} />} />
-              <Route path="/gestione-accessi" element={<ProtectedRoute page="gestione-accessi" element={<GestioneAccessi />} />} />
-              <Route path="/qr-generator" element={<ProtectedRoute page="qr-generator" element={<QRCodeGenerator />} />} />
-              <Route path="/bobine" element={<ProtectedRoute page="bobine" element={<BobinePLAGestionale />} />} />
-              <Route path="/link" element={<ProtectedRoute page="link" element={<LinkGestionale />} />} />
-              <Route path="/gestionale-web" element={<ProtectedRoute page="gestionale-web" element={<WebGestionale />} />} />
-              <Route path="/tasse" element={<ProtectedRoute page="tasse" element={<TasseGestionale />} />} />
-              <Route path="/banner" element={<ProtectedRoute page="banner" element={<BannerGestionale />} />} />
-              <Route path="/consegna" element={<ProtectedRoute page="consegna" element={<ConsegneGestionale />} />} />
-              <Route path="/qrgen" element={<QRgen />} />
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="/termini" element={<Terms />} />
-              <Route path="/cookie-policy" element={<Cookie />} />
-              <Route path="/recoveremail" element={<RecoverEmail />} />
-              <Route path="/web" element={<RichiestaSitoWeb />} />
-              <Route path="/richiesta-sito-web" element={<RichiestaSitoWeb />} />
-              <Route path="/3d" element={<RichiestaStampa3D />} />
-              <Route path="/account" element={<AccountPage />} />
-              <Route path="/recoverpassword" element={<RecoverPassword />} />
-              <Route path="/resetpassword" element={<ResetPassword />} />
-            </Routes>
+        <>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/printA4" element={<A4PagePrint />} />
+            <Route path="/printA3" element={<A3PagePrint />} />
+            <Route path="/comingSoon" element={<ComingSoon />} />
+            <Route path="/contatti-servizi-foto-video" element={<ContattiServiziFotoVideo />} />
+            <Route path="/gestionaleA4" element={<ProtectedRoute page="gestionaleA4" element={<A4Gestionale />} />} />
+            <Route path="/gestionaleA3" element={<ProtectedRoute page="gestionaleA3" element={<A3Gestionale />} />} />
+            <Route path="/utentiGestionale" element={<ProtectedRoute page="utentiGestionale" element={<UtentiGestionale />} />} />
+            <Route path="/storicoDati" element={<ProtectedRoute page="storicoDati" element={<StoricoDati />} />} />
+            <Route path="/foto-video-gestionale" element={<ProtectedRoute page="foto-video-gestionale" element={<FotoVideoGestionale />} />} />
+            <Route path="/gestione-accessi" element={<ProtectedRoute page="gestione-accessi" element={<GestioneAccessi />} />} />
+            <Route path="/qr-generator" element={<ProtectedRoute page="qr-generator" element={<QRCodeGenerator />} />} />
+            <Route path="/bobine" element={<ProtectedRoute page="bobine" element={<BobinePLAGestionale />} />} />
+            <Route path="/link" element={<ProtectedRoute page="link" element={<LinkGestionale />} />} />
+            <Route path="/gestionale-web" element={<ProtectedRoute page="gestionale-web" element={<WebGestionale />} />} />
+            <Route path="/tasse" element={<ProtectedRoute page="tasse" element={< TasseGestionale />} />} />
+            <Route path="/banner" element={<ProtectedRoute page="banner" element={< BannerGestionale />} />} />
+            <Route path="/consegna" element={<ProtectedRoute page="consegna" element={< ConsegneGestionale />} />} />
 
-            <CookieInfoBar policyUrl="/cookie-policy" />
 
-            <Assistant
-              position="right"
-              accentHex="#c7ab2b"
-            />
-          </>
-        </InstallPromptProvider>
+
+            <Route path="/qrgen" element={<QRgen />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/termini" element={<Terms />} />
+            <Route path="/cookie-policy" element={<Cookie />} />
+
+            <Route path="/recoveremail" element={<RecoverEmail />} />
+            <Route path="/web" element={<RichiestaSitoWeb />} />
+            {/* ⬇️ Alias più chiaro per la pagina richieste */}
+            <Route path="/richiesta-sito-web" element={<RichiestaSitoWeb />} />
+            <Route path="/3d" element={<RichiestaStampa3D />} />
+
+
+            <Route path="/account" element={<AccountPage />} />
+            <Route path="/recoverpassword" element={<RecoverPassword />} />
+            <Route path="/resetpassword" element={<ResetPassword />} />
+
+            {/* ⬇️ NUOVE ROTTE di anteprima template */}
+          </Routes>
+          <CookieInfoBar policyUrl="/cookie-policy" />
+
+
+          <Assistant
+            position="right"
+            accentHex="#c7ab2b"
+
+          />
+
+        </>
+
+
       )}
     </Router>
+
   );
 };
 
