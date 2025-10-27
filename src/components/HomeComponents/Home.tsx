@@ -6,6 +6,7 @@ import CardsSection from './CardsSection';
 import AlternatingContentSection from './AlternatingContentSection';
 import './Home.module.css';
 import Banner from '../Banner/Banner';
+import InstallButton from '../../InstallButton';
 
 const Home: React.FC = () => {
   return (
@@ -13,6 +14,7 @@ const Home: React.FC = () => {
       <Header />
       <Banner />
       <DescriptionSection />
+      <InstallButton />
       <CardsSection />
       <AlternatingContentSection />
       <Footer />

@@ -5,14 +5,24 @@
   <meta charset="utf-8" />
 
   <!-- Favicon & App Icons -->
-  <link rel="icon" href="/favicon.ico?v=3" />
-  <link rel="manifest" href="/manifest.json?v=3" />
+  <link rel="icon" href="%PUBLIC_URL%/favicon.ico?v=4" />
+  <link rel="manifest" href="%PUBLIC_URL%/manifest.json?v=4" />
 
+  <!-- Icone PWA -->
+  <link rel="apple-touch-icon" href="%PUBLIC_URL%/icons/pwa-192.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="%PUBLIC_URL%/icons/pwa-192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="%PUBLIC_URL%/icons/pwa-512.png" />
 
   <!-- Viewport & Theme -->
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#0f0f0f" />
+  <meta name="theme-color" content="#000000" />
   <meta name="color-scheme" content="dark light" />
+
+  <!-- PWA meta -->
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Photo & Vision" />
 
   <!-- SEO base -->
   <title>Photo & Vision – Stampa A4/A3, Siti Web, Foto & Video, QR</title>
@@ -36,14 +46,6 @@
   <meta name="twitter:description" content="Stampa, Web e Multimedia. Qualità e velocità al tuo servizio." />
   <meta name="twitter:image" content="https://photoandvision.it/images/og_image.jpg" />
 
-  <!-- PWA (facoltativi ma utili) -->
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-
-  <!-- Preconnect (se usi Google Fonts, lascia altrimenti rimuovi) -->
-  <!-- <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin /> -->
-
   <!-- Structured Data (LocalBusiness) -->
   <script type="application/ld+json">
     {
@@ -60,7 +62,6 @@
         "postalCode": "73025",
         "addressCountry": "IT"
       },
-      
       "openingHours": ["Mo-Fr 09:00-18:00"],
       "priceRange": "€€",
       "sameAs": [
@@ -68,7 +69,7 @@
         "https://www.facebook.com/photoandvision.it"
       ]
     }
-    </script>
+  </script>
 </head>
 
 <body>
