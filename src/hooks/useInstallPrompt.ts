@@ -1,27 +1,25 @@
-// src/hooks/useInstallPrompt.ts
 import { useEffect, useState } from "react";
-
-
 
 export function useInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [isInstallable, setIsInstallable] = useState(false);
+  const [hasPrompt, setHasPrompt] = useState(false);
 
   useEffect(() => {
     const onBeforeInstall = (e: any) => {
-      console.log('[PWA] beforeinstallprompt fired');
       e.preventDefault();
       setDeferredPrompt(e);
-      setIsInstallable(true);
+      setHasPrompt(true);
     };
+    const onInstalled = () => {
+      setDeferredPrompt(null);
+      setHasPrompt(false);
+    };
+
     window.addEventListener("beforeinstallprompt", onBeforeInstall);
-
-    const onInstalled = () => console.log('[PWA] appinstalled');
-    window.addEventListener('appinstalled', onInstalled);
-
+    window.addEventListener("appinstalled", onInstalled);
     return () => {
       window.removeEventListener("beforeinstallprompt", onBeforeInstall);
-      window.removeEventListener('appinstalled', onInstalled);
+      window.removeEventListener("appinstalled", onInstalled);
     };
   }, []);
 
@@ -29,11 +27,10 @@ export function useInstallPrompt() {
     if (!deferredPrompt) return false;
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    console.log('[PWA] userChoice:', outcome);
     setDeferredPrompt(null);
-    setIsInstallable(false);
+    setHasPrompt(false);
     return outcome === "accepted";
   };
 
-  return { isInstallable, promptInstall };
+  return { hasPrompt, promptInstall };
 }

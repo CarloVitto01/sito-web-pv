@@ -6,7 +6,9 @@ import CardsSection from './CardsSection';
 import AlternatingContentSection from './AlternatingContentSection';
 import './Home.module.css';
 import Banner from '../Banner/Banner';
-import InstallButton from '../../InstallButton';
+
+// ⬇️ nuovo import
+import PwaInstallBanner from '../PwaInstallBanner';
 
 const Home: React.FC = () => {
   return (
@@ -14,7 +16,15 @@ const Home: React.FC = () => {
       <Header />
       <Banner />
       <DescriptionSection />
-      <InstallButton />
+
+      {/* Banner sempre visibile sotto la descrizione */}
+      <div style={{ padding: '0 16px', marginTop: '16px' }}>
+        <PwaInstallBanner />
+        {/* Oppure sticky in basso:
+        <PwaInstallBanner sticky />
+        */}
+      </div>
+
       <CardsSection />
       <AlternatingContentSection />
       <Footer />
