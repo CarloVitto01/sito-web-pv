@@ -85,6 +85,7 @@ type DeliveryConfig = {
   timezone?: string;
   blacklistDates?: string[];        // singole YYYY-MM-DD
   blacklistRanges?: BlacklistRange[]; // intervalli inclusivi [from,to] YYYY-MM-DD
+  minLeadDays?: number;             // NEW: giorni minimi di preavviso (oggi escluso se = 1)
 };
 const COLL_CONS = "configConsegne";
 const DOC_CONS = "settings";
@@ -152,6 +153,8 @@ function buildSlotsFromConfig(cfg: DeliveryConfig): DeliverySlot[] {
     : [{ start: "12:00", end: "13:00" }];
   const slotsAhead = Math.max(1, Number(cfg.slotsAhead) || 6);
 
+  const minLeadDays = Math.max(1, Number(cfg.minLeadDays) || 1); // NEW
+
   const blacklistDates = new Set(cfg.blacklistDates || []);
   const blacklistRanges = (cfg.blacklistRanges || []).slice();
 
@@ -165,11 +168,18 @@ function buildSlotsFromConfig(cfg: DeliveryConfig): DeliverySlot[] {
   const now = new Date();
   now.setHours(0, 0, 0, 0);
 
+  // Prima data selezionabile = oggi + minLeadDays (quindi oggi escluso se = 1)
+  const earliest = new Date(now);
+  earliest.setDate(now.getDate() + minLeadDays);
+
   // Scorriamo i giorni in avanti e raccogliamo in ordine cronologico
   const horizonDays = 120; // sicurezza per coprire tante esclusioni
   for (let i = 0; i < horizonDays && slots.length < slotsAhead; i++) {
     const day = new Date(now);
     day.setDate(now.getDate() + i);
+
+    // esclude oggi (e i giorni inferiori al lead)
+    if (day < earliest) continue;
 
     const jsDay = day.getDay(); // 0..6 (0 = Dom)
     const weekday: Weekday = (jsDay === 0 ? 7 : (jsDay as 1 | 2 | 3 | 4 | 5 | 6)) as Weekday;
@@ -210,14 +220,21 @@ function buildSlotsFromConfig(cfg: DeliveryConfig): DeliverySlot[] {
 const SLOT_START = { hour: 12, minute: 0 };
 const SLOT_END = { hour: 13, minute: 0 };
 
-function buildUpcomingSlotsStatic(n: number): DeliverySlot[] {
+function buildUpcomingSlotsStatic(n: number, minLeadDays: number = 1): DeliverySlot[] {
   const now = new Date();
   now.setHours(0,0,0,0);
+
+  const earliest = new Date(now);
+  earliest.setDate(now.getDate() + Math.max(1, minLeadDays)); // NEW
+
   const slots: DeliverySlot[] = [];
   const horizonDays = 120;
   for (let i = 0; i < horizonDays && slots.length < n; i++) {
     const day = new Date(now);
     day.setDate(now.getDate() + i);
+
+    if (day < earliest) continue; // NEW: esclude oggi
+
     const jsDay = day.getDay(); // 0..6
     const weekday: Weekday = (jsDay === 0 ? 7 : (jsDay as 1|2|3|4|5|6)) as Weekday;
     if (![1,3,5].includes(weekday)) continue;
@@ -281,6 +298,7 @@ const RiepilogoOrdine = ({
     timezone: "Europe/Rome",
     blacklistDates: [],
     blacklistRanges: [],
+    minLeadDays: 1, // NEW: oggi non selezionabile
   });
 
   useEffect(() => {
@@ -295,6 +313,7 @@ const RiepilogoOrdine = ({
           timezone: typeof d.timezone === "string" && d.timezone ? d.timezone : "Europe/Rome",
           blacklistDates: Array.isArray(d.blacklistDates) ? (d.blacklistDates as string[]) : [],
           blacklistRanges: Array.isArray(d.blacklistRanges) ? (d.blacklistRanges as BlacklistRange[]) : [],
+          minLeadDays: typeof d.minLeadDays === "number" ? d.minLeadDays : 1, // NEW
         });
       }
     });
@@ -307,8 +326,8 @@ const RiepilogoOrdine = ({
     [deliveryCfg]
   );
   const deliverySlots = useMemo<DeliverySlot[]>(
-    () => (deliverySlotsFromCfg.length ? deliverySlotsFromCfg : buildUpcomingSlotsStatic(6)),
-    [deliverySlotsFromCfg]
+    () => (deliverySlotsFromCfg.length ? deliverySlotsFromCfg : buildUpcomingSlotsStatic(6, deliveryCfg?.minLeadDays ?? 1)),
+    [deliverySlotsFromCfg, deliveryCfg?.minLeadDays]
   );
 
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
@@ -584,7 +603,7 @@ const RiepilogoOrdine = ({
             ? ` (${deliveryCfg.timeRanges[0].start}–${deliveryCfg.timeRanges[0].end})`
             : ""}
         </div>
-            {!selectedSlot && (
+        {!selectedSlot && (
           <p className={styles["hint"]}>Verrai contattato/a tramite WhatsApp per decidere il luogo della consegna.</p>
         )}
         <div className={styles["slots-grid"]} role="listbox" aria-label="Seleziona uno slot di consegna">
