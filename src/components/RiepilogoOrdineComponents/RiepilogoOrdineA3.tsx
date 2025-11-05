@@ -85,6 +85,7 @@ type DeliveryConfig = {
   timezone?: string;             // es. "Europe/Rome"
   blacklistDates?: string[];     // YYYY-MM-DD
   blacklistRanges?: BlacklistRange[]; // intervalli inclusivi [from,to] in YYYY-MM-DD
+  minLeadDays?: number;          // NEW: giorni minimi di preavviso (>=1 per escludere oggi)
 };
 const COLL_CONS = "configConsegne";
 const DOC_CONS = "settings";
@@ -139,7 +140,7 @@ function weekdayToJs(weekday: Weekday): number {
   return weekday === 7 ? 0 : weekday; // 7=Dom -> 0
 }
 
-/** ======= Generazione slot: cronologica + blacklist locale + intervalli ======= */
+/** ======= Generazione slot: cronologica + blacklist locale + lead time ======= */
 function buildSlotsFromConfig(cfg: DeliveryConfig): DeliverySlot[] {
   const weekdays = (Array.isArray(cfg.weekdays) && cfg.weekdays.length ? cfg.weekdays : [1, 3, 5])
     .map(w => Math.min(7, Math.max(1, Number(w)))) as Weekday[];
@@ -147,6 +148,8 @@ function buildSlotsFromConfig(cfg: DeliveryConfig): DeliverySlot[] {
     ? cfg.timeRanges
     : [{ start: "12:00", end: "13:00" }];
   const slotsAhead = Math.max(1, Number(cfg.slotsAhead) || 6);
+
+  const minLeadDays = Math.max(1, Number(cfg.minLeadDays) || 1); // NEW
 
   const singles = new Set(cfg.blacklistDates || []);
   const ranges = (cfg.blacklistRanges || []).slice();
@@ -161,18 +164,22 @@ function buildSlotsFromConfig(cfg: DeliveryConfig): DeliverySlot[] {
   const now = new Date();
   now.setHours(0, 0, 0, 0);
 
+  // oggi escluso: prima data selezionabile = oggi + minLeadDays
+  const earliest = new Date(now);
+  earliest.setDate(now.getDate() + minLeadDays);
+
   const horizonDays = 120; // margine per molte esclusioni
   for (let i = 0; i < horizonDays && slots.length < slotsAhead; i++) {
     const day = new Date(now);
     day.setDate(now.getDate() + i);
 
+    // rispetta lead time (esclude oggi)
+    if (day < earliest) continue;
+
     const jsDay = day.getDay(); // 0..6
     const weekday: Weekday = (jsDay === 0 ? 7 : (jsDay as 1 | 2 | 3 | 4 | 5 | 6)) as Weekday;
 
-    // se il giorno non è previsto, passa
     if (!weekdays.some(w => weekdayToJs(w) === jsDay)) continue;
-
-    // esclusioni
     if (isBlacklisted(day)) continue;
 
     for (const tr of timeRanges) {
@@ -202,18 +209,25 @@ function buildSlotsFromConfig(cfg: DeliveryConfig): DeliverySlot[] {
   return slots.slice(0, slotsAhead);
 }
 
-/** ======= Fallback statico Lun/Mer/Ven 12–13 ======= */
+/** ======= Fallback statico Lun/Mer/Ven 12–13 (rispetta lead time) ======= */
 const SLOT_START = { hour: 12, minute: 0 };
 const SLOT_END = { hour: 13, minute: 0 };
 
-function buildUpcomingSlotsStatic(n: number): DeliverySlot[] {
+function buildUpcomingSlotsStatic(n: number, minLeadDays: number = 1): DeliverySlot[] {
   const now = new Date();
   now.setHours(0, 0, 0, 0);
+
+  const earliest = new Date(now);
+  earliest.setDate(now.getDate() + Math.max(1, minLeadDays)); // NEW
+
   const slots: DeliverySlot[] = [];
   const horizonDays = 120;
   for (let i = 0; i < horizonDays && slots.length < n; i++) {
     const day = new Date(now);
     day.setDate(now.getDate() + i);
+
+    if (day < earliest) continue; // NEW: esclude oggi
+
     const jsDay = day.getDay();
     const weekday: Weekday = (jsDay === 0 ? 7 : (jsDay as 1 | 2 | 3 | 4 | 5 | 6)) as Weekday;
     if (![1, 3, 5].includes(weekday)) continue;
@@ -278,6 +292,7 @@ const RiepilogoOrdineA3 = ({
     timezone: "Europe/Rome",
     blacklistDates: [],
     blacklistRanges: [],
+    minLeadDays: 1, // NEW: oggi non selezionabile
   });
 
   useEffect(() => {
@@ -292,20 +307,23 @@ const RiepilogoOrdineA3 = ({
           timezone: typeof d.timezone === "string" && d.timezone ? d.timezone : "Europe/Rome",
           blacklistDates: Array.isArray(d.blacklistDates) ? (d.blacklistDates as string[]) : [],
           blacklistRanges: Array.isArray(d.blacklistRanges) ? (d.blacklistRanges as BlacklistRange[]) : [],
+          minLeadDays: typeof d.minLeadDays === "number" ? d.minLeadDays : 1, // NEW
         });
       }
     });
     return () => unsub();
   }, []);
 
-  /** ======= Slots consegna dinamici + fallback statico ======= */
+  /** ======= Slots consegna dinamici + fallback statico (rispetta lead time) ======= */
   const deliverySlotsFromCfg = useMemo<DeliverySlot[]>(
     () => buildSlotsFromConfig(deliveryCfg),
     [deliveryCfg]
   );
   const deliverySlots = useMemo<DeliverySlot[]>(
-    () => (deliverySlotsFromCfg.length ? deliverySlotsFromCfg : buildUpcomingSlotsStatic(6)),
-    [deliverySlotsFromCfg]
+    () => (deliverySlotsFromCfg.length
+      ? deliverySlotsFromCfg
+      : buildUpcomingSlotsStatic(6, deliveryCfg?.minLeadDays ?? 1)),
+    [deliverySlotsFromCfg, deliveryCfg?.minLeadDays]
   );
 
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
