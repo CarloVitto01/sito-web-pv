@@ -4,7 +4,7 @@ import { doc, onSnapshot, setDoc, serverTimestamp } from "firebase/firestore";
 import Header from "../../components/HeaderComponents/Header";
 import styles from "./BannerGestionale.module.css";
 
-type Variant = "info" | "warning" | "success" | "error";
+type Variant = "info" | "warning" | "success" | "error" | "christmas";
 
 type BannerData = {
   enabled: boolean;
@@ -41,12 +41,16 @@ const BannerGestionale: React.FC = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await setDoc(doc(db, "config", "homeBanner"), {
-        enabled: form.enabled,
-        text: form.text,
-        variant: form.variant,
-        updatedAt: serverTimestamp(),
-      }, { merge: true });
+      await setDoc(
+        doc(db, "config", "homeBanner"),
+        {
+          enabled: form.enabled,
+          text: form.text,
+          variant: form.variant,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
       setSavedMsg("Salvato!");
       setTimeout(() => setSavedMsg(null), 1500);
     } catch (e: any) {
@@ -69,7 +73,9 @@ const BannerGestionale: React.FC = () => {
           <input
             type="checkbox"
             checked={form.enabled}
-            onChange={(e) => setForm((f) => ({ ...f, enabled: e.target.checked }))}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, enabled: e.target.checked }))
+            }
           />
         </label>
 
@@ -79,7 +85,9 @@ const BannerGestionale: React.FC = () => {
             rows={3}
             value={form.text}
             placeholder="Scrivi l'avviso da mostrare in home…"
-            onChange={(e) => setForm((f) => ({ ...f, text: e.target.value }))}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, text: e.target.value }))
+            }
           />
         </label>
 
@@ -87,12 +95,15 @@ const BannerGestionale: React.FC = () => {
           <span>Stile</span>
           <select
             value={form.variant}
-            onChange={(e) => setForm((f) => ({ ...f, variant: e.target.value as Variant }))}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, variant: e.target.value as Variant }))
+            }
           >
             <option value="info">Info</option>
             <option value="warning">Warning</option>
             <option value="success">Success</option>
             <option value="error">Error</option>
+            <option value="christmas">Promo Natale</option>
           </select>
         </label>
 
@@ -103,7 +114,11 @@ const BannerGestionale: React.FC = () => {
           </div>
         </div>
 
-        <button className={styles.saveBtn} onClick={handleSave} disabled={saving}>
+        <button
+          className={styles.saveBtn}
+          onClick={handleSave}
+          disabled={saving}
+        >
           {saving ? "Salvataggio…" : "Salva"}
         </button>
         {savedMsg && <div className={styles.savedMsg}>{savedMsg}</div>}

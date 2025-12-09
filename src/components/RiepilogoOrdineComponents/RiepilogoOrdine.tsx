@@ -85,7 +85,7 @@ type DeliveryConfig = {
   timezone?: string;
   blacklistDates?: string[];        // singole YYYY-MM-DD
   blacklistRanges?: BlacklistRange[]; // intervalli inclusivi [from,to] YYYY-MM-DD
-  minLeadDays?: number;             // NEW: giorni minimi di preavviso (oggi escluso se = 1)
+  minLeadDays?: number;             // giorni minimi di preavviso (oggi escluso se = 1)
 };
 const COLL_CONS = "configConsegne";
 const DOC_CONS = "settings";
@@ -99,6 +99,20 @@ type DeliverySlot = {
   dayLabel: string;
   timeRange: string;
 };
+
+/** ======= Config promo (da Firestore) ======= */
+type PromoConfig = {
+  enabled: boolean;
+  name?: string;
+  description?: string;
+  percent: number;      // es. 10 = 10%
+  startDate?: string;   // YYYY-MM-DD
+  endDate?: string;     // YYYY-MM-DD
+  minPdf?: number;      // min numero PDF
+};
+
+const PROMO_COLL = "configPromo";
+const PROMO_DOC = "current";
 
 /** ======= Utility date ======= */
 const DAY_FULL_IT: Record<Weekday, string> = {
@@ -144,6 +158,23 @@ function weekdayToJs(weekday: Weekday): number {
   return weekday === 7 ? 0 : weekday;
 }
 
+/** Verifica se la promo è attiva oggi (tenendo conto di start/end e minPdf) */
+function isPromoActiveToday(promo: PromoConfig, numeroPDF: number): boolean {
+  if (!promo.enabled) return false;
+  if (numeroPDF < (promo.minPdf ?? 1)) return false;
+
+  if (!Number.isFinite(promo.percent) || promo.percent <= 0) return false;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayYmd = ymdLocal(today); // es. 2025-12-09
+
+  if (promo.startDate && todayYmd < promo.startDate) return false;
+  if (promo.endDate && todayYmd > promo.endDate) return false;
+
+  return true;
+}
+
 /** ======= Nuova generazione slot (round-robin + blacklist locale) ======= */
 function buildSlotsFromConfig(cfg: DeliveryConfig): DeliverySlot[] {
   const weekdays = (Array.isArray(cfg.weekdays) && cfg.weekdays.length ? cfg.weekdays : [1, 3, 5])
@@ -153,13 +184,13 @@ function buildSlotsFromConfig(cfg: DeliveryConfig): DeliverySlot[] {
     : [{ start: "12:00", end: "13:00" }];
   const slotsAhead = Math.max(1, Number(cfg.slotsAhead) || 6);
 
-  const minLeadDays = Math.max(1, Number(cfg.minLeadDays) || 1); // NEW
+  const minLeadDays = Math.max(1, Number(cfg.minLeadDays) || 1);
 
   const blacklistDates = new Set(cfg.blacklistDates || []);
   const blacklistRanges = (cfg.blacklistRanges || []).slice();
 
   const isBlacklisted = (d: Date) => {
-    const ymd = ymdLocal(d); // locale!
+    const ymd = ymdLocal(d);
     if (blacklistDates.has(ymd)) return true;
     return blacklistRanges.some(r => r.from <= ymd && ymd <= r.to);
   };
@@ -168,17 +199,15 @@ function buildSlotsFromConfig(cfg: DeliveryConfig): DeliverySlot[] {
   const now = new Date();
   now.setHours(0, 0, 0, 0);
 
-  // Prima data selezionabile = oggi + minLeadDays (quindi oggi escluso se = 1)
+  // Prima data selezionabile = oggi + minLeadDays
   const earliest = new Date(now);
   earliest.setDate(now.getDate() + minLeadDays);
 
-  // Scorriamo i giorni in avanti e raccogliamo in ordine cronologico
-  const horizonDays = 120; // sicurezza per coprire tante esclusioni
+  const horizonDays = 120;
   for (let i = 0; i < horizonDays && slots.length < slotsAhead; i++) {
     const day = new Date(now);
     day.setDate(now.getDate() + i);
 
-    // esclude oggi (e i giorni inferiori al lead)
     if (day < earliest) continue;
 
     const jsDay = day.getDay(); // 0..6 (0 = Dom)
@@ -225,7 +254,7 @@ function buildUpcomingSlotsStatic(n: number, minLeadDays: number = 1): DeliveryS
   now.setHours(0,0,0,0);
 
   const earliest = new Date(now);
-  earliest.setDate(now.getDate() + Math.max(1, minLeadDays)); // NEW
+  earliest.setDate(now.getDate() + Math.max(1, minLeadDays));
 
   const slots: DeliverySlot[] = [];
   const horizonDays = 120;
@@ -233,7 +262,7 @@ function buildUpcomingSlotsStatic(n: number, minLeadDays: number = 1): DeliveryS
     const day = new Date(now);
     day.setDate(now.getDate() + i);
 
-    if (day < earliest) continue; // NEW: esclude oggi
+    if (day < earliest) continue; // esclude oggi
 
     const jsDay = day.getDay(); // 0..6
     const weekday: Weekday = (jsDay === 0 ? 7 : (jsDay as 1|2|3|4|5|6)) as Weekday;
@@ -298,7 +327,7 @@ const RiepilogoOrdine = ({
     timezone: "Europe/Rome",
     blacklistDates: [],
     blacklistRanges: [],
-    minLeadDays: 1, // NEW: oggi non selezionabile
+    minLeadDays: 1, // oggi non selezionabile
   });
 
   useEffect(() => {
@@ -313,10 +342,48 @@ const RiepilogoOrdine = ({
           timezone: typeof d.timezone === "string" && d.timezone ? d.timezone : "Europe/Rome",
           blacklistDates: Array.isArray(d.blacklistDates) ? (d.blacklistDates as string[]) : [],
           blacklistRanges: Array.isArray(d.blacklistRanges) ? (d.blacklistRanges as BlacklistRange[]) : [],
-          minLeadDays: typeof d.minLeadDays === "number" ? d.minLeadDays : 1, // NEW
+          minLeadDays: typeof d.minLeadDays === "number" ? d.minLeadDays : 1,
         });
       }
     });
+    return () => unsub();
+  }, []);
+
+  /** ======= Lettura live promo (sconti) ======= */
+  const [promoCfg, setPromoCfg] = useState<PromoConfig>({
+    enabled: false,
+    name: "Promo",
+    description: "",
+    percent: 0,
+    startDate: "",
+    endDate: "",
+    minPdf: 1,
+  });
+
+  useEffect(() => {
+    const ref = doc(db, PROMO_COLL, PROMO_DOC);
+    const unsub = onSnapshot(
+      ref,
+      (snap) => {
+        if (snap.exists()) {
+          const d = snap.data() as Partial<PromoConfig>;
+          setPromoCfg({
+            enabled: typeof d.enabled === "boolean" ? d.enabled : false,
+            name: typeof d.name === "string" ? d.name : "Promo",
+            description: typeof d.description === "string" ? d.description : "",
+            percent: typeof d.percent === "number" ? d.percent : 0,
+            startDate: typeof d.startDate === "string" ? d.startDate : "",
+            endDate: typeof d.endDate === "string" ? d.endDate : "",
+            minPdf: typeof d.minPdf === "number" ? d.minPdf : 1,
+          });
+        } else {
+          setPromoCfg((prev) => ({ ...prev, enabled: false, percent: 0 }));
+        }
+      },
+      (err) => {
+        console.error("Errore lettura promo:", err);
+      }
+    );
     return () => unsub();
   }, []);
 
@@ -355,8 +422,18 @@ const RiepilogoOrdine = ({
     return () => unsub();
   }, [ivaRate, transportFeeEuro, paypalPercent, paypalFixed]);
 
+  /** ======= Totali con promo ======= */
   const totals = useMemo(() => {
-    const base = round2(parseEuro(prezzo));
+    const baseLordo = round2(parseEuro(prezzo));
+
+    const promoAttiva = isPromoActiveToday(promoCfg, numeroPDF);
+    const scontoPercent = promoAttiva ? promoCfg.percent : 0;
+    const scontoPromo = scontoPercent > 0
+      ? round2(baseLordo * (scontoPercent / 100))
+      : 0;
+
+    const base = round2(baseLordo - scontoPromo);
+
     const iva = round2(base * fees.ivaRate);
     const trasporto = round2(fees.transportFeeEuro);
     const subTotale = round2(base + iva + trasporto);
@@ -368,10 +445,20 @@ const RiepilogoOrdine = ({
     const totaleDaAddebitare = paymentMethod === "paypal" ? totalePayPal : totaleContanti;
 
     return {
-      base, iva, trasporto, subTotale,
-      feePP, totaleContanti, totalePayPal, totaleDaAddebitare,
+      baseLordo,
+      base,
+      scontoPromo,
+      scontoPercent,
+      promoAttiva,
+      iva,
+      trasporto,
+      subTotale,
+      feePP,
+      totaleContanti,
+      totalePayPal,
+      totaleDaAddebitare,
     };
-  }, [prezzo, fees, paymentMethod]);
+  }, [prezzo, fees, paymentMethod, promoCfg, numeroPDF]);
 
   // Carica SDK PayPal solo quando serve
   useEffect(() => {
@@ -557,6 +644,14 @@ const RiepilogoOrdine = ({
     <div className={styles["riepilogo-container"]}>
       <h3 className={styles["riepilogo-title"]}>📋 Riepilogo Ordine A4</h3>
 
+      {totals.promoAttiva && (
+        <div className={styles["promo-banner"]}>
+          {promoCfg.description
+            ? promoCfg.description
+            : `🎄 ${promoCfg.name ?? "Promo"}: -${totals.scontoPercent.toFixed(0)}% sulle stampe PDF`}
+        </div>
+      )}
+
       {/* Dettagli ordine */}
       <div className={`${styles["price-card"]} ${styles["details-card"]}`}>
         <div className={styles["price-header"]}>Dettagli ordine</div>
@@ -631,6 +726,16 @@ const RiepilogoOrdine = ({
 
       {/* Totali */}
       <div className={`${styles["price-card"]} ${styles["price-left"]}`}>
+        {/* Sconto promo, se attivo */}
+        {totals.promoAttiva && totals.scontoPromo > 0 && (
+          <div className={`${styles["price-row"]} ${styles["price-discount"]}`}>
+            <span className={styles["price-label"]}>
+              {promoCfg.name || "Promo"} (-{totals.scontoPercent.toFixed(0)}%)
+            </span>
+            <span className={styles["price-value"]}>- {euro(totals.scontoPromo)} €</span>
+          </div>
+        )}
+
         {paymentMethod === "paypal" && (
           <div className={`${styles["price-row"]} ${styles["price-fee-paypal"]}`}>
             <span className={styles["price-label"]}>

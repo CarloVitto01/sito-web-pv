@@ -120,6 +120,41 @@
   font-size: 14px;
 }
 
+/* stile base già esistente: .preview { ... } */
+
+/* Variante natalizia per l’anteprima del gestionale */
+.christmas {
+  color: transparent;
+  font-weight: 800;
+  text-align: center;
+
+  background-image:
+    radial-gradient(circle, #ffffff 0, rgb(255, 0, 0) 55%),
+    radial-gradient(circle, #ffe66d 0, rgb(0, 255, 0) 55%),
+    linear-gradient(135deg, #b3001f, #d7263d, #0b7d3b);
+  background-size:
+    18px 18px,
+    24px 24px,
+    180% 100%;
+  background-repeat: repeat, repeat, no-repeat;
+  background-position: 0 0, 60px -20px, 0 0;
+
+  -webkit-background-clip: text;
+  background-clip: text;
+
+  animation: christmasSnowText 2s linear infinite;
+}
+
+@keyframes christmasSnowText {
+  0% {
+    background-position: 0 0, 60px -20px, 0 0;
+  }
+  100% {
+    background-position: -130px 80px, 0 60px, -180% 0;
+  }
+}
+
+
 /* responsive locale */
 @media (max-width: 768px) {
   .card { padding: 14px; }

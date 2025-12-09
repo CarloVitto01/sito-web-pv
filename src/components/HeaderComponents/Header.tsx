@@ -144,6 +144,7 @@ const Header: React.FC = () => {
       { path: "/tasse", label: "Tasse" },
       { path: "/banner", label: "Banner" },
       { path: "/consegna", label: "Consegna" },
+      { path: "/sconti", label: "Sconti" },
     ],
     []
   );

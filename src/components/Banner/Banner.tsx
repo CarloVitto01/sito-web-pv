@@ -3,10 +3,12 @@ import { db } from "../../backend/firebase";
 import { doc, onSnapshot } from "firebase/firestore";
 import styles from "./Banner.module.css";
 
+type Variant = "info" | "warning" | "success" | "error" | "christmas";
+
 type BannerData = {
   enabled?: boolean;
   text?: string;
-  variant?: "info" | "warning" | "success" | "error";
+  variant?: Variant;
 };
 
 const Banner: React.FC = () => {
@@ -22,16 +24,19 @@ const Banner: React.FC = () => {
 
   if (!data?.enabled || !data?.text) return null;
 
-  const variant = data.variant ?? "info";
-  // Banner.tsx (solo la parte del render)
-return (
-  <div className={`${styles.banner} ${styles[variant]}`} role="status" aria-live="polite">
-    <div className={styles.inner}>
-      <p className={styles.text}>{data.text}</p>
-    </div>
-  </div>
-);
+  const variant: Variant = data.variant ?? "info";
 
+  return (
+    <div
+      className={`${styles.banner} ${styles[variant]}`}
+      role="status"
+      aria-live="polite"
+    >
+      <div className={styles.inner}>
+        <p className={styles.text}>{data.text}</p>
+      </div>
+    </div>
+  );
 };
 
 export default Banner;
