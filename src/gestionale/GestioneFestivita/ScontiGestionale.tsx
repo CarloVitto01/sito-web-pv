@@ -9,8 +9,6 @@ type PromoConfig = {
   name?: string;
   description?: string;
   percent: number;      // es. 10 = 10%
-  startDate?: string;   // YYYY-MM-DD
-  endDate?: string;     // YYYY-MM-DD
   minPdf?: number;      // min numero PDF
 };
 
@@ -22,8 +20,6 @@ const DEFAULT_PROMO: PromoConfig = {
   name: "Promo Natale",
   description: "Sconto sulle stampe PDF per il periodo natalizio.",
   percent: 10,
-  startDate: "", // vuoto = nessun limite
-  endDate: "",
   minPdf: 1,
 };
 
@@ -46,8 +42,6 @@ const ScontiGestionale: React.FC = () => {
             description:
               typeof data.description === "string" ? data.description : DEFAULT_PROMO.description,
             percent: typeof data.percent === "number" ? data.percent : DEFAULT_PROMO.percent,
-            startDate: typeof data.startDate === "string" ? data.startDate : DEFAULT_PROMO.startDate,
-            endDate: typeof data.endDate === "string" ? data.endDate : DEFAULT_PROMO.endDate,
             minPdf: typeof data.minPdf === "number" ? data.minPdf : DEFAULT_PROMO.minPdf,
           });
         } else {
@@ -76,8 +70,6 @@ const ScontiGestionale: React.FC = () => {
           name: promo.name || "",
           description: promo.description || "",
           percent: Number.isFinite(promo.percent) ? promo.percent : 0,
-          startDate: promo.startDate || "",
-          endDate: promo.endDate || "",
           minPdf: promo.minPdf ?? 1,
         },
         { merge: true }
@@ -151,28 +143,6 @@ const ScontiGestionale: React.FC = () => {
                   ...prev,
                   percent: Math.max(0, Math.min(100, Number(e.target.value) || 0)),
                 }))
-              }
-            />
-          </div>
-
-          <div className={styles.inline}>
-            <label>Data inizio (opzionale)</label>
-            <input
-              type="date"
-              value={promo.startDate || ""}
-              onChange={(e) =>
-                setPromo((prev) => ({ ...prev, startDate: e.target.value }))
-              }
-            />
-          </div>
-
-          <div className={styles.inline}>
-            <label>Data fine (opzionale)</label>
-            <input
-              type="date"
-              value={promo.endDate || ""}
-              onChange={(e) =>
-                setPromo((prev) => ({ ...prev, endDate: e.target.value }))
               }
             />
           </div>
