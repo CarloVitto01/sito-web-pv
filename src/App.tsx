@@ -45,6 +45,7 @@ import TasseGestionale from './gestionale/GestionaleTasse/TasseGestionale';
 import Assistant from './components/Assistenza/Assistant';
 import BannerGestionale from './gestionale/GestionaleBanner/BannerGestionale';
 import ConsegneGestionale from './gestionale/GestionaleConsegne/ConsegneGestionale';
+import ScontiGestionale from './gestionale/GestioneFestivita/ScontiGestionale';
 
 
 
@@ -126,6 +127,7 @@ const App: React.FC = () => {
             <Route path="/tasse" element={<ProtectedRoute page="tasse" element={< TasseGestionale />} />} />
             <Route path="/banner" element={<ProtectedRoute page="banner" element={< BannerGestionale />} />} />
             <Route path="/consegna" element={<ProtectedRoute page="consegna" element={< ConsegneGestionale />} />} />
+             <Route path="/sconti" element={<ProtectedRoute page="sconti" element={< ScontiGestionale />} />} />
 
 
 

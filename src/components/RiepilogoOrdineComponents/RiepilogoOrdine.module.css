@@ -359,6 +359,97 @@
 
 .delivery-card { margin-top: 12px; }
 
+/* Banner promo: solo testo animato in stile natalizio */
+.promo-banner {
+  margin-top: 0.5rem;
+  margin-bottom: 1.2rem;
+
+  font-size: 2.25rem;        /* testo più grande */
+  font-weight: 800;
+  text-align: center;        /* centrato */
+  line-height: 1.4;
+
+  display: block;            /* occupa tutta la linea */
+  padding: 0.4rem 0;
+
+  /* testo trasparente che usa il background come riempimento */
+  color: transparent;
+  background-image:
+    radial-gradient(circle, #ffffff 0, rgba(255, 0, 0, 0.918) 55%),
+    radial-gradient(circle, #ffe66d 0, rgba(0, 189, 247, 0.897) 55%),
+    linear-gradient(135deg, #b3001f, #d7263d, #0b7d3b);
+  background-size:
+    16px 16px,
+    22px 22px,
+    200% 100%;
+  background-repeat: repeat, repeat, no-repeat;
+  background-position: 0 0, 60px -20px, 0 0;
+
+  -webkit-background-clip: text;
+  background-clip: text;
+
+  animation: promoSnowText 4.2s linear infinite; /* più veloce e visibile */
+}
+
+@keyframes promoSnowText {
+  0% {
+    background-position: 0 0, 60px -20px, 0 0;
+  }
+  100% {
+    background-position: -120px 80px, 0 60px, -200% 0;
+  }
+}
+
+
+
+/* Riga sconto natalizia nella card dei totali */
+.price-discount {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0.35rem 0;
+  margin-bottom: 0.25rem;
+
+  /* leggero sfondo verde trasparente */
+  background: linear-gradient(
+    90deg,
+    rgba(11, 125, 59, 0.22),
+    rgba(11, 125, 59, 0.02)
+  );
+  border-radius: 10px;
+  position: relative;
+}
+
+/* piccola icona “fiocco/stella” a sinistra */
+.price-discount::before {
+  content: "❄️";
+  position: absolute;
+  left: 0.4rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.75rem;
+  opacity: 0.9;
+}
+
+/* sposto leggermente il testo per non sovrapporlo all’icona */
+.price-discount .price-label {
+  padding-left: 1.3rem;
+  color: #d4f9e3;
+  font-weight: 600;
+}
+
+/* importo negativo in evidenza */
+.price-discount .price-value {
+  color: #d4f9e3;
+  font-weight: 700;
+}
+
+/* opzionale: linea tratteggiata sotto il blocco sconti */
+.price-discount + .price-total {
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  margin-top: 0.4rem;
+  padding-top: 0.6rem;
+}
 
 
 

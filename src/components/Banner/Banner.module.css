@@ -27,13 +27,12 @@
     0 10px 24px rgba(0,0,0,0.35);
   backdrop-filter: saturate(110%) blur(3px);
   -webkit-backdrop-filter: saturate(110%) blur(3px);
-    /* Ombra dinamica basata sul colore del banner */
+  /* Ombra dinamica basata sul colore del banner */
   position: relative;
   z-index: 2;
   filter:
     drop-shadow(0 8px 16px color-mix(in srgb, var(--acc) 60%, black))
     drop-shadow(0 2px 8px rgba(0, 0, 0, 0.45));
-
 }
 
 /* wrapper interno per centratura e max width */
@@ -86,6 +85,84 @@
   --acc-border: rgba(255,59,48,0.35);
 }
 
+/* ===========================
+   VARIANTE NATALIZIA
+   =========================== */
+
+.banner.christmas {
+  /* accenti più luminosi e “freddi” */
+  --acc: rgba(255, 255, 255, 0.18);
+  --acc-border: rgba(255, 255, 255, 0.55);
+  position: relative;
+  overflow: hidden;
+}
+
+/* neve / palline fuori fuoco */
+.banner.christmas::before {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  pointer-events: none;
+  opacity: 0.9;
+
+  background-image:
+    radial-gradient(circle at 10% 20%, rgba(255,255,255,0.85) 0, transparent 52%),
+    radial-gradient(circle at 80% 0%, rgba(255,255,255,0.85) 0, transparent 52%),
+    radial-gradient(circle at 20% 80%, rgba(255,255,255,0.55) 0, transparent 52%),
+    radial-gradient(circle at 90% 60%, rgba(255,255,255,0.45) 0, transparent 52%);
+  background-size: 120px 120px, 160px 160px, 110px 110px, 140px 140px;
+  background-repeat: no-repeat;
+  background-position: 0 0, 100% -20px, 0 100%, 100% 100%;
+
+  animation: pvChristmasSnow 4s linear infinite;
+  mix-blend-mode: screen;
+}
+
+/* testo animato natalizio */
+.banner.christmas .text {
+  color: transparent;
+  font-weight: 800;
+  font-size: 1.60rem;
+
+  background-image:
+    radial-gradient(circle, #ffffff 0, rgb(255, 0, 0) 55%),
+    radial-gradient(circle, #ffe66d 0, rgb(0, 255, 0) 55%),
+    linear-gradient(135deg, #b3001f, #d7263d, #0b7d3b);
+  background-size:
+    18px 18px,
+    24px 24px,
+    180% 100%;
+  background-repeat: repeat, repeat, no-repeat;
+  background-position: 0 0, 60px -20px, 0 0;
+
+  -webkit-background-clip: text;
+  background-clip: text;
+
+  animation: pvChristmasText 5s linear infinite;
+}
+
+/* animazione neve / palline */
+@keyframes pvChristmasSnow {
+  0% {
+    transform: translate3d(0, -8px, 0);
+    background-position: 0 0, 100% -20px, 0 100%, 100% 100%;
+  }
+  100% {
+    transform: translate3d(0, 8px, 0);
+    background-position: -60px 40px, 110% 20px, -40px 120%, 110% 120%;
+  }
+}
+
+/* animazione del gradiente nel testo */
+@keyframes pvChristmasText {
+  0% {
+    background-position: 0 0, 60px -20px, 0 0;
+  }
+  100% {
+    background-position: -130px 80px, 0 60px, -180% 0;
+  }
+}
+
 /* micro-interaction all’apparire */
 @media (prefers-reduced-motion: no-preference) {
   .banner { animation: pvFadeSlide .35s ease-out both; }
@@ -107,6 +184,3 @@
 
 /* opzionale sticky sotto l'Header (se ti serve) */
 /* .banner.sticky { position: sticky; top: 64px; z-index: 30; } */
-
-
-

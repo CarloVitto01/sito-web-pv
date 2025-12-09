@@ -18,6 +18,7 @@ const PAGINE = [
   'tasse',
   'banner',
   'consegna',
+  'sconti',
 ];
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
