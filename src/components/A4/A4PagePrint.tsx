@@ -152,6 +152,22 @@ const A4PagePrint = () => {
     });
   }, []);
 
+  // Pagine da usare per i limiti rilegatura:
+  // - 1 PDF: usa l'intervallo selezionato (intervalloPagine)
+  // - 2+ PDF + rilegatura unica SI: usa il totale pagine complessive (numeroPaginePDF)
+  // - 2+ PDF + rilegatura unica NO: usa il massimo numero pagine tra i PDF (max per-PDF)
+  const pagesForBindingLimit = useMemo(() => {
+    if (numeroPDF <= 1) return intervalloPagine;
+
+    const isUnica = rilegaturaUnica === rilegaturaUnicaEnum.SI;
+    if (isUnica) return numeroPaginePDF || 0;
+
+    // rilegatura unica NO => controllo sul singolo PDF (prendiamo il massimo)
+    const maxSingle = fileData.reduce((acc, f) => Math.max(acc, f.pages || 0), 0);
+    return maxSingle;
+  }, [numeroPDF, rilegaturaUnica, intervalloPagine, numeroPaginePDF, fileData]);
+
+
   const newValue = useCallback((value: string) => {
     switch (value) {
       case "Bianco e nero": setInchiostro(inchiostroEnum.BIANCOENERO); break;
@@ -326,26 +342,26 @@ const A4PagePrint = () => {
     const isPaymentPayload = (o: any) => o && typeof o === "object" && ("method" in o);
     const payment = isPaymentPayload(arg1)
       ? (arg1 as {
-          method: "CASH" | "PAYPAL";
-          confirmed: boolean;
-          amount?: number;
-          orderId?: string;
-          captureId?: string;
-          payerEmail?: string;
-          breakdown?: {
-            imponibile: number;
-            iva: number;
-            trasporto: number;
-            feePayPal: number;
-          };
-          // 🆕 consegna
-          delivery?: {
-            dateISO: string;
-            dayLabel: string;
-            timeRange: string;
-            weekday: number; // 1..7
-          };
-        })
+        method: "CASH" | "PAYPAL";
+        confirmed: boolean;
+        amount?: number;
+        orderId?: string;
+        captureId?: string;
+        payerEmail?: string;
+        breakdown?: {
+          imponibile: number;
+          iva: number;
+          trasporto: number;
+          feePayPal: number;
+        };
+        // 🆕 consegna
+        delivery?: {
+          dateISO: string;
+          dayLabel: string;
+          timeRange: string;
+          weekday: number; // 1..7
+        };
+      })
       : undefined;
     const event = isPaymentPayload(arg1) ? arg2 : (arg1 as React.MouseEvent<HTMLButtonElement, MouseEvent> | undefined);
 
@@ -756,25 +772,25 @@ ${extraPP}`.trim();
                   {
                     title: "Anelli",
                     imageSrc: require("../../assets/images/Anelli.png"),
-                    disabled: numeroPaginePDF > 670 && intervalloPagine > 670,
+                    disabled: pagesForBindingLimit > 670,
                     errorMessage: "Limite di 670 pagine",
                   },
                   {
                     title: "Spirale",
                     imageSrc: require("../../assets/images/Spirale.png"),
-                    disabled: numeroPaginePDF > 500 && intervalloPagine > 500,
+                    disabled: pagesForBindingLimit > 500,
                     errorMessage: "Limite di 500 pagine",
                   },
                   {
                     title: "Fascetta",
                     imageSrc: require("../../assets/images/Fascetta.png"),
-                    disabled: numeroPaginePDF > 80 && intervalloPagine > 80,
+                    disabled: pagesForBindingLimit > 80,
                     errorMessage: "Limite di 80 pagine",
                   },
                   {
                     title: "Ciappatura",
                     imageSrc: require("../../assets/images/Ciappatura.png"),
-                    disabled: numeroPaginePDF > 35 && intervalloPagine > 35,
+                    disabled: pagesForBindingLimit > 35,
                     errorMessage: "Limite di 40 pagine"
                   },
                   {
@@ -784,7 +800,7 @@ ${extraPP}`.trim();
                     errorMessage: "",
                   },
                 ],
-                [numeroPaginePDF, intervalloPagine]
+                [pagesForBindingLimit]
               )}
               defaultValue="Anelli"
               onSendData={newValue}
