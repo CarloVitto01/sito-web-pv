@@ -1,13 +1,28 @@
+@import "../../styles/variables.css";
+
+/* wrapper */
 .container-line {
-  background-color: var(--color-background);
+  width: 100%;
+  min-width: 0;
+
   display: flex;
   justify-content: center;
-  margin-top: 3vh;
-  margin-bottom: 3vh;
+
+  margin: 16px 0; /* spacing coerente con i pannelli */
 }
 
+/* linea */
 .line-delimiter {
-  border: 1px solid var(--color-gold);
-  width: 80vw;
-  border-radius: 50px;
+  width: 100%;
+  max-width: 720px; /* allineata al contenuto centrale */
+  height: 1px;
+
+  border-radius: 999px;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(212, 175, 55, 0.85),
+    transparent
+  );
 }

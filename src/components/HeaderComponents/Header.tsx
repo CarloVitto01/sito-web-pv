@@ -119,12 +119,10 @@ const Header: React.FC = () => {
   // ===== Dati di navigazione =====
   const servizi: NavItem[] = useMemo(
     () => [
-      { path: "/richiesta-sito-web", label: "Sviluppo Siti Web", icon: "🖥️" },
       { path: "/printA4", label: "Stampa in A4", icon: "🖨️" },
       { path: "/printA3", label: "Stampa in A3", icon: "🖨️" },
       { path: "/3d", label: "Stampa in 3D", icon: "🖨️" },
       { path: "/qrgen", label: "Generatore di QR Code", icon: "📱" },
-      { path: "/contatti-servizi-foto-video", label: "Contatti Servizi Foto/Video", icon: "📸" },
     ],
     []
   );
@@ -134,13 +132,10 @@ const Header: React.FC = () => {
       { path: "/gestionaleA4", label: "A4" },
       { path: "/gestionaleA3", label: "A3" },
       { path: "/bobine", label: "Bobine" },
-      { path: "/foto-video-gestionale", label: "Foto & Video" },
-      { path: "/gestionale-web", label: "Web" },
       { path: "/qr-generator", label: "QR" },
       { path: "/utentiGestionale", label: "Utenti" },
       { path: "/gestione-accessi", label: "Accessi Ruoli" },
       { path: "/storicoDati", label: "Storico Dati" },
-      { path: "/link", label: "Link" },
       { path: "/tasse", label: "Tasse" },
       { path: "/banner", label: "Banner" },
       { path: "/consegna", label: "Consegna" },

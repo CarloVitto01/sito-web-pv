@@ -1,5 +1,4 @@
-// Card.tsx
-import React from "react";
+import { Box, UnstyledButton, Text } from "@mantine/core";
 import classes from "./Card.module.css";
 
 interface ImageButtonProps {
@@ -19,30 +18,33 @@ const Card: React.FC<ImageButtonProps> = ({
   disabled = false,
   errorMessage,
 }) => {
-  const handleClick = (event: React.MouseEvent) => {
-    if (!disabled) onClick();
-    event.stopPropagation();
-  };
-
   return (
-    <div className={classes.cardWrapper}>
-      <button
-        className={`${classes.pillButton} ${
-          isSelected ? classes.selected : ""
-        } ${disabled ? classes.disabled : ""}`}
-        onClick={handleClick}
+    <Box className={classes.root}>
+      <UnstyledButton
+        className={[
+          classes.button,
+          isSelected ? classes.selected : "",
+          disabled ? classes.disabled : "",
+        ].join(" ")}
+        onClick={!disabled ? onClick : undefined}
         disabled={disabled}
-        title={title}
+        aria-pressed={isSelected}
       >
-        <div className={classes.imageWrapper}>
+        <div className={classes.media}>
           <img src={imageSrc} alt={title} className={classes.image} />
         </div>
-        <span className={classes.label}>{title}</span>
-      </button>
+
+        <Text className={classes.label} lineClamp={1}>
+          {title}
+        </Text>
+      </UnstyledButton>
+
       {disabled && errorMessage && (
-        <div className={classes.error}>{errorMessage}</div>
+        <Box className={classes.helper} role="note">
+          {errorMessage}
+        </Box>
       )}
-    </div>
+    </Box>
   );
 };
 

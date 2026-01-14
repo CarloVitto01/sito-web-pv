@@ -1,118 +1,220 @@
+@import "../../styles/variables.css";
+
+/* ===== Wrapper ===== */
 .page-range {
+  width: 100%;
+  min-width: 0;
+
   display: flex;
   flex-direction: column;
-  align-items: center;
-  width: 100%;
+  align-items: stretch;
+
+  /* stesso “feeling” dei pannelli */
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(18, 18, 18, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.22);
 }
 
 .title {
-  font-size: 1.5rem;
+  margin: 0 0 10px;
+  font-size: 1rem;
+  font-weight: 800;
   color: var(--color-gold);
-  margin-bottom: 1rem;
-  text-align: center;
+  letter-spacing: 0.2px;
+  text-align: left;
 }
 
 .error-message {
-  color: var(--color-error);
-  margin-bottom: 1rem;
-  font-size: 1.1rem;
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 60, 60, 0.10);
+  border: 1px solid rgba(255, 60, 60, 0.18);
+  font-size: 0.92rem;
+  line-height: 1.25;
+}
+
+/* ===== Options area ===== */
+.options-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .options-group {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  margin-bottom: 1rem;
-}
-
-.options {
-  display: flex;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-.container-text {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-}
-
-.text {
-  font-size: 1.4rem;
-  color: var(--color-text);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
   margin: 0;
 }
 
-.text-page {
-  font-size: 1.2rem;
-  color: var(--color-text);
-  margin: 0 1vw 0 0;
+/* Ogni option div */
+.options {
+  margin: 0;
+}
+
+/* “Button-radio” con label full width */
+.options label {
+  display: block;
+  width: 100%;
+}
+
+.container-text {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 12px;
+  border-radius: 12px;
+
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  cursor: pointer;
+
+  transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
+}
+
+.container-text:hover {
+  transform: translateY(-1px);
+  border-color: rgba(212, 175, 55, 0.22);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.text {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.90);
+}
+
+/* Radio hidden (come già fai) */
+.options input[type="radio"] {
+  display: none;
+}
+
+/* Checkmark */
+.checkmark {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+
+  border: 2px solid rgba(212, 175, 55, 0.75);
+  background: transparent;
+
+  flex: 0 0 14px;
+  box-sizing: border-box;
+}
+
+/* Stato checked: il label è subito dopo input, quindi qui funziona */
+.options input[type="radio"]:checked + label .container-text {
+  border-color: rgba(212, 175, 55, 0.70);
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.12);
+  background: rgba(212, 175, 55, 0.06);
+}
+
+.options input[type="radio"]:checked + label .checkmark {
+  background: rgba(212, 175, 55, 0.95);
+  border-color: rgba(212, 175, 55, 0.95);
+}
+
+/* ===== Floating inputs (Da/A) ===== */
+.floating-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-items: start;
 }
 
 .inputRowDivS {
   display: flex;
   align-items: center;
-  margin-bottom: 0.8rem;
+  justify-content: space-between;
+  gap: 10px;
+
+  padding: 12px;
+  border-radius: 12px;
+
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.text-page {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+/* Input numerico pulito */
+.inputRowDivS input {
+  width: 100%;
+  max-width: 120px;
+
+  font-size: 0.95rem;
+  padding: 10px 12px;
+
+  text-align: center;
+  border-radius: 10px;
+
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.18);
+
+  color: rgba(255, 255, 255, 0.92);
+  outline: none;
+
+  transition: border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
+}
+
+.inputRowDivS input:focus {
+  border-color: rgba(212, 175, 55, 0.60);
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.12);
+  background: rgba(0, 0, 0, 0.28);
+}
+
+/* Stato invalid */
+.inputRowDivS.invalid {
+  border-color: rgba(255, 60, 60, 0.40);
+  background: rgba(255, 60, 60, 0.06);
 }
 
 .inputRowDivS.invalid input {
-  border-bottom: 2px solid var(--color-error);
-  background-color: rgba(255, 0, 0, 0.1);
+  border-color: rgba(255, 60, 60, 0.55);
+  background: rgba(255, 60, 60, 0.10);
 }
 
-.inputRowDivS input {
-  width: 6vw;
-  min-width: 50px;
-  font-size: 1rem;
-  padding: 0.3rem;
-  text-align: center;
-  border: none;
-  border-bottom: 1px solid var(--color-text);
-  background-color: transparent;
-  color: var(--color-text);
-}
-
+/* Messaggio invalid sotto ciascun input */
 .invalid-input {
- color: var(--color-error);
-  font-size: 0.9rem;
-  margin: -0.5rem 0 0.8rem 0; /* avvicina e separa il messaggio */
-  padding-left: 1px; /* sposta sotto input, regola se serve */
+  margin: 6px 0 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: rgba(255, 120, 120, 0.95);
+  grid-column: span 1;
 }
 
-
-.options input[type="radio"] {
-  display: none;
-}
-
-.checkmark {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  border: 2px solid var(--color-gold);
-  border-radius: 50%;
-  margin-right: 0.5rem;
-}
-
-.options input[type="radio"]:checked + label .checkmark {
-  background-color: var(--color-gold);
-  border-color: var(--color-gold);
-}
-
+/* ===== Disabled state ===== */
 .disabled {
-  opacity: 0.6;
+  opacity: 0.55;
   pointer-events: none;
+  filter: grayscale(0.15);
 }
 
-@media screen and (max-width: 500px) {
+/* ===== Mobile ===== */
+@media (max-width: 520px) {
+  .options-group {
+    grid-template-columns: 1fr;
+  }
+
+  .floating-inputs {
+    grid-template-columns: 1fr;
+  }
+
   .inputRowDivS input {
-    width: 14vw;
-    font-size: 4.2vw;
+    max-width: none;
   }
-
-  .invalid-input {
-    font-size: 4vw;
-    padding-left: 2vw;
-  }
-
-  
 }

@@ -6,7 +6,7 @@ import CardsSection from './CardsSection';
 import AlternatingContentSection from './AlternatingContentSection';
 import './Home.module.css';
 import Banner from '../Banner/Banner';
-import PwaInstallGuide from '../PwaInstallGuide';
+
 
 const Home: React.FC = () => {
   return (
@@ -14,12 +14,6 @@ const Home: React.FC = () => {
       <Header />
       <Banner />
       <DescriptionSection />
-
-      {/* Guida install app */}
-      <div style={{ padding: '0 16px', marginTop: '16px' }}>
-        <PwaInstallGuide />
-      </div>
-
       <CardsSection />
       <AlternatingContentSection />
       <Footer />

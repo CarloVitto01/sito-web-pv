@@ -1,7 +1,25 @@
-import styles from "./RiepilogoOrdine.module.css";
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+// ✅ src/components/RiepilogoOrdineComponents/RiepilogoOrdine.tsx
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { db } from "../../backend/firebase";
 import { doc, onSnapshot } from "firebase/firestore";
+import {
+  Alert,
+  Badge,
+  Box,
+  Button,
+  Card,
+  Divider,
+  Group,
+  Loader,
+  Progress,
+  Stack,
+  Text,
+  Title,
+} from "@mantine/core";
+import { IconCheck, IconInfoCircle } from "@tabler/icons-react";
+
+import MetodoPagamentoPicker from "../CardComponents/MetodoPagamentoPicker";
+import ConsegnaSlotPicker, { type DeliverySlot } from "../CardComponents/ConsegnaSlotPicker";
 
 type PaymentPayload = {
   method: "CASH" | "PAYPAL";
@@ -25,15 +43,19 @@ type PaymentPayload = {
 };
 
 type RiepilogoProps = {
+  tipo?: "A4" | "A3";
+
   inchiostro: string;
   pagina: string;
   layout: string;
   rilegatura: string;
   rilegaturaUnica: string;
   intervalloPagine: string;
+
   numeroCopie: number;
   numeroPDF: number;
   prezzo: string;
+
   onConfirmOrder: (payment: PaymentPayload) => Promise<void>;
   disabled?: boolean;
   submitted?: boolean;
@@ -60,10 +82,13 @@ function parseEuro(prezzo: string): number {
   return isNaN(val) ? 0 : val;
 }
 const round2 = (n: number) => Math.round(n * 100) / 100;
-const euro = (n: number) =>
-  n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const euro = (n: number) => n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-declare global { interface Window { paypal?: any; } }
+declare global {
+  interface Window {
+    paypal?: any;
+  }
+}
 
 const FEES_COLLECTION = "configTasse";
 const FEES_DOC = "fees";
@@ -79,42 +104,34 @@ type Fees = {
 type TimeRange = { start: string; end: string };
 type BlacklistRange = { from: string; to: string };
 type DeliveryConfig = {
-  weekdays: number[];               // 1..7 (1=Lun ... 7=Dom)
+  weekdays: number[];
   timeRanges: TimeRange[];
   slotsAhead: number;
   timezone?: string;
-  blacklistDates?: string[];        // singole YYYY-MM-DD
-  blacklistRanges?: BlacklistRange[]; // intervalli inclusivi [from,to] YYYY-MM-DD
-  minLeadDays?: number;             // giorni minimi di preavviso (oggi escluso se = 1)
+  blacklistDates?: string[];
+  blacklistRanges?: BlacklistRange[];
+  minLeadDays?: number;
 };
 const COLL_CONS = "configConsegne";
 const DOC_CONS = "settings";
-
-/** ======= Slot di consegna ======= */
-type Weekday = 1 | 2 | 3 | 4 | 5 | 6 | 7;
-type DeliverySlot = {
-  id: string;
-  weekday: Weekday;
-  dateISO: string;
-  dayLabel: string;
-  timeRange: string;
-};
 
 /** ======= Config promo (da Firestore) ======= */
 type PromoConfig = {
   enabled: boolean;
   name?: string;
   description?: string;
-  percent: number;      // es. 10 = 10%
-  startDate?: string;   // YYYY-MM-DD
-  endDate?: string;     // YYYY-MM-DD
-  minPdf?: number;      // min numero PDF
+  percent: number;
+  startDate?: string;
+  endDate?: string;
+  minPdf?: number;
 };
 
 const PROMO_COLL = "configPromo";
 const PROMO_DOC = "current";
 
 /** ======= Utility date ======= */
+type Weekday = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+
 const DAY_FULL_IT: Record<Weekday, string> = {
   1: "Lunedì",
   2: "Martedì",
@@ -125,11 +142,12 @@ const DAY_FULL_IT: Record<Weekday, string> = {
   7: "Domenica",
 };
 
-function pad2(n: number) { return String(n).padStart(2, "0"); }
+function pad2(n: number) {
+  return String(n).padStart(2, "0");
+}
 function itShortMonth(d: Date): string {
   return d.toLocaleDateString("it-IT", { month: "short" }).replace(".", "");
 }
-/** ISO con offset locale (non Z) */
 function toTZDateISO(date: Date, hour: number, minute: number): string {
   const d = new Date(date);
   d.setHours(hour, minute, 0, 0);
@@ -146,28 +164,24 @@ function toTZDateISO(date: Date, hour: number, minute: number): string {
   const ss = pad2(d.getSeconds());
   return `${yyyy}-${MM}-${DD}T${HH}:${mi}:${ss}${sign}${HHoff}:${MMoff}`;
 }
-/** YYYY-MM-DD in LOCALE (niente UTC) */
 function ymdLocal(d: Date): string {
   const y = d.getFullYear();
   const m = pad2(d.getMonth() + 1);
   const dd = pad2(d.getDate());
   return `${y}-${m}-${dd}`;
 }
-/** weekday(1..7) -> JS getDay (0..6) */
 function weekdayToJs(weekday: Weekday): number {
   return weekday === 7 ? 0 : weekday;
 }
 
-/** Verifica se la promo è attiva oggi (tenendo conto di start/end e minPdf) */
 function isPromoActiveToday(promo: PromoConfig, numeroPDF: number): boolean {
   if (!promo.enabled) return false;
   if (numeroPDF < (promo.minPdf ?? 1)) return false;
-
   if (!Number.isFinite(promo.percent) || promo.percent <= 0) return false;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const todayYmd = ymdLocal(today); // es. 2025-12-09
+  const todayYmd = ymdLocal(today);
 
   if (promo.startDate && todayYmd < promo.startDate) return false;
   if (promo.endDate && todayYmd > promo.endDate) return false;
@@ -175,15 +189,13 @@ function isPromoActiveToday(promo: PromoConfig, numeroPDF: number): boolean {
   return true;
 }
 
-/** ======= Nuova generazione slot (round-robin + blacklist locale) ======= */
 function buildSlotsFromConfig(cfg: DeliveryConfig): DeliverySlot[] {
-  const weekdays = (Array.isArray(cfg.weekdays) && cfg.weekdays.length ? cfg.weekdays : [1, 3, 5])
-    .map(w => Math.min(7, Math.max(1, Number(w)))) as Weekday[];
-  const timeRanges = Array.isArray(cfg.timeRanges) && cfg.timeRanges.length
-    ? cfg.timeRanges
-    : [{ start: "12:00", end: "13:00" }];
-  const slotsAhead = Math.max(1, Number(cfg.slotsAhead) || 6);
+  const weekdays = (Array.isArray(cfg.weekdays) && cfg.weekdays.length ? cfg.weekdays : [1, 3, 5]).map((w) =>
+    Math.min(7, Math.max(1, Number(w)))
+  ) as Weekday[];
 
+  const timeRanges = Array.isArray(cfg.timeRanges) && cfg.timeRanges.length ? cfg.timeRanges : [{ start: "12:00", end: "13:00" }];
+  const slotsAhead = Math.max(1, Number(cfg.slotsAhead) || 6);
   const minLeadDays = Math.max(1, Number(cfg.minLeadDays) || 1);
 
   const blacklistDates = new Set(cfg.blacklistDates || []);
@@ -192,14 +204,13 @@ function buildSlotsFromConfig(cfg: DeliveryConfig): DeliverySlot[] {
   const isBlacklisted = (d: Date) => {
     const ymd = ymdLocal(d);
     if (blacklistDates.has(ymd)) return true;
-    return blacklistRanges.some(r => r.from <= ymd && ymd <= r.to);
+    return blacklistRanges.some((r) => r.from <= ymd && ymd <= r.to);
   };
 
   const slots: DeliverySlot[] = [];
   const now = new Date();
   now.setHours(0, 0, 0, 0);
 
-  // Prima data selezionabile = oggi + minLeadDays
   const earliest = new Date(now);
   earliest.setDate(now.getDate() + minLeadDays);
 
@@ -210,18 +221,16 @@ function buildSlotsFromConfig(cfg: DeliveryConfig): DeliverySlot[] {
 
     if (day < earliest) continue;
 
-    const jsDay = day.getDay(); // 0..6 (0 = Dom)
+    const jsDay = day.getDay();
     const weekday: Weekday = (jsDay === 0 ? 7 : (jsDay as 1 | 2 | 3 | 4 | 5 | 6)) as Weekday;
 
-    // è uno dei giorni configurati?
-    if (!weekdays.some(w => weekdayToJs(w) === jsDay)) continue;
-
-    // escluso?
+    if (!weekdays.some((w) => weekdayToJs(w) === jsDay)) continue;
     if (isBlacklisted(day)) continue;
 
     for (const tr of timeRanges) {
       const [sh, sm] = String(tr.start || "12:00").split(":").map(Number);
       const [eh, em] = String(tr.end || "13:00").split(":").map(Number);
+
       const startH = Number.isFinite(sh) ? sh : 12;
       const startM = Number.isFinite(sm) ? sm : 0;
       const endH = Number.isFinite(eh) ? eh : 13;
@@ -231,11 +240,11 @@ function buildSlotsFromConfig(cfg: DeliveryConfig): DeliverySlot[] {
       const label = `${DAY_FULL_IT[weekday]} ${day.getDate()} ${itShortMonth(day)}`;
 
       slots.push({
-        id: `${weekday}-${ymdLocal(day)}-${pad2(startH)}${pad2(startM)}`, // usa locale per coerenza
+        id: `${weekday}-${ymdLocal(day)}-${pad2(startH)}${pad2(startM)}`,
         weekday,
         dateISO,
         dayLabel: label,
-        timeRange: `${pad2(startH)}:${pad2(startM)}–${pad2(endH)}:${pad2(endM)}`
+        timeRange: `${pad2(startH)}:${pad2(startM)}–${pad2(endH)}:${pad2(endM)}`,
       });
 
       if (slots.length >= slotsAhead) break;
@@ -245,42 +254,22 @@ function buildSlotsFromConfig(cfg: DeliveryConfig): DeliverySlot[] {
   return slots.slice(0, slotsAhead);
 }
 
-/** ======= Fallback statico (Lun/Mer/Ven 12–13) ======= */
-const SLOT_START = { hour: 12, minute: 0 };
-const SLOT_END = { hour: 13, minute: 0 };
-
-function buildUpcomingSlotsStatic(n: number, minLeadDays: number = 1): DeliverySlot[] {
-  const now = new Date();
-  now.setHours(0,0,0,0);
-
-  const earliest = new Date(now);
-  earliest.setDate(now.getDate() + Math.max(1, minLeadDays));
-
-  const slots: DeliverySlot[] = [];
-  const horizonDays = 120;
-  for (let i = 0; i < horizonDays && slots.length < n; i++) {
-    const day = new Date(now);
-    day.setDate(now.getDate() + i);
-
-    if (day < earliest) continue; // esclude oggi
-
-    const jsDay = day.getDay(); // 0..6
-    const weekday: Weekday = (jsDay === 0 ? 7 : (jsDay as 1|2|3|4|5|6)) as Weekday;
-    if (![1,3,5].includes(weekday)) continue;
-    const dateISO = toTZDateISO(day, SLOT_START.hour, SLOT_START.minute);
-    const label = `${DAY_FULL_IT[weekday]} ${day.getDate()} ${itShortMonth(day)}`;
-    slots.push({
-      id: `${weekday}-${ymdLocal(day)}`,
-      weekday,
-      dateISO,
-      dayLabel: label,
-      timeRange: `${pad2(SLOT_START.hour)}:${pad2(SLOT_START.minute)}–${pad2(SLOT_END.hour)}:${pad2(SLOT_END.minute)}`
-    });
-  }
-  return slots.slice(0, n);
+function KeyValueRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <Group justify="space-between" align="baseline" wrap="nowrap">
+      <Text size="sm" c="dimmed">
+        {label}
+      </Text>
+      <Text size="sm" fw={600} style={{ textAlign: "right" }}>
+        {value}
+      </Text>
+    </Group>
+  );
 }
 
-const RiepilogoOrdine = ({
+const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
+  tipo = "A4",
+
   inchiostro,
   pagina,
   layout,
@@ -302,15 +291,14 @@ const RiepilogoOrdine = ({
 
   authToken,
   csrfToken,
-}: RiepilogoProps) => {
+}) => {
   const [progress, setProgress] = useState(0);
-  const [paymentMethod, setPaymentMethod] = useState<"cash" | "paypal" | null>(null);
+
+  // ✅ ora ha default (UX più chiara e zero "null-state")
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "paypal">("cash");
+
   const [paypalReady, setPaypalReady] = useState(false);
   const paypalButtonsContainerRef = useRef<HTMLDivElement | null>(null);
-
-  if (!API) {
-    console.warn("REACT_APP_API_BASE_URL non impostata. Configura l'endpoint API e ricompila.");
-  }
 
   const [fees, setFees] = useState<Fees>({
     ivaRate,
@@ -319,7 +307,6 @@ const RiepilogoOrdine = ({
     paypalFixed,
   });
 
-  /** ======= Lettura live configurazione consegne ======= */
   const [deliveryCfg, setDeliveryCfg] = useState<DeliveryConfig>({
     weekdays: [1, 3, 5],
     timeRanges: [{ start: "12:00", end: "13:00" }],
@@ -327,29 +314,27 @@ const RiepilogoOrdine = ({
     timezone: "Europe/Rome",
     blacklistDates: [],
     blacklistRanges: [],
-    minLeadDays: 1, // oggi non selezionabile
+    minLeadDays: 1,
   });
 
   useEffect(() => {
     const ref = doc(db, COLL_CONS, DOC_CONS);
     const unsub = onSnapshot(ref, (snap) => {
-      if (snap.exists()) {
-        const d = snap.data() as Partial<DeliveryConfig>;
-        setDeliveryCfg({
-          weekdays: Array.isArray(d.weekdays) && d.weekdays.length ? (d.weekdays as number[]) : [1, 3, 5],
-          timeRanges: Array.isArray(d.timeRanges) && d.timeRanges.length ? (d.timeRanges as TimeRange[]) : [{ start: "12:00", end: "13:00" }],
-          slotsAhead: typeof d.slotsAhead === "number" ? d.slotsAhead : 6,
-          timezone: typeof d.timezone === "string" && d.timezone ? d.timezone : "Europe/Rome",
-          blacklistDates: Array.isArray(d.blacklistDates) ? (d.blacklistDates as string[]) : [],
-          blacklistRanges: Array.isArray(d.blacklistRanges) ? (d.blacklistRanges as BlacklistRange[]) : [],
-          minLeadDays: typeof d.minLeadDays === "number" ? d.minLeadDays : 1,
-        });
-      }
+      if (!snap.exists()) return;
+      const d = snap.data() as Partial<DeliveryConfig>;
+      setDeliveryCfg({
+        weekdays: Array.isArray(d.weekdays) && d.weekdays.length ? (d.weekdays as number[]) : [1, 3, 5],
+        timeRanges: Array.isArray(d.timeRanges) && d.timeRanges.length ? (d.timeRanges as TimeRange[]) : [{ start: "12:00", end: "13:00" }],
+        slotsAhead: typeof d.slotsAhead === "number" ? d.slotsAhead : 6,
+        timezone: typeof d.timezone === "string" && d.timezone ? d.timezone : "Europe/Rome",
+        blacklistDates: Array.isArray(d.blacklistDates) ? (d.blacklistDates as string[]) : [],
+        blacklistRanges: Array.isArray(d.blacklistRanges) ? (d.blacklistRanges as BlacklistRange[]) : [],
+        minLeadDays: typeof d.minLeadDays === "number" ? d.minLeadDays : 1,
+      });
     });
     return () => unsub();
   }, []);
 
-  /** ======= Lettura live promo (sconti) ======= */
   const [promoCfg, setPromoCfg] = useState<PromoConfig>({
     enabled: false,
     name: "Promo",
@@ -365,81 +350,63 @@ const RiepilogoOrdine = ({
     const unsub = onSnapshot(
       ref,
       (snap) => {
-        if (snap.exists()) {
-          const d = snap.data() as Partial<PromoConfig>;
-          setPromoCfg({
-            enabled: typeof d.enabled === "boolean" ? d.enabled : false,
-            name: typeof d.name === "string" ? d.name : "Promo",
-            description: typeof d.description === "string" ? d.description : "",
-            percent: typeof d.percent === "number" ? d.percent : 0,
-            startDate: typeof d.startDate === "string" ? d.startDate : "",
-            endDate: typeof d.endDate === "string" ? d.endDate : "",
-            minPdf: typeof d.minPdf === "number" ? d.minPdf : 1,
-          });
-        } else {
+        if (!snap.exists()) {
           setPromoCfg((prev) => ({ ...prev, enabled: false, percent: 0 }));
+          return;
         }
+        const d = snap.data() as Partial<PromoConfig>;
+        setPromoCfg({
+          enabled: typeof d.enabled === "boolean" ? d.enabled : false,
+          name: typeof d.name === "string" ? d.name : "Promo",
+          description: typeof d.description === "string" ? d.description : "",
+          percent: typeof d.percent === "number" ? d.percent : 0,
+          startDate: typeof d.startDate === "string" ? d.startDate : "",
+          endDate: typeof d.endDate === "string" ? d.endDate : "",
+          minPdf: typeof d.minPdf === "number" ? d.minPdf : 1,
+        });
       },
-      (err) => {
-        console.error("Errore lettura promo:", err);
-      }
+      (err) => console.error("Errore lettura promo:", err)
     );
     return () => unsub();
   }, []);
 
-  /** ======= Generazione slot dinamica + fallback statico ======= */
-  const deliverySlotsFromCfg = useMemo<DeliverySlot[]>(
-    () => buildSlotsFromConfig(deliveryCfg),
-    [deliveryCfg]
-  );
-  const deliverySlots = useMemo<DeliverySlot[]>(
-    () => (deliverySlotsFromCfg.length ? deliverySlotsFromCfg : buildUpcomingSlotsStatic(6, deliveryCfg?.minLeadDays ?? 1)),
-    [deliverySlotsFromCfg, deliveryCfg?.minLeadDays]
-  );
+  const deliverySlots = useMemo(() => buildSlotsFromConfig(deliveryCfg), [deliveryCfg]);
 
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
-  const selectedSlot = useMemo(
-    () => deliverySlots.find(s => s.id === selectedSlotId) || null,
-    [deliverySlots, selectedSlotId]
-  );
+  const selectedSlot = useMemo(() => deliverySlots.find((s) => s.id === selectedSlotId) || null, [deliverySlots, selectedSlotId]);
 
-  /** ======= Tasse ======= */
   useEffect(() => {
     const ref = doc(db, FEES_COLLECTION, FEES_DOC);
     const unsub = onSnapshot(ref, (snap) => {
-      if (snap.exists()) {
-        const d = snap.data() as Partial<Fees>;
-        setFees({
-          ivaRate: typeof d.ivaRate === "number" ? d.ivaRate : ivaRate,
-          transportFeeEuro: typeof d.transportFeeEuro === "number" ? d.transportFeeEuro : transportFeeEuro,
-          paypalPercent: typeof d.paypalPercent === "number" ? d.paypalPercent : paypalPercent,
-          paypalFixed: typeof d.paypalFixed === "number" ? d.paypalFixed : paypalFixed,
-        });
-      } else {
+      if (!snap.exists()) {
         setFees({ ivaRate, transportFeeEuro, paypalPercent, paypalFixed });
+        return;
       }
+      const d = snap.data() as Partial<Fees>;
+      setFees({
+        ivaRate: typeof d.ivaRate === "number" ? d.ivaRate : ivaRate,
+        transportFeeEuro: typeof d.transportFeeEuro === "number" ? d.transportFeeEuro : transportFeeEuro,
+        paypalPercent: typeof d.paypalPercent === "number" ? d.paypalPercent : paypalPercent,
+        paypalFixed: typeof d.paypalFixed === "number" ? d.paypalFixed : paypalFixed,
+      });
     });
     return () => unsub();
   }, [ivaRate, transportFeeEuro, paypalPercent, paypalFixed]);
 
-  /** ======= Totali con promo ======= */
   const totals = useMemo(() => {
     const baseLordo = round2(parseEuro(prezzo));
 
     const promoAttiva = isPromoActiveToday(promoCfg, numeroPDF);
     const scontoPercent = promoAttiva ? promoCfg.percent : 0;
-    const scontoPromo = scontoPercent > 0
-      ? round2(baseLordo * (scontoPercent / 100))
-      : 0;
+    const scontoPromo = scontoPercent > 0 ? round2(baseLordo * (scontoPercent / 100)) : 0;
 
     const base = round2(baseLordo - scontoPromo);
 
     const iva = round2(base * fees.ivaRate);
     const trasporto = round2(fees.transportFeeEuro);
     const subTotale = round2(base + iva + trasporto);
-    const feePP = paymentMethod === "paypal"
-      ? round2(subTotale * fees.paypalPercent + fees.paypalFixed)
-      : 0;
+
+    const feePP = paymentMethod === "paypal" ? round2(subTotale * fees.paypalPercent + fees.paypalFixed) : 0;
     const totaleContanti = subTotale;
     const totalePayPal = round2(subTotale + feePP);
     const totaleDaAddebitare = paymentMethod === "paypal" ? totalePayPal : totaleContanti;
@@ -460,7 +427,6 @@ const RiepilogoOrdine = ({
     };
   }, [prezzo, fees, paymentMethod, promoCfg, numeroPDF]);
 
-  // Carica SDK PayPal solo quando serve
   useEffect(() => {
     if (paymentMethod !== "paypal") return;
     if (window.paypal) {
@@ -479,45 +445,27 @@ const RiepilogoOrdine = ({
     document.body.appendChild(script);
   }, [paymentMethod]);
 
-  // Helper fetch JSON robusto
-  const fetchJSON = useCallback(async <T,>(url: string, body: unknown): Promise<T> => {
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (authToken) headers.Authorization = `Bearer ${authToken}`;
-    if (csrfToken) headers["X-CSRF-Token"] = csrfToken;
+  const fetchJSON = useCallback(
+    async <T,>(url: string, body: unknown): Promise<T> => {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (authToken) headers.Authorization = `Bearer ${authToken}`;
+      if (csrfToken) headers["X-CSRF-Token"] = csrfToken;
 
-    const res = await fetch(url, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-    });
+      const res = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
+      const text = await res.text();
 
-    const text = await res.text();
-    if (!res.ok) {
-      console.error(`HTTP ${res.status} su ${url}. Body:`, text.slice(0, 500));
-      throw new Error(`Request failed (${res.status})`);
-    }
-    try {
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
       return JSON.parse(text) as T;
-    } catch {
-      console.error(`Risposta non JSON da ${url}:`, text.slice(0, 500));
-      throw new Error("Risposta non JSON dal server");
-    }
-  }, [authToken, csrfToken]);
+    },
+    [authToken, csrfToken]
+  );
 
-  // Render PayPal Buttons
   useEffect(() => {
     if (paymentMethod !== "paypal" || !paypalButtonsContainerRef.current || submitted) return;
 
     paypalButtonsContainerRef.current.innerHTML = "";
 
-    if (!selectedSlot) {
-      const div = document.createElement("div");
-      div.className = styles["hint"];
-      div.textContent = "Seleziona prima uno slot di consegna per abilitare il pagamento PayPal.";
-      paypalButtonsContainerRef.current.appendChild(div);
-      return;
-    }
-
+    if (!selectedSlot) return;
     if (!paypalReady) return;
 
     const Buttons = window.paypal?.Buttons;
@@ -527,13 +475,11 @@ const RiepilogoOrdine = ({
       style: { layout: "vertical" },
 
       createOrder: async () => {
-        const data = await fetchJSON<{ orderId: string }>(
-          `${API}/api/paypal/create-order`,
-          { amount: totals.totaleDaAddebitare.toFixed(2), currency: "EUR" }
-        );
-        if (!data?.orderId || typeof data.orderId !== "string") {
-          throw new Error("Risposta backend priva di orderId");
-        }
+        const data = await fetchJSON<{ orderId: string }>(`${API}/api/paypal/create-order`, {
+          amount: totals.totaleDaAddebitare.toFixed(2),
+          currency: "EUR",
+        });
+        if (!data?.orderId) throw new Error("Risposta backend priva di orderId");
         return data.orderId;
       },
 
@@ -545,10 +491,7 @@ const RiepilogoOrdine = ({
             captureId?: string;
             payerEmail?: string;
             amount?: string | number;
-          }>(
-            `${API}/api/paypal/capture-order`,
-            { orderId: data.orderID }
-          );
+          }>(`${API}/api/paypal/capture-order`, { orderId: data.orderID });
 
           if (cap.status === "COMPLETED") {
             await onConfirmOrder({
@@ -566,24 +509,22 @@ const RiepilogoOrdine = ({
               },
               delivery: selectedSlot
                 ? {
-                    dateISO: selectedSlot.dateISO,
-                    dayLabel: selectedSlot.dayLabel,
-                    timeRange: selectedSlot.timeRange,
-                    weekday: selectedSlot.weekday,
-                  }
+                  dateISO: selectedSlot.dateISO,
+                  dayLabel: selectedSlot.dayLabel,
+                  timeRange: selectedSlot.timeRange,
+                  weekday: selectedSlot.weekday,
+                }
                 : undefined,
             });
           } else {
             alert("Pagamento non completato: " + cap.status);
           }
-        } catch (e) {
-          console.error(e);
+        } catch {
           alert("Si è verificato un errore durante il pagamento.");
         }
       },
 
-      onError: (err: unknown) => {
-        console.error("PayPal error:", err);
+      onError: () => {
         alert("Errore PayPal. Riprova.");
       },
     });
@@ -591,9 +532,13 @@ const RiepilogoOrdine = ({
     instance.render(paypalButtonsContainerRef.current);
 
     return () => {
-      try { instance.close(); } catch { /* noop */ }
+      try {
+        instance.close();
+      } catch {
+        /* noop */
+      }
     };
-  }, [paymentMethod, paypalReady, submitted, totals.totaleDaAddebitare, totals.base, totals.iva, totals.trasporto, totals.feePP, onConfirmOrder, fetchJSON, selectedSlot]);
+  }, [paymentMethod, paypalReady, submitted, totals, onConfirmOrder, fetchJSON, selectedSlot]);
 
   const handleConfirmOrderCash = async () => {
     if (!selectedSlot) {
@@ -619,197 +564,163 @@ const RiepilogoOrdine = ({
     });
   };
 
-  const handlePayCash = () => setPaymentMethod("cash");
-  const handlePayPaypal = () => setPaymentMethod("paypal");
-
-  // Barra di caricamento (solo UI)
   useEffect(() => {
-    if (loading) {
-      let current = 0;
-      const interval = setInterval(() => {
-        current += Math.floor(Math.random() * 10) + 5;
-        if (current >= 90) {
-          clearInterval(interval);
-        } else {
-          setProgress(current);
-        }
-      }, 300);
-      return () => clearInterval(interval);
-    }
+    if (!loading) return;
+    let current = 0;
+    const interval = setInterval(() => {
+      current += Math.floor(Math.random() * 10) + 5;
+      if (current >= 90) clearInterval(interval);
+      else setProgress(current);
+    }, 300);
+    return () => clearInterval(interval);
   }, [loading]);
 
-  useEffect(() => { if (submitted) setProgress(100); }, [submitted]);
+  useEffect(() => {
+    if (submitted) setProgress(100);
+  }, [submitted]);
+
+  const deliveryTitleSuffix =
+    deliveryCfg.timeRanges?.length === 1 ? ` (${deliveryCfg.timeRanges[0].start}–${deliveryCfg.timeRanges[0].end})` : "";
 
   return (
-    <div className={styles["riepilogo-container"]}>
-      <h3 className={styles["riepilogo-title"]}>📋 Riepilogo Ordine A4</h3>
+    <Card withBorder radius="lg" p="md">
+      <Stack gap="md">
+        <Group justify="space-between" align="center">
+          <Title order={3} size="h4">
+            📋 Riepilogo Ordine {tipo}
+          </Title>
+          {totals.promoAttiva && (
+            <Badge variant="light" color="yellow">
+              -{totals.scontoPercent.toFixed(0)}%
+            </Badge>
+          )}
+        </Group>
 
-      {totals.promoAttiva && (
-        <div className={styles["promo-banner"]}>
-          {promoCfg.description
-            ? promoCfg.description
-            : `🎄 ${promoCfg.name ?? "Promo"}: -${totals.scontoPercent.toFixed(0)}% sulle stampe PDF`}
-        </div>
-      )}
-
-      {/* Dettagli ordine */}
-      <div className={`${styles["price-card"]} ${styles["details-card"]}`}>
-        <div className={styles["price-header"]}>Dettagli ordine</div>
-
-        <div className={styles["price-row"]}>
-          <span className={styles["price-label"]}>Numero PDF</span>
-          <span className={styles["price-value"]}>{numeroPDF}</span>
-        </div>
-        <div className={styles["price-row"]}>
-          <span className={styles["price-label"]}>Inchiostro</span>
-          <span className={styles["price-value"]}>{inchiostro}</span>
-        </div>
-        <div className={styles["price-row"]}>
-          <span className={styles["price-label"]}>Layout</span>
-          <span className={styles["price-value"]}>{layout}</span>
-        </div>
-        <div className={styles["price-row"]}>
-          <span className={styles["price-label"]}>Gestione pagina</span>
-          <span className={styles["price-value"]}>{pagina}</span>
-        </div>
-        <div className={styles["price-row"]}>
-          <span className={styles["price-label"]}>Rilegatura</span>
-          <span className={styles["price-value"]}>{rilegatura}</span>
-        </div>
-        <div className={styles["price-row"]}>
-          <span className={styles["price-label"]}>Rilegatura unica</span>
-          <span className={styles["price-value"]}>{rilegaturaUnica}</span>
-        </div>
-        <div className={styles["price-row"]}>
-          <span className={styles["price-label"]}>Intervallo pagine</span>
-          <span className={styles["price-value"]}>{intervalloPagine}</span>
-        </div>
-        <div className={styles["price-row"]}>
-          <span className={styles["price-label"]}>Numero copie</span>
-          <span className={styles["price-value"]}>{numeroCopie}</span>
-        </div>
-      </div>
-
-      {/* Slot di consegna */}
-      <div className={`${styles["price-card"]} ${styles["delivery-card"]}`}>
-        <div className={styles["price-header"]}>
-          Consegna 
-          {deliveryCfg.timeRanges?.length === 1
-            ? ` (${deliveryCfg.timeRanges[0].start}–${deliveryCfg.timeRanges[0].end})`
-            : ""}
-        </div>
-        {!selectedSlot && (
-          <p className={styles["hint"]}>Verrai contattato/a tramite WhatsApp per decidere il luogo della consegna.</p>
+        {totals.promoAttiva && (
+          <Alert icon={<IconInfoCircle size={18} />} color="yellow" variant="light">
+            {promoCfg.description ? promoCfg.description : `🎄 ${promoCfg.name ?? "Promo"}: -${totals.scontoPercent.toFixed(0)}% sulle stampe PDF`}
+          </Alert>
         )}
-        <div className={styles["slots-grid"]} role="listbox" aria-label="Seleziona uno slot di consegna">
-          {deliverySlots.map(slot => {
-            const selected = slot.id === selectedSlotId;
-            return (
-              <button
-                key={slot.id}
-                type="button"
-                role="option"
-                aria-selected={selected}
-                className={`${styles["slot-card"]} ${selected ? styles["slot-selected"] : ""}`}
-                onClick={() => setSelectedSlotId(slot.id)}
-              >
-                <span className={styles["slot-day"]}>{slot.dayLabel}</span>
-                <span className={styles["slot-time"]}>{slot.timeRange}</span>
-              </button>
-            );
-          })}
-        </div>
-        {!selectedSlot && (
-          <p className={styles["hint"]}>Seleziona uno slot per procedere al pagamento.</p>
-        )}
-      </div>
 
-      {/* Totali */}
-      <div className={`${styles["price-card"]} ${styles["price-left"]}`}>
-        {/* Sconto promo, se attivo */}
-        {totals.promoAttiva && totals.scontoPromo > 0 && (
-          <div className={`${styles["price-row"]} ${styles["price-discount"]}`}>
-            <span className={styles["price-label"]}>
-              {promoCfg.name || "Promo"} (-{totals.scontoPercent.toFixed(0)}%)
-            </span>
-            <span className={styles["price-value"]}>- {euro(totals.scontoPromo)} €</span>
-          </div>
-        )}
+        <Card withBorder radius="md" p="md">
+          <Stack gap="xs">
+            <Text fw={800}>Dettagli ordine</Text>
+            <Divider />
+            <KeyValueRow label="Numero PDF" value={numeroPDF} />
+            <KeyValueRow label="Inchiostro" value={inchiostro} />
+            <KeyValueRow label="Layout" value={layout} />
+            <KeyValueRow label="Gestione pagina" value={pagina} />
+            <KeyValueRow label="Rilegatura" value={rilegatura} />
+            <KeyValueRow label="Rilegatura unica" value={rilegaturaUnica} />
+            <KeyValueRow label="Intervallo pagine" value={intervalloPagine} />
+            <KeyValueRow label="Numero copie" value={numeroCopie} />
+          </Stack>
+        </Card>
+
+        <ConsegnaSlotPicker
+          title={`Consegna${deliveryTitleSuffix}`}
+          slots={deliverySlots}
+          selectedId={selectedSlotId}
+          onChange={setSelectedSlotId}
+          hint="Seleziona uno slot per procedere al pagamento."
+        />
+
+        <Card withBorder radius="md" p="md">
+          <Stack gap="xs">
+            <Group justify="space-between">
+              <Text fw={800}>Totale</Text>
+              <Badge variant="light" color={paymentMethod === "paypal" ? "blue" : "gray"}>
+                {paymentMethod === "paypal" ? "PayPal" : "Contanti"}
+              </Badge>
+            </Group>
+            <Divider />
+
+            {totals.promoAttiva && totals.scontoPromo > 0 && (
+              <Group justify="space-between" align="baseline">
+                <Text size="sm" c="green">
+                  {promoCfg.name || "Promo"} (-{totals.scontoPercent.toFixed(0)}%)
+                </Text>
+                <Text size="sm" c="green" fw={700}>
+                  - {euro(totals.scontoPromo)} €
+                </Text>
+              </Group>
+            )}
+
+            <KeyValueRow label="Imponibile" value={`${euro(totals.base)} €`} />
+            <KeyValueRow label={`IVA (${(fees.ivaRate * 100).toFixed(0)}%)`} value={`${euro(totals.iva)} €`} />
+            <KeyValueRow label="Trasporto" value={`${euro(totals.trasporto)} €`} />
+
+            {paymentMethod === "paypal" && (
+              <KeyValueRow
+                label={`Fee PayPal (${(fees.paypalPercent * 100).toFixed(2)}% + ${euro(fees.paypalFixed)} €)`}
+                value={`${euro(totals.feePP)} €`}
+              />
+            )}
+
+            <Divider />
+            <Group justify="space-between" align="baseline">
+              <Text fw={900}>Totale finale</Text>
+              <Text fw={900} size="lg">
+                {euro(totals.totaleDaAddebitare)} €
+              </Text>
+            </Group>
+          </Stack>
+        </Card>
+
+        {/* ✅ picker stile FormatoPicker */}
+        <MetodoPagamentoPicker value={paymentMethod} onChange={setPaymentMethod} />
 
         {paymentMethod === "paypal" && (
-          <div className={`${styles["price-row"]} ${styles["price-fee-paypal"]}`}>
-            <span className={styles["price-label"]}>
-              Fee PayPal ({(fees.paypalPercent * 100).toFixed(2)}% + {euro(fees.paypalFixed)} €)
-            </span>
-            <span className={styles["price-value"]}>{euro(totals.feePP)} €</span>
-          </div>
+          <Card withBorder radius="md" p="md">
+            <Stack gap="xs">
+              <Text size="sm" c="dimmed">
+                Completa il pagamento di <strong>{euro(totals.totaleDaAddebitare)} €</strong> con PayPal. Al termine l’ordine partirà automaticamente.
+              </Text>
+
+              {!selectedSlot ? (
+                <Alert color="yellow" variant="light" icon={<IconInfoCircle size={18} />}>
+                  Seleziona prima uno slot di consegna per abilitare il pagamento PayPal.
+                </Alert>
+              ) : (
+                <Box>
+                  {!paypalReady && (
+                    <Group gap="sm">
+                      <Loader size="sm" />
+                      <Text size="sm" c="dimmed">
+                        Caricamento PayPal…
+                      </Text>
+                    </Group>
+                  )}
+                  <Box ref={paypalButtonsContainerRef} mt="sm" />
+                </Box>
+              )}
+            </Stack>
+          </Card>
         )}
 
-        <div className={`${styles["price-row"]} ${styles["price-total"]}`}>
-          <span className={styles["price-label"]}>
-            Totale(IVA Incl.) {paymentMethod === "paypal" ? "PayPal" : "Contanti"}
-          </span>
-          <span className={styles["price-value"]}>{euro(totals.totaleDaAddebitare)} €</span>
-        </div>
-      </div>
+        {!loading && !submitted && paymentMethod === "cash" && (
+          <Button fullWidth size="md" onClick={handleConfirmOrderCash} disabled={disabled || loading || submitted || !selectedSlot}>
+            ✅ Conferma Ordine
+          </Button>
+        )}
 
-      {/* Metodi di pagamento */}
-      <div className={styles["payment-box"]} role="group" aria-label="Seleziona metodo di pagamento">
-        <button
-          type="button"
-          className={`${styles["pay-button"]} ${paymentMethod === "cash" ? styles["selected"] : ""}`}
-          onClick={handlePayCash}
-          aria-pressed={paymentMethod === "cash"}
-        >
-          💵 Contanti
-          <span className={styles["pay-subtext"]}>Paga in contanti alla consegna</span>
-        </button>
+        {loading && (
+          <Stack gap="xs">
+            <Text size="sm" c="dimmed">
+              Invio in corso: attendere il completamento della barra.
+            </Text>
+            <Progress value={progress} />
+          </Stack>
+        )}
 
-        <button
-          type="button"
-          className={`${styles["pay-button"]} ${paymentMethod === "paypal" ? styles["selected"] : ""}`}
-          onClick={handlePayPaypal}
-          aria-pressed={paymentMethod === "paypal"}
-        >
-          🟦 PayPal
-          <span className={styles["pay-subtext"]}>Paga con PayPal</span>
-        </button>
-      </div>
-
-      {/* Flusso PayPal */}
-      {paymentMethod === "paypal" && (
-        <div className={styles["paypal-flow"]}>
-          <p className={styles["hint"]}>
-            Completa il pagamento di <strong>{euro(totals.totaleDaAddebitare)} €</strong> con PayPal. Al termine l’ordine partirà automaticamente.
-          </p>
-          <div ref={paypalButtonsContainerRef} />
-        </div>
-      )}
-
-      {/* Pulsante Conferma (solo contanti) */}
-      {!loading && !submitted && paymentMethod === "cash" && (
-        <button
-          className={styles["confirm-button"]}
-          onClick={handleConfirmOrderCash}
-          disabled={disabled || loading || submitted || !selectedSlot}
-          title={!selectedSlot ? "Seleziona uno slot di consegna" : "Conferma Ordine"}
-        >
-          ✅ Conferma Ordine
-        </button>
-      )}
-
-      {loading && (
-        <>
-          <p className={styles.loadingText}>Invio in corso: attendere il completamento della barra.</p>
-          <div className={styles.loader}>
-            <div className={styles.loaderBar} style={{ width: `${progress}%` }} />
-          </div>
-        </>
-      )}
-
-      {submitted && <div className={styles.successMessage}>🎉 Ordine inviato con successo!</div>}
-    </div>
+        {submitted && (
+          <Alert color="yellow" variant="light" icon={<IconCheck size={18} />}>
+            🎉 Ordine inviato con successo!
+          </Alert>
+        )}
+      </Stack>
+    </Card>
   );
 };
 
-export default RiepilogoOrdine;
+export default React.memo(RiepilogoOrdine);

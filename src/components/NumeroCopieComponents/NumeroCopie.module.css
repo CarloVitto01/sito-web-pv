@@ -1,44 +1,69 @@
-.copy-number {
-  margin-bottom: 5vh;
+@import "../../styles/variables.css";
+
+.root {
+  width: 100%;
+  min-width: 0;
+
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.container {
+.header {
   display: flex;
   align-items: center;
-  width: 100vw;
-  justify-content: center;
+  justify-content: space-between;
 }
 
 .title {
-  font-size: 1.5rem;
-  color: var(--color-gold);
   margin: 0;
-  margin-right: 1vw;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-gold);
+  font-family: var(--font-main);
+  letter-spacing: 0.2px;
 }
 
-.number {
+.controls {
   display: flex;
-  justify-content: flex-start;
-  flex-direction: row;
-  border: none;
-  border: 2px solid gray; /* se vuoi, puoi creare una variabile tipo --color-border-gray */
-  color: var(--color-text);
-  padding: 0.5vw;
-  background-color: transparent;
-  text-align: center;
-  width: 4vw;
-  font-size: 1.0rem;
+  align-items: center;
+  gap: 10px;
 }
 
-@media screen and (max-width: 500px) {
-  .title {
-    font-size:5.5vw;
-  }
+.input {
+  width: 110px;
+  height: 42px;
 
-  .number {
-    width: 12vw;
-    font-size: 5vw;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(18, 18, 18, 0.75);
+
+  color: var(--color-text);
+  font-size: 1rem;
+  font-family: var(--font-main);
+  padding: 0 12px;
+  text-align: left;
+
+  outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+.input:focus {
+  border-color: rgba(212, 175, 55, 0.55);
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.12);
+  background: rgba(18, 18, 18, 0.9);
+}
+
+.hint {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* Mobile: input full-ish */
+@media (max-width: 520px) {
+  .input {
+    width: 100%;
+    max-width: 180px;
   }
 }

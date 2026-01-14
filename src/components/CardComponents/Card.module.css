@@ -1,65 +1,132 @@
-.cardWrapper {
-  margin: 0.8rem;
-  width: 160px;
-}
+/* components/CardComponents/Card.module.css */
+@import "../../styles/variables.css";
 
-.pillButton {
-  background-color: #121212;
-  border: 2px solid var(--color-gold);
-  border-radius: 16px;
-  padding: 0.8rem;
+.root {
   width: 100%;
-  text-align: center;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  cursor: pointer;
-  box-shadow: 0 0 10px rgba(222, 181, 0, 0.2);
-  display: flex;
-  flex-direction: column;
+  min-width: 0;
+}
+
+/* Il tuo button diventa la "card" */
+.button {
+  width: 100%;
+  min-width: 0;
+
+  display: grid;
+  grid-template-columns: 86px 1fr;
   align-items: center;
+  gap: 14px;
+
+  padding: 14px 14px;
+  border-radius: 12px;
+
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(0, 0, 0, 0.10);
+
+  cursor: pointer;
+  text-align: left;
+
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.06);
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
 }
 
-.pillButton:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 0 20px rgba(222, 181, 0, 0.4);
+.button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.10);
+  border-color: rgba(0, 0, 0, 0.16);
 }
 
-.selected {
-  background: linear-gradient(to bottom, var(--color-gold), #b79600);
-  color: #000;
-  font-weight: 600;
-  box-shadow: 0 0 20px rgba(222, 181, 0, 0.6);
-}
+/* BOX immagine: qui risolvi il problema che "non si vedono bene" */
+.media {
+  width: 86px;
+  height: 54px;
+  border-radius: 10px;
 
-.disabled {
-  opacity: 0.5;
-  pointer-events: none;
-}
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.10);
 
-.imageWrapper {
-  width: 64px;
-  height: 64px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 1rem;
+
+  overflow: hidden;
 }
 
+/* immagine grande e pulita */
 .image {
-  height: 100%;
   width: 100%;
+  height: 100%;
   object-fit: contain;
-  filter: brightness(1.1);
+
+  /* niente padding che rimpicciolisce troppo */
+  padding: 0;
+
+  /* aumenta leggibilità su icone scure/chiare */
+  filter: contrast(1.05);
 }
 
+/* Titolo */
 .label {
-  font-size: 1rem;
-  color: var(--color-text);
-  text-align: center;
+  font-family: var(--font-main);
+  font-size: 0.98rem;
+  font-weight: 800;
+  color: rgba(15, 15, 15, 0.90);
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.error {
-  color: var(--color-error);
-  font-size: 0.75rem;
-  margin-top: 0.4rem;
-  text-align: center;
+/* SELECTED: bordo gold + “outline” come nello screenshot */
+.selected {
+  border-color: rgba(212, 175, 55, 0.95) !important;
+  box-shadow:
+    0 14px 30px rgba(0, 0, 0, 0.10),
+    0 0 0 3px rgba(212, 175, 55, 0.28);
+}
+
+.selected .label {
+  color: rgba(140, 105, 10, 0.95);
+}
+
+.selected .media {
+  border-color: rgba(212, 175, 55, 0.55);
+}
+
+/* DISABLED */
+.disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none !important;
+}
+
+.disabled .image {
+  filter: grayscale(0.35) contrast(1.0);
+}
+
+/* Messaggio errore sotto */
+.helper {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+
+  background: rgba(255, 230, 230, 0.75);
+  border: 1px solid rgba(255, 0, 0, 0.18);
+
+  color: rgba(140, 0, 0, 0.85);
+  font-size: 0.82rem;
+  line-height: 1.25;
+}
+
+/* Mobile */
+@media (max-width: 520px) {
+  .button {
+    grid-template-columns: 78px 1fr;
+    padding: 12px;
+    gap: 12px;
+  }
+  .media {
+    width: 78px;
+    height: 52px;
+  }
 }

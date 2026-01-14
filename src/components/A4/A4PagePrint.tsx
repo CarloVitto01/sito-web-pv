@@ -393,7 +393,7 @@ const A4PagePrint = () => {
 
     const statoPagamento =
       payment?.method === "PAYPAL"
-        ? (payment.confirmed ? "Pagato (conferma utente)" : "Non verificato")
+        ? (payment.confirmed ? "Pagato" : "Non verificato")
         : payment?.method === "CASH"
           ? "Da saldare alla consegna"
           : "Non specificato";
@@ -509,12 +509,6 @@ const A4PagePrint = () => {
 
         await setDoc(doc(db, "ArchivioOrdini", id), datiSnelliti);
 
-        // 🧾 Dettagli PayPal facoltativi
-        const extraPP =
-          payment?.method === "PAYPAL"
-            ? `\n🧾 *PayPal OrderID*: ${payment.orderId ?? "-"}\n🧾 *CaptureID*: ${payment.captureId ?? "-"}\n👤 *Payer*: ${payment.payerEmail ?? "-"}\n`
-            : "";
-
         // 🆕 Blocchetto consegna per Telegram
         const deliveryBlock = delivery
           ? `\n🚚 *Consegna*: ${deliveryDayLabel} • ${deliveryTimeRange}\n`
@@ -548,7 +542,7 @@ ${deliveryBlock}
 💳 *Metodo di pagamento*: ${metodoPagamento}
 ✅ *Stato pagamento*: ${statoPagamento}
 💰 *Totale finale*: ${fmtEuro(totaleFinale)} €
-${extraPP}`.trim();
+`.trim();
 
         const apiUrl = `https://api.telegram.org/bot${TOKENA4}/sendMessage`;
         const payload = {

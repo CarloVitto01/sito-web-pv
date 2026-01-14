@@ -93,6 +93,9 @@
     cursor: pointer;
 }
 
+.addBtn {
+    margin: 0.5vw;
+}
 .removeBtn {
     border-color: #673;
 }
