@@ -26,9 +26,9 @@ export default function PrivacyPolicy() {
           <ul>
             <li><strong>Dati account</strong>: nome, cognome, email, telefono, ruolo (es. PublicUser/admin).</li>
             <li><strong>Dati ordine/servizio</strong>: indirizzo, preferenze di stampa, note progetto, storico richieste.</li>
-            <li><strong>File caricati</strong>: PDF/A4-A3, immagini, STL/OBJ/3MF, ZIP (per stampe e 3D). I file sono salvati sul nostro NAS/Server.</li>
+            <li><strong>File caricati</strong>: PDF/A4-A3. I file sono salvati sul nostro NAS/Server.</li>
             <li><strong>PV-Drive</strong>: file e cartelle che carichi/gestisci nel tuo spazio (restano finché li mantieni o chiudi l’account).</li>
-            <li><strong>Pagamenti</strong>: gestiti da Stripe (noi riceviamo solo esito/transazione, non i numeri della carta).</li>
+            <li><strong>Pagamenti</strong>: gestiti da PayPal (noi riceviamo solo esito/transazione, non i numeri della carta).</li>
             <li><strong>Comunicazioni</strong>: messaggi via form, email, e bot Telegram collegati alle pagine del sito.</li>
             <li><strong>Dati tecnici</strong>: log applicativi, indirizzo IP, user-agent, orario di accesso, cookie tecnici.</li>
           </ul>
@@ -37,7 +37,7 @@ export default function PrivacyPolicy() {
         <section className={styles.section}>
           <h2>Finalità e basi giuridiche</h2>
           <ul>
-            <li><strong>Gestione richieste/ordini/preventivi</strong> (A4/A3, 3D, foto/video, siti web) — <em>contratto/misure precontrattuali</em>.</li>
+            <li><strong>Gestione richieste/ordini/preventivi</strong> (A4/A3) — <em>contratto/misure precontrattuali</em>.</li>
             <li><strong>Fatturazione e adempimenti fiscali</strong> — <em>obbligo di legge</em>.</li>
             <li><strong>PV-Drive e spazio file</strong> — erogazione del servizio — <em>contratto</em>.</li>
             <li><strong>Sicurezza, prevenzione abusi e difesa in giudizio</strong> — <em>legittimo interesse</em>.</li>

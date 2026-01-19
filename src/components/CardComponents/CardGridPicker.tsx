@@ -126,14 +126,14 @@ export default function CardGridPicker({
                 {/* icona */}
                 <div
                   style={{
-                    width: 36,
-                    height: 36,
+                    width: 60,
+                    height: 40,
                     borderRadius: 12,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     border: `1px solid ${borderBase}`,
-                    background: isDark ? theme.colors.dark[6] : theme.colors.gray[1],
+                    background: isDark ? theme.colors.dark[6] : theme.colors.gray[8],
                   }}
                 >
                   <Image src={o.imageSrc} alt={o.title} width={22} height={22} fit="contain" />

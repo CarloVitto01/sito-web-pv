@@ -1,22 +1,52 @@
-@import './styles/variables.css';
+:root{
+  --color-bg-base: #f1e9e9;
 
-body {
-  background-color: var(--color-background); /* usa variabile o fallback black */
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: cover;
-  background-attachment: fixed;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  justify-content: center;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
+  /* più piccoli e più fitti */
+  --pv-pattern-size: 34px;
+  --pv-pattern-opacity: 0.42;
+
+  /* se vuoi calcolare al millimetro la min-height del contenuto */
+  --header-h: 72px;
+  --footer-h: 0px; /* metti la tua altezza footer se vuoi */
 }
 
-@media screen and (max-width: 500px) {
-  body {
-    background-attachment: scroll;
-  }
+html, body, #root { min-height: 100%; }
+body{
+  margin: 0;
+  background: var(--color-bg-base);
+}
+
+/* evita wrapper che coprono lo sfondo */
+#root, .App { background: transparent !important; }
+
+/* wrapper contenuto (qui vive il pattern) */
+.pageBg{
+  position: relative;
+  min-height: calc(100dvh - var(--header-h) - var(--footer-h));
+}
+
+/* pattern SOLO sul contenuto */
+.pageBg::before{
+  content:"";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+
+  background-image: url("/public/patterns/pv-diamond-beige-3d.svg"); /* ⚠️ NO /public */
+  background-repeat: repeat;
+  background-size: var(--pv-pattern-size) var(--pv-pattern-size);
+  opacity: var(--pv-pattern-opacity);
+}
+
+/* contenuti sopra al pattern */
+.pageContent{
+  position: relative;
+  z-index: 1;
+}
+
+/* Mantine: Card/Paper restano bianchi puliti */
+.mantine-Paper-root,
+.mantine-Card-root {
+  background-color: #fff !important;
 }

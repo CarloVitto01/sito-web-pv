@@ -21,19 +21,22 @@ import Banner from "../Banner/Banner";
 
 import { auth, db, storage } from "../../backend/firebase";
 import { TOKENA4, CHAT_IDA4, TOKENA3, CHAT_IDA3 } from "../../backend/telegram";
-import { FormData } from "../../types/FormData";
 import { FileHandler } from "../../types/FileHandler";
 import { RangePagesData } from "../../types/RangePagesData";
 
 import FormatoPicker from "../CardComponents/FormatoPicker";
 import CardGridPicker from "../CardComponents/CardGridPicker";
 import RilegaturaUnicaPicker from "../CardComponents/RilegaturaUnicaPicker";
+import { Modal, Text, Group, Button } from "@mantine/core";
+import { useNavigate } from "react-router-dom";
+import { IconLock } from "@tabler/icons-react";
 
 // Formatter €
 const fmtEuro = (n?: number | string) =>
   typeof n === "number"
     ? n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     : Number(n || 0).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 
 // --- ENUM condivisi ---
 const formatoEnum = { A4: 0, A3: 1 };
@@ -50,14 +53,28 @@ const plastificazioneEnum = { SI: 0, NO: 1 };
 const layoutA3Enum = { ORIZZONTALE: 0, VERTICALE: 1, AUTO: 2 };
 const grammaturaEnum = { NORMALE: 0, CARTONCINO: 1 };
 
+type UserMini = {
+  name: string;
+  surname: string;
+  email: string;
+  telephoneNumber: string;
+  corsoLaurea: string;
+  annoAccademico: string;
+};
+
 const PdfPrintPage = () => {
   const isNarrow = useMediaQuery("(max-width: 900px)");
   const isShort = useMediaQuery("(max-height: 860px)");
 
+  const navigate = useNavigate();
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+
+
   // --- stato base condiviso ---
   const [formato, setFormato] = useState<number>(formatoEnum.A4);
 
-  const [data, setData] = useState<FormData>({
+  // ✅ dati “silenziosi” (non c’è Form UI): servono solo per Firestore/Telegram
+  const [userMini, setUserMini] = useState<UserMini>({
     name: "",
     surname: "",
     email: "",
@@ -116,7 +133,6 @@ const PdfPrintPage = () => {
     plastificazione: 0.3,
   });
 
-
   const coloreCards = useMemo(
     () => [
       { title: "Bianco e nero", imageSrc: require("../../assets/images/Bianco_nero.png"), disabled: false, errorMessage: "" },
@@ -143,35 +159,6 @@ const PdfPrintPage = () => {
     []
   );
 
-  const rilegaturaUnicaCards = useMemo(
-    () => [
-      {
-        title: "Si (rilegatura unica)",
-        imageSrc: require("../../assets/images/SI.png"),
-        disabled: numeroPDF === 1,
-        errorMessage: "Disponibile Soltanto per 2 o più PDF",
-      },
-      {
-        title: "No (rilegatura unica)",
-        imageSrc: require("../../assets/images/NO.png"),
-        disabled: numeroPDF === 1,
-        errorMessage: "Disponibile Soltanto per 2 o più PDF",
-      },
-    ],
-    [numeroPDF]
-  );
-
-  const rilegaturaCards = useMemo(
-    () => [
-      { title: "Anelli", imageSrc: require("../../assets/images/Anelli.png"), disabled: numeroPaginePDF > 670 && intervalloPagine > 670, errorMessage: "Limite di 670 pagine" },
-      { title: "Spirale", imageSrc: require("../../assets/images/Spirale.png"), disabled: numeroPaginePDF > 500 && intervalloPagine > 500, errorMessage: "Limite di 500 pagine" },
-      { title: "Fascetta", imageSrc: require("../../assets/images/Fascetta.png"), disabled: numeroPaginePDF > 80 && intervalloPagine > 80, errorMessage: "Limite di 80 pagine" },
-      { title: "Ciappatura", imageSrc: require("../../assets/images/Ciappatura.png"), disabled: numeroPaginePDF > 35 && intervalloPagine > 35, errorMessage: "Limite di 40 pagine" },
-      { title: "Nessuna", imageSrc: require("../../assets/images/No_rilegatura.png"), disabled: false, errorMessage: "" },
-    ],
-    [numeroPaginePDF, intervalloPagine]
-  );
-
   const grammaturaCards = useMemo(
     () => [
       { title: "Normale", imageSrc: require("../../assets/images/Grammatura_normale_A3.png"), disabled: false, errorMessage: "" },
@@ -195,6 +182,17 @@ const PdfPrintPage = () => {
       { title: "Verticale (A3)", imageSrc: require("../../assets/images/Verticale.png"), disabled: false, errorMessage: "" },
     ],
     []
+  );
+
+  const rilegaturaCards = useMemo(
+    () => [
+      { title: "Anelli", imageSrc: require("../../assets/images/Anelli.png"), disabled: numeroPaginePDF > 670 && intervalloPagine > 670, errorMessage: "Limite di 670 pagine" },
+      { title: "Spirale", imageSrc: require("../../assets/images/Spirale.png"), disabled: numeroPaginePDF > 500 && intervalloPagine > 500, errorMessage: "Limite di 500 pagine" },
+      { title: "Fascetta", imageSrc: require("../../assets/images/Fascetta.png"), disabled: numeroPaginePDF > 80 && intervalloPagine > 80, errorMessage: "Limite di 80 pagine" },
+      { title: "Ciappatura", imageSrc: require("../../assets/images/Ciappatura.png"), disabled: numeroPaginePDF > 35 && intervalloPagine > 35, errorMessage: "Limite di 40 pagine" },
+      { title: "Nessuna", imageSrc: require("../../assets/images/No_rilegatura.png"), disabled: false, errorMessage: "" },
+    ],
+    [numeroPaginePDF, intervalloPagine]
   );
 
   // ---- carico costi da Firestore (entrambi) ----
@@ -257,27 +255,33 @@ const PdfPrintPage = () => {
     else document.body.style.overflow = "auto";
   }, [formSubmitted, formSubmitting, formError]);
 
-  // ---- login + preload user ----
+  // ---- login + (opzionale) preload user data SOLO se ti serve per Telegram/archivio ----
+  // ✅ qui NON mostriamo nessun form, ma manteniamo l’avviso login tramite submitFormHandler
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setIsLoggedIn(true);
+
+        // Se non ti servono dati utente, puoi anche NON leggere Firestore.
+        // Ma se vuoi almeno nome/cognome/email su Telegram, lasciamo questo preload.
         const docRef = doc(db, "users", user.uid);
         const snap = await getDoc(docRef);
         if (snap.exists()) {
           const u = snap.data();
-          setData({
+          setUserMini({
             name: u.displayName || "",
             surname: u.cognome || "",
             email: u.email || "",
             telephoneNumber: u.telefono || "",
             corsoLaurea: u.corsoLaurea || "",
             annoAccademico: u.annoAccademico || "",
-            isValid: false,
           });
+        } else {
+          setUserMini({ name: "", surname: "", email: "", telephoneNumber: "", corsoLaurea: "", annoAccademico: "" });
         }
       } else {
         setIsLoggedIn(false);
+        setUserMini({ name: "", surname: "", email: "", telephoneNumber: "", corsoLaurea: "", annoAccademico: "" });
       }
     });
     return () => unsubscribe();
@@ -545,16 +549,19 @@ const PdfPrintPage = () => {
       const event = isPaymentPayload(arg1) ? arg2 : arg1;
       event?.preventDefault();
 
+      // ✅ unico comportamento richiesto: avviso login
       if (!auth.currentUser) {
-        alert("Per effettuare un ordine è necessario effettuare il login.");
-        window.location.href = "/login";
+        setLoginModalOpen(true);
+        setFormSubmitting(false);
         return;
       }
 
       setFormSubmitting(true);
 
       const isValidA4 = formato === formatoEnum.A4 ? !!intervalloPagineIsValid : true;
-      if (fileData.length === 0 || !data.isValid || !isValidA4) {
+
+      // ✅ non usiamo data.isValid (perché non c’è form dati): solo file + range valido
+      if (fileData.length === 0 || !isValidA4) {
         setFormSubmitting(false);
         return;
       }
@@ -564,7 +571,7 @@ const PdfPrintPage = () => {
       const urls: string[] = [];
 
       for (const { file } of fileData) {
-        const path = `PDF/${data.surname + data.name + "|" + file.name
+        const path = `PDF/${userMini.surname + userMini.name + "|" + file.name
           .trim()
           .replace(".pdf", "")
           .replace(/\s/g, "")
@@ -601,12 +608,13 @@ const PdfPrintPage = () => {
       const baseToUpload: any = {
         id,
         path: paths,
-        nome: data.name,
-        cognome: data.surname,
-        email: data.email,
-        telefono: data.telephoneNumber,
-        corsoLaurea: data.corsoLaurea,
-        annoAccademico: data.annoAccademico,
+        // ✅ dati utente: se non ti servono, restano vuoti oppure presi da users
+        nome: userMini.name || "",
+        cognome: userMini.surname || "",
+        email: userMini.email || "",
+        telefono: userMini.telephoneNumber || "",
+        corsoLaurea: userMini.corsoLaurea || "",
+        annoAccademico: userMini.annoAccademico || "",
         file: urls,
         numeroPDF,
         copie: numeroCopie,
@@ -687,14 +695,16 @@ const PdfPrintPage = () => {
       try {
         await setDoc(PDFref, dataToUpload);
 
+        // ✅ opzionale: updateDoc users (puoi anche rimuoverlo del tutto)
+        // lasciato perché non rompe nulla, ma se non vuoi toccare users elimina questo blocco
         if (auth.currentUser) {
           await updateDoc(doc(db, "users", auth.currentUser.uid), {
-            displayName: dataToUpload.nome,
-            cognome: dataToUpload.cognome,
-            email: dataToUpload.email,
-            telefono: dataToUpload.telefono,
-            corsoLaurea: dataToUpload.corsoLaurea,
-            annoAccademico: dataToUpload.annoAccademico,
+            displayName: baseToUpload.nome,
+            cognome: baseToUpload.cognome,
+            email: baseToUpload.email,
+            telefono: baseToUpload.telefono,
+            corsoLaurea: baseToUpload.corsoLaurea,
+            annoAccademico: baseToUpload.annoAccademico,
           });
         }
 
@@ -737,12 +747,12 @@ const PdfPrintPage = () => {
 =====================
 
 📝 *Dettagli Ordine:*
-*Nome*: ${dataToUpload.nome}
-*Cognome*: ${dataToUpload.cognome}
-*Email*: ${dataToUpload.email}
-*Telefono*: ${dataToUpload.telefono}
-*Corso Laurea*: ${dataToUpload.corsoLaurea}
-*Anno Accademico*: ${dataToUpload.annoAccademico}
+*Nome*: ${baseToUpload.nome || "-"}
+*Cognome*: ${baseToUpload.cognome || "-"}
+*Email*: ${baseToUpload.email || "-"}
+*Telefono*: ${baseToUpload.telefono || "-"}
+*Corso Laurea*: ${baseToUpload.corsoLaurea || "-"}
+*Anno Accademico*: ${baseToUpload.annoAccademico || "-"}
 
 📁 *Link ai file:* 📄
 ${fileLinks}
@@ -754,10 +764,28 @@ ${deliveryBlock}
 💰 *Totale finale*: ${fmtEuro(totaleFinale)} €
 `.trim();
 
-        const apiUrl = `https://api.telegram.org/bot${isA4 ? TOKENA4 : TOKENA3}/sendMessage`;
-        const payload = { chat_id: isA4 ? CHAT_IDA4 : CHAT_IDA3, text: messageText, parse_mode: "Markdown" };
+        const safeMessageText =
+          messageText.length > 3900 ? messageText.slice(0, 3900) + "\n\n...(troncato)" : messageText;
 
-        fetch(apiUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).catch(() => { });
+        const apiUrl = `https://api.telegram.org/bot${isA4 ? TOKENA4 : TOKENA3}/sendMessage`;
+        const payload = { chat_id: isA4 ? CHAT_IDA4 : CHAT_IDA3, text: safeMessageText, parse_mode: "Markdown" };
+
+        fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+          .then(async (response) => {
+            const text = await response.text();
+            if (!response.ok) {
+              console.log("Errore durante l'invio del messaggio Telegram:", response.status, text);
+            } else {
+              console.log("Telegram OK:", text);
+            }
+          })
+          .catch((error) => {
+            console.error("Errore durante l'invio del messaggio Telegram:", error);
+          });
       } catch (e) {
         console.log(e);
         setFormError(true);
@@ -766,7 +794,7 @@ ${deliveryBlock}
     },
     [
       formato,
-      data,
+      userMini,
       fileData,
       numeroPDF,
       numeroCopie,
@@ -794,20 +822,47 @@ ${deliveryBlock}
   }, [formSubmitted]);
 
   const introTitle = formato === formatoEnum.A4 ? "STAMPA I TUOI DOCUMENTI A4" : "STAMPA I TUOI DOCUMENTI A3";
-  const introText =
-    "In questa pagina potrai ordinare la stampa del tuo documento, inserisci le caratteristiche disponibili nelle varie sezioni per poter avere dei documenti cartacei di qualità.";
 
-  // (tenuti ma non usati)
-  const pagePadX = isNarrow ? 16 : isShort ? 24 : 48;
-  const pagePadY = isNarrow ? 16 : isShort ? 16 : 24;
-  const gridGutter = isNarrow ? "md" : isShort ? "sm" : "md";
-  const containerProps = isNarrow ? { size: "lg" as const, py: "md" as const } : { fluid: true as const, py: "md" as const };
+
+  const canConfirmA4 = formato === formatoEnum.A4 ? !!intervalloPagineIsValid : true;
 
   return (
     <Box w="100%" mih="100vh" style={{ background: "var(--color-background)" }}>
       <Header />
       <Banner />
-      <Intro title={introTitle} text={introText} />
+
+      <Modal
+        opened={loginModalOpen}
+        onClose={() => setLoginModalOpen(false)}
+        centered
+        radius="lg"
+        title={
+          <Group gap={10}>
+            <IconLock size={18} />
+            <Text fw={700}>Accesso richiesto</Text>
+          </Group>
+        }
+      >
+        <Text c="dimmed" style={{ lineHeight: 1.6 }}>
+          Per inviare l’ordine devi effettuare il login.
+        </Text>
+
+        <Group justify="flex-end" mt="lg">
+          <Button variant="default" onClick={() => setLoginModalOpen(false)}>
+            Annulla
+          </Button>
+          <Button
+            onClick={() => {
+              setLoginModalOpen(false);
+              navigate("/login");
+            }}
+          >
+            Vai al login
+          </Button>
+        </Group>
+      </Modal>
+
+      <Intro title={introTitle} />
 
       <Container fluid px="xl" py="md">
         <Grid gutter="xl" align="start">
@@ -853,12 +908,13 @@ ${deliveryBlock}
                     options={layoutA4Cards}
                     cols={{ base: 2, md: 2, xl: 2 }}
                   />
-<RilegaturaUnicaPicker
-  value={rilegaturaUnica === rilegaturaUnicaEnum.SI ? "SI" : "NO"}
-  disabled={numeroPDF === 1}
-  disabledHint="Disponibile soltanto per 2 o più PDF"
-  onChange={(v) => newValue(v === "SI" ? "Si (rilegatura unica)" : "No (rilegatura unica)")}
-/>
+
+                  <RilegaturaUnicaPicker
+                    value={rilegaturaUnica === rilegaturaUnicaEnum.SI ? "SI" : "NO"}
+                    disabled={numeroPDF === 1}
+                    disabledHint="Disponibile soltanto per 2 o più PDF"
+                    onChange={(v) => newValue(v === "SI" ? "Si (rilegatura unica)" : "No (rilegatura unica)")}
+                  />
 
                   <CardGridPicker
                     title="Rilegatura:"
@@ -945,15 +1001,13 @@ ${deliveryBlock}
                           ? "2 pagine in 1 orizzontale"
                           : "2 pagine in 1 verticale"
                   }
-                  rilegatura={
-                    rilegatura === 0 ? "Anelli" : rilegatura === 1 ? "Fascetta" : rilegatura === 2 ? "Ciappatura" : rilegatura === 3 ? "Nessuna" : "Spirale"
-                  }
+                  rilegatura={rilegatura === 0 ? "Anelli" : rilegatura === 1 ? "Fascetta" : rilegatura === 2 ? "Ciappatura" : rilegatura === 3 ? "Nessuna" : "Spirale"}
                   rilegaturaUnica={rilegaturaUnica === 0 ? "Si" : "No"}
                   intervalloPagine={daA}
                   numeroCopie={numeroCopie}
                   prezzo={preventivo}
                   onConfirmOrder={submitFormHandler}
-                  disabled={!data.isValid || fileData.length === 0 || !intervalloPagineIsValid || formSubmitting}
+                  disabled={fileData.length === 0 || !canConfirmA4 || formSubmitting}
                   loading={formSubmitting}
                   submitted={formSubmitted}
                 />
@@ -969,7 +1023,7 @@ ${deliveryBlock}
                   plastificazione={plastificazione === 0 ? "Si" : "No"}
                   prezzo={preventivo}
                   onConfirmOrder={submitFormHandler}
-                  disabled={!data.isValid || fileData.length === 0 || formSubmitting}
+                  disabled={fileData.length === 0 || formSubmitting}
                   loading={formSubmitting}
                   submitted={formSubmitted}
                 />

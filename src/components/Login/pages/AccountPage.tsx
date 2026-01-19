@@ -3,9 +3,44 @@ import React, { useEffect, useMemo, useState } from "react";
 import { auth, db } from "../../../backend/firebase";
 import { collection, doc, getDoc, getDocs, query, updateDoc, where } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
-import "./AccountPage.css";
+
+import {
+  Box,
+  Container,
+  Paper,
+  Stack,
+  Title,
+  Text,
+  Group,
+  Button,
+  Divider,
+  SimpleGrid,
+  TextInput,
+  Checkbox,
+  Badge,
+  ThemeIcon,
+  Alert,
+  Loader,
+  Card,
+} from "@mantine/core";
+
+import {
+  IconHome,
+  IconKey,
+  IconDeviceFloppy,
+  IconReceipt2,
+  IconShoppingBag,
+  IconCoin,
+  IconAlertCircle,
+  IconChevronLeft,
+  IconChevronRight,
+  IconCalendar,
+} from "@tabler/icons-react";
+
 import Header from "../../HeaderComponents/Header";
 import Footer from "../../FooterComponents/Footer";
+
+const ACCENT = "#d1ab63";
 
 const fmtEuro = (n?: number | string) =>
   typeof n === "number"
@@ -37,10 +72,10 @@ type Order = {
   id: string;
   uid?: string;
   tipo?: string;
-  prezzo?: number | string;        // alcuni documenti hanno solo "prezzo"
-  totaleFinale?: number | string;  // altri hanno "totaleFinale"
-  timestamp?: string | null | FirestoreTimestampLike; // ISO string o Firestore Timestamp
-  _tsMillis?: number;              // campo ausiliario per sort (millisecondi)
+  prezzo?: number | string;
+  totaleFinale?: number | string;
+  timestamp?: string | null | FirestoreTimestampLike;
+  _tsMillis?: number;
   [key: string]: any;
 };
 
@@ -71,7 +106,6 @@ const AccountPage: React.FC = () => {
 
       const [archiveSnapshot, docSnap] = await Promise.all([getDocs(archiveQuery), getDoc(docRef)]);
 
-      // 👇 Mapping + normalizzazione timestamp + calcolo ms per sort
       const userOrders: Order[] = archiveSnapshot.docs.map((d) => {
         const data = d.data() as any;
 
@@ -98,11 +132,9 @@ const AccountPage: React.FC = () => {
         } as Order;
       });
 
-      // 🔽 Ordina dal più recente (ms desc)
       userOrders.sort((a, b) => (b._tsMillis ?? 0) - (a._tsMillis ?? 0));
       setOrders(userOrders);
 
-      // Calcolo totale speso (fallback totaleFinale → prezzo)
       const total = userOrders.reduce((sum, o) => {
         const v = o.totaleFinale ?? o.prezzo;
         return sum + parsePrice(v);
@@ -121,13 +153,11 @@ const AccountPage: React.FC = () => {
     fetchData();
   }, [navigate]);
 
-  // 🔁 Se cambia il numero di ordini e la pagina corrente “sfora”, torna all’ultima pagina valida
   const totalPages = Math.max(1, Math.ceil(orders.length / PAGE_SIZE));
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
   }, [orders.length, totalPages, page]);
 
-  // 📄 Slice per paginazione
   const paginatedOrders = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE;
     return orders.slice(start, start + PAGE_SIZE);
@@ -174,163 +204,606 @@ const AccountPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="account-loading">
-        <div className="pv-spinner" aria-label="Caricamento" />
-        <p>Caricamento in corso…</p>
-      </div>
+      <>
+        <Header />
+        <Box mih="70vh" style={{ display: "flex", alignItems: "center" }}>
+          <Container size="lg">
+            <Paper
+              radius="xl"
+              p="xl"
+              style={{
+                background: "rgba(10,12,16,0.78)",
+                border: "1px solid rgba(255,255,255,0.10)",
+                backdropFilter: "blur(10px)",
+              }}
+            >
+              <Group>
+                <Loader color="gray" />
+                <Text style={{ color: "rgba(255,255,255,0.75)" }}>Caricamento in corso…</Text>
+              </Group>
+            </Paper>
+          </Container>
+        </Box>
+        <Footer />
+      </>
     );
   }
+
+  const emailReadonly = auth.currentUser?.email || "";
 
   return (
     <>
       <Header />
-      <div className="account-page">
-        <div className="account-shell">
-          {/* HEADER SUMMARY */}
-          <section className="account-hero">
-            <div className="hero-left">
-              <h1>Il Mio Account</h1>
-              <p className="hero-sub">Gestisci i tuoi dati e rivedi gli ordini effettuati su <span className="pv">Photo &amp; Vision</span>.</p>
-              <div className="hero-stats">
-                <div className="stat-card" role="status" aria-label={`Ordini effettuati: ${orders.length}`}>
-                  <div className="stat-value">{orders.length}</div>
-                  <div className="stat-label">Ordini</div>
-                </div>
-                <div className="stat-card" role="status" aria-label={`Totale speso: €${fmtEuro(totalSpent)}`}>
-                  <div className="stat-value">€{fmtEuro(totalSpent)}</div>
-                  <div className="stat-label">Totale speso</div>
-                </div>
-              </div>
-            </div>
-            <div className="hero-right">
-              <button type="button" className="btn-ghost" onClick={() => navigate("/")}>🏠 Home</button>
-              <button type="button" className="btn-gold" onClick={handlePasswordReset}>🔑 Cambia Password</button>
-            </div>
-          </section>
+
+      <Box
+        mih="100vh"
+        style={{
+          background: "#070A0F",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        {/* Glow */}
+        <Box
+          style={{
+            position: "absolute",
+            inset: 0,
+            background:
+              "radial-gradient(900px 600px at 18% 30%, rgba(209,171,99,0.16), transparent 60%), radial-gradient(700px 480px at 75% 65%, rgba(209,171,99,0.08), transparent 60%)",
+            pointerEvents: "none",
+          }}
+        />
+
+        <Container size="lg" py={{ base: 18, sm: 28 }} style={{ position: "relative" }}>
+          {/* HERO */}
+          <Paper
+            radius="xl"
+            p={{ base: "lg", sm: "xl" }}
+            style={{
+              background: "rgba(10,12,16,0.70)",
+              border: "1px solid rgba(255,255,255,0.10)",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.55)",
+              backdropFilter: "blur(10px)",
+            }}
+          >
+            <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
+              <Stack gap={6} maw={640}>
+                <Text
+                  style={{
+                    color: ACCENT,
+                    fontWeight: 800,
+                    letterSpacing: 1,
+                    textTransform: "uppercase",
+                    fontSize: 12,
+                  }}
+                >
+                  Account
+                </Text>
+
+                <Title order={2} style={{ color: "#fff", letterSpacing: -0.5 }}>
+                  Il mio account
+                </Title>
+
+                <Text style={{ color: "rgba(255,255,255,0.70)", lineHeight: 1.7 }}>
+                  Gestisci i tuoi dati e rivedi gli ordini effettuati su{" "}
+                  <span style={{ color: "#fff", fontWeight: 800 }}>Photo &amp; Vision</span>.
+                </Text>
+
+                <Group gap="sm" mt="sm">
+                  <Card
+                    radius="xl"
+                    p="md"
+                    style={{
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(255,255,255,0.10)",
+                      minWidth: 170,
+                    }}
+                  >
+                    <Group gap={10} align="center">
+                      <ThemeIcon
+                        radius="xl"
+                        size={34}
+                        style={{
+                          background: "rgba(209,171,99,0.14)",
+                          border: "1px solid rgba(209,171,99,0.35)",
+                          color: ACCENT,
+                        }}
+                      >
+                        <IconShoppingBag size={18} />
+                      </ThemeIcon>
+                      <Stack gap={0}>
+                        <Text style={{ color: "#fff", fontWeight: 800, lineHeight: 1.15 }}>{orders.length}</Text>
+                        <Text size="xs" style={{ color: "rgba(255,255,255,0.65)" }}>
+                          Ordini
+                        </Text>
+                      </Stack>
+                    </Group>
+                  </Card>
+
+                  <Card
+                    radius="xl"
+                    p="md"
+                    style={{
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(255,255,255,0.10)",
+                      minWidth: 220,
+                    }}
+                  >
+                    <Group gap={10} align="center">
+                      <ThemeIcon
+                        radius="xl"
+                        size={34}
+                        style={{
+                          background: "rgba(209,171,99,0.14)",
+                          border: "1px solid rgba(209,171,99,0.35)",
+                          color: ACCENT,
+                        }}
+                      >
+                        <IconCoin size={18} />
+                      </ThemeIcon>
+                      <Stack gap={0}>
+                        <Text style={{ color: "#fff", fontWeight: 800, lineHeight: 1.15 }}>
+                          €{fmtEuro(totalSpent)}
+                        </Text>
+                        <Text size="xs" style={{ color: "rgba(255,255,255,0.65)" }}>
+                          Totale speso
+                        </Text>
+                      </Stack>
+                    </Group>
+                  </Card>
+                </Group>
+              </Stack>
+
+              <Group gap="sm" style={{ alignSelf: "flex-start" }}>
+                <Button
+                  radius="lg"
+                  variant="outline"
+                  onClick={() => navigate("/")}
+                  leftSection={<IconHome size={18} />}
+                  style={{
+                    borderColor: "rgba(255,255,255,0.16)",
+                    color: "rgba(255,255,255,0.82)",
+                  }}
+                >
+                  Home
+                </Button>
+
+                <Button
+                  radius="lg"
+                  onClick={handlePasswordReset}
+                  leftSection={<IconKey size={18} />}
+                  style={{
+                    background: ACCENT,
+                    color: "#111",
+                    fontWeight: 800,
+                  }}
+                >
+                  Cambia password
+                </Button>
+              </Group>
+            </Group>
+          </Paper>
 
           {(success || error) && (
-            <div className={`alert ${success ? "alert-success" : "alert-error"}`} role="alert">
+            <Alert
+              mt="md"
+              radius="xl"
+              variant="light"
+              icon={<IconAlertCircle size={18} />}
+              color={success ? "green" : "red"}
+              styles={{
+                root: {
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.10)",
+                },
+                message: { color: success ? "#b7f7c2" : "#ffb3b3" },
+                label: { color: "#fff" },
+              }}
+            >
               {success || error}
-            </div>
+            </Alert>
           )}
 
-          {/* TWO-COLUMN LAYOUT */}
-          <div className="account-grid">
+          {/* CONTENT GRID */}
+          <SimpleGrid cols={{ base: 1, md: 2 }} spacing="xl" mt="xl">
             {/* LEFT: FORM */}
-            <section className="card pv-form" aria-labelledby="dati-personali">
-              <h2 id="dati-personali">Dati personali</h2>
-              <form onSubmit={handleUpdate} className="form-grid">
-                <label>
-                  <span>Nome</span>
-                  <input name="displayName" value={userData?.displayName || ""} onChange={handleChange} required />
-                </label>
+            <Paper
+              radius="xl"
+              p={{ base: "lg", sm: "xl" }}
+              style={{
+                background: "rgba(10,12,16,0.70)",
+                border: "1px solid rgba(255,255,255,0.10)",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.35)",
+                backdropFilter: "blur(10px)",
+              }}
+            >
+              <Group justify="space-between" align="center" mb="sm">
+                <Group gap={10}>
+                  <ThemeIcon
+                    radius="xl"
+                    size={34}
+                    style={{
+                      background: "rgba(209,171,99,0.14)",
+                      border: "1px solid rgba(209,171,99,0.35)",
+                      color: ACCENT,
+                    }}
+                  >
+                    <IconDeviceFloppy size={18} />
+                  </ThemeIcon>
+                  <Stack gap={0}>
+                    <Text style={{ color: "#fff", fontWeight: 800 }}>Dati personali</Text>
+                    <Text size="sm" style={{ color: "rgba(255,255,255,0.65)" }}>
+                      Aggiorna le informazioni del profilo
+                    </Text>
+                  </Stack>
+                </Group>
+              </Group>
 
-                <label>
-                  <span>Cognome</span>
-                  <input name="cognome" value={userData?.cognome || ""} onChange={handleChange} required />
-                </label>
+              <Divider my="md" style={{ borderColor: "rgba(255,255,255,0.08)" }} />
 
-                <label>
-                  <span>Email</span>
-                  <input value={auth.currentUser?.email || ""} readOnly />
-                </label>
+              <form onSubmit={handleUpdate}>
+                <Stack gap="sm">
+                  <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+                    <TextInput
+                      label="Nome"
+                      name="displayName"
+                      value={userData?.displayName || ""}
+                      onChange={handleChange}
+                      required
+                      styles={{
+                        label: { color: "rgba(255,255,255,0.85)" },
+                        input: {
+                          backgroundColor: "rgba(255,255,255,0.06)",
+                          borderColor: "rgba(255,255,255,0.10)",
+                          color: "#fff",
+                        },
+                      }}
+                    />
 
-                <label>
-                  <span>Telefono</span>
-                  <input name="telefono" value={userData?.telefono || ""} onChange={handleChange} required />
-                </label>
+                    <TextInput
+                      label="Cognome"
+                      name="cognome"
+                      value={userData?.cognome || ""}
+                      onChange={handleChange}
+                      required
+                      styles={{
+                        label: { color: "rgba(255,255,255,0.85)" },
+                        input: {
+                          backgroundColor: "rgba(255,255,255,0.06)",
+                          borderColor: "rgba(255,255,255,0.10)",
+                          color: "#fff",
+                        },
+                      }}
+                    />
+                  </SimpleGrid>
 
-                <div className="switch-row">
-                  <label htmlFor="isStudente" className="switch-label">Studente universitario (Ecotekne)?</label>
-                  <input type="checkbox" id="isStudente" className="switch" checked={isStudente} onChange={async (e) => {
-                    const checked = e.target.checked;
-                    setIsStudente(checked);
+                  <TextInput
+                    label="Email"
+                    value={emailReadonly}
+                    readOnly
+                    styles={{
+                      label: { color: "rgba(255,255,255,0.85)" },
+                      input: {
+                        backgroundColor: "rgba(255,255,255,0.03)",
+                        borderColor: "rgba(255,255,255,0.10)",
+                        color: "rgba(255,255,255,0.70)",
+                      },
+                    }}
+                  />
 
-                    if (!checked) {
-                      setUserData((prev: any) => ({ ...prev, corsoLaurea: "", annoAccademico: "" }));
-                      const user = auth.currentUser;
-                      if (user) {
-                        try {
-                          await updateDoc(doc(db, "users", user.uid), { corsoLaurea: "", annoAccademico: "" });
-                        } catch { }
+                  <TextInput
+                    label="Telefono"
+                    name="telefono"
+                    value={userData?.telefono || ""}
+                    onChange={handleChange}
+                    required
+                    styles={{
+                      label: { color: "rgba(255,255,255,0.85)" },
+                      input: {
+                        backgroundColor: "rgba(255,255,255,0.06)",
+                        borderColor: "rgba(255,255,255,0.10)",
+                        color: "#fff",
+                      },
+                    }}
+                  />
+
+                  <Checkbox
+                    label="Studente universitario (Ecotekne)?"
+                    checked={isStudente}
+                    onChange={async (e) => {
+                      const checked = e.currentTarget.checked;
+                      setIsStudente(checked);
+
+                      if (!checked) {
+                        setUserData((prev: any) => ({ ...prev, corsoLaurea: "", annoAccademico: "" }));
+                        const user = auth.currentUser;
+                        if (user) {
+                          try {
+                            await updateDoc(doc(db, "users", user.uid), { corsoLaurea: "", annoAccademico: "" });
+                          } catch { }
+                        }
                       }
-                    }
-                  }} />
-                </div>
+                    }}
+                    styles={{
+                      label: { color: "rgba(255,255,255,0.78)" },
+                      input: { borderColor: "rgba(255,255,255,0.18)", background: "rgba(255,255,255,0.02)" },
+                    }}
+                  />
 
-                {isStudente && (
-                  <>
-                    <label>
-                      <span>Corso di Laurea</span>
-                      <input name="corsoLaurea" value={userData?.corsoLaurea || ""} onChange={handleChange} />
-                    </label>
+                  {isStudente && (
+                    <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+                      <TextInput
+                        label="Corso di Laurea"
+                        name="corsoLaurea"
+                        value={userData?.corsoLaurea || ""}
+                        onChange={handleChange}
+                        styles={{
+                          label: { color: "rgba(255,255,255,0.85)" },
+                          input: {
+                            backgroundColor: "rgba(255,255,255,0.06)",
+                            borderColor: "rgba(255,255,255,0.10)",
+                            color: "#fff",
+                          },
+                        }}
+                      />
 
-                    <label>
-                      <span>Anno Accademico</span>
-                      <input name="annoAccademico" value={userData?.annoAccademico || ""} onChange={handleChange} />
-                    </label>
-                  </>
-                )}
+                      <TextInput
+                        label="Anno Accademico"
+                        name="annoAccademico"
+                        value={userData?.annoAccademico || ""}
+                        onChange={handleChange}
+                        styles={{
+                          label: { color: "rgba(255,255,255,0.85)" },
+                          input: {
+                            backgroundColor: "rgba(255,255,255,0.06)",
+                            borderColor: "rgba(255,255,255,0.10)",
+                            color: "#fff",
+                          },
+                        }}
+                      />
+                    </SimpleGrid>
+                  )}
 
-                <div className="form-actions">
-                  <button type="submit" className="btn-gold">💾 Aggiorna Dati</button>
-                </div>
+                  <Group justify="flex-end" mt="xs">
+                    <Button
+                      type="submit"
+                      radius="lg"
+                      leftSection={<IconDeviceFloppy size={18} />}
+                      style={{
+                        background: ACCENT,
+                        color: "#111",
+                        fontWeight: 800,
+                      }}
+                    >
+                      Aggiorna dati
+                    </Button>
+                  </Group>
+                </Stack>
               </form>
-            </section>
+            </Paper>
 
             {/* RIGHT: ORDERS */}
-            <section className="card pv-orders" aria-labelledby="storico-ordini">
-              <div className="orders-head">
-                <h2 id="storico-ordini">Storico ordini</h2>
-                <span className="orders-count" aria-label={`Totale ordini: ${orders.length}`}>{orders.length}</span>
-              </div>
+            <Paper
+              radius="xl"
+              p={{ base: "lg", sm: "xl" }}
+              style={{
+                background: "rgba(10,12,16,0.70)",
+                border: "1px solid rgba(255,255,255,0.10)",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.35)",
+                backdropFilter: "blur(10px)",
+              }}
+            >
+              <Group justify="space-between" align="center" mb="sm">
+                <Group gap={10}>
+                  <ThemeIcon
+                    radius="xl"
+                    size={34}
+                    style={{
+                      background: "rgba(209,171,99,0.14)",
+                      border: "1px solid rgba(209,171,99,0.35)",
+                      color: ACCENT,
+                    }}
+                  >
+                    <IconReceipt2 size={18} />
+                  </ThemeIcon>
+                  <Stack gap={0}>
+                    <Text style={{ color: "#fff", fontWeight: 800 }}>
+                      Storico ordini
+                    </Text>
+                    <Text size="sm" style={{ color: "rgba(255,255,255,0.65)" }}>
+                      Ultimi ordini effettuati
+                    </Text>
+                  </Stack>
+                </Group>
+
+                <Badge
+                  radius="xl"
+                  variant="light"
+                  style={{
+                    background: "rgba(255,255,255,0.06)",
+                    border: "1px solid rgba(255,255,255,0.10)",
+                    color: "rgba(255,255,255,0.85)",
+                  }}
+                >
+                  {orders.length}
+                </Badge>
+              </Group>
+
+              <Divider my="md" style={{ borderColor: "rgba(255,255,255,0.08)" }} />
 
               {orders.length === 0 ? (
-                <div className="empty-state">
-                  <div className="empty-ill" aria-hidden>🗂️</div>
-                  <p>Nessun ordine trovato.</p>
-                </div>
+                <Paper
+                  radius="xl"
+                  p="xl"
+                  style={{
+                    background: "rgba(255,255,255,0.03)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    textAlign: "center",
+                  }}
+                >
+                  <Text style={{ color: "rgba(255,255,255,0.75)" }}>Nessun ordine trovato.</Text>
+                </Paper>
               ) : (
-                <>
-                  <ul className="orders-list">
-                    {paginatedOrders.map((order) => {
-                      const total = fmtEuro(parsePrice(order.totaleFinale ?? order.prezzo));
-                      const dateStr = typeof order.timestamp === "string"
+                <Stack gap="sm">
+                  {paginatedOrders.map((order) => {
+                    const total = fmtEuro(parsePrice(order.totaleFinale ?? order.prezzo));
+                    const dateStr =
+                      typeof order.timestamp === "string"
                         ? fmtDate(order.timestamp)
                         : fmtDate(order.timestamp?.toDate?.());
-                      return (
-                        <li key={order.id} className="order-item">
-                          <div className="order-icon" aria-hidden>🧾</div>
-                          <div className="order-main">
-                            <div className="order-top">
-                              <span className="order-type">{order.tipo ?? "Ordine"}</span>
-                              <span className="order-total">€{total}</span>
-                            </div>
-                            <div className="order-meta">
-                              <span className="badge">{dateStr}</span>
-                              {order?.stato && <span className={`badge ${String(order.stato).toLowerCase()}`}>{String(order.stato)}</span>}
-                            </div>
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
 
-                  <div className="pagination">
-                    <button className="btn-ghost" type="button" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
-                      ◀︎ Precedenti
-                    </button>
-                    <span className="page-info">Pagina {page} di {totalPages}</span>
-                    <button className="btn-ghost" type="button" disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>
-                      Successivi ▶︎
-                    </button>
-                  </div>
-                </>
+                    return (
+                      <Paper
+                        key={order.id}
+                        radius="xl"
+                        p="md"
+                        style={{
+                          background: "rgba(255,255,255,0.03)",
+                          border: "1px solid rgba(255,255,255,0.08)",
+                        }}
+                      >
+                        <Group justify="space-between" align="flex-start" wrap="nowrap">
+                          <Group gap={10} wrap="nowrap">
+                            <ThemeIcon
+                              radius="xl"
+                              size={34}
+                              style={{
+                                background: "rgba(209,171,99,0.14)",
+                                border: "1px solid rgba(209,171,99,0.35)",
+                                color: ACCENT,
+                              }}
+                            >
+                              <IconReceipt2 size={18} />
+                            </ThemeIcon>
+
+                            <Stack gap={2}>
+                              <Group gap={8} wrap="wrap">
+                                <Text style={{ color: "#fff", fontWeight: 800 }}>
+                                  {order.tipo ?? "Ordine"}
+                                </Text>
+                                <Badge
+                                  leftSection={<IconCalendar size={12} />}
+                                  radius="xl"
+                                  variant="light"
+                                  style={{
+                                    background: "rgba(255,255,255,0.06)",
+                                    border: "1px solid rgba(255,255,255,0.10)",
+                                    color: "rgba(255,255,255,0.80)",
+                                  }}
+                                >
+                                  {dateStr}
+                                </Badge>
+
+                                {order?.stato && (
+                                  <Badge
+                                    radius="xl"
+                                    variant="light"
+                                    style={{
+                                      background: "rgba(255,255,255,0.06)",
+                                      border: "1px solid rgba(255,255,255,0.10)",
+                                      color: "rgba(255,255,255,0.80)",
+                                    }}
+                                  >
+                                    {String(order.stato)}
+                                  </Badge>
+                                )}
+                              </Group>
+                            </Stack>
+                          </Group>
+
+                          <Text style={{ color: "#fff", fontWeight: 900, whiteSpace: "nowrap" }}>
+                            €{total}
+                          </Text>
+                        </Group>
+                      </Paper>
+                    );
+                  })}
+
+                  {/* Pagination */}
+                  <Group justify="space-between" mt="xs" align="center" wrap="nowrap">
+                    {/* PREV */}
+                    <Button
+                      radius="lg"
+                      variant="outline"
+                      leftSection={<IconChevronLeft size={18} />}
+                      disabled={page <= 1}
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      visibleFrom="sm"
+                      style={{
+                        borderColor: "rgba(255,255,255,0.16)",
+                        color: "rgba(255, 255, 255, 0.82)",
+                      }}
+                    >
+                      Precedenti
+                    </Button>
+
+                    <Button
+                      radius="lg"
+                      variant="outline"
+                      disabled={page <= 1}
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      hiddenFrom="sm"
+                      style={{
+                        borderColor: "rgba(255,255,255,0.16)",
+                        color: "rgba(255, 251, 0, 0.82)",
+                        width: 44,
+                        paddingLeft: 0,
+                        paddingRight: 0,
+                      }}
+                      aria-label="Precedenti"
+                    >
+                      <IconChevronLeft size={18} />
+                    </Button>
+
+                    {/* INFO */}
+                    <Text size="sm" style={{ color: "rgba(255,255,255,0.65)", whiteSpace: "nowrap" }}>
+                      {page}/{totalPages}
+                    </Text>
+
+                    {/* NEXT */}
+                    <Button
+                      radius="lg"
+                      variant="outline"
+                      rightSection={<IconChevronRight size={18} />}
+                      disabled={page >= totalPages}
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      visibleFrom="sm"
+                      style={{
+                        borderColor: "rgba(255,255,255,0.16)",
+                        color: "rgba(255, 255, 255, 0.82)",
+                      }}
+                    >
+                      Successivi
+                    </Button>
+
+                    <Button
+                      radius="lg"
+                      variant="outline"
+                      disabled={page >= totalPages}
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      hiddenFrom="sm"
+                      style={{
+                        borderColor: "rgba(255,255,255,0.16)",
+                        color: "rgba(253, 216, 4, 0.82)",
+                        width: 44,
+                        paddingLeft: 0,
+                        paddingRight: 0,
+                      }}
+                      aria-label="Successivi"
+                    >
+                      <IconChevronRight size={18} />
+                    </Button>
+                  </Group>
+
+                </Stack>
               )}
-            </section>
-          </div>
-        </div>
-      </div>
+            </Paper>
+          </SimpleGrid>
+
+          <Box h={28} />
+        </Container>
+      </Box>
+
       <Footer />
     </>
   );

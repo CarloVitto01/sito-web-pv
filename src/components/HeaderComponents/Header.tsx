@@ -1,131 +1,90 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { FiMenu } from "react-icons/fi";
+
+import {
+  Box,
+  Group,
+  Image,
+  Button,
+  Drawer,
+  Stack,
+  Text,
+  Divider,
+  ScrollArea,
+  UnstyledButton,
+  Container,
+  ActionIcon,
+  Menu,
+  Badge,
+  Tooltip,
+} from "@mantine/core";
+import { useDisclosure, useMediaQuery } from "@mantine/hooks";
+import {
+  IconMenu2,
+  IconX,
+  IconChevronRight,
+  IconUser,
+  IconLogout,
+  IconSettings,
+} from "@tabler/icons-react";
+
 import logo from "../../assets/images/Firma_Bianca_oro_PV.png";
-import classes from "./Header.module.css";
 import { auth, db } from "../../backend/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
-type NavItem = { path: string; label: string; icon?: string };
+type NavItem = { path: string; label: string; icon?: React.ReactNode };
+
+const HEADER_H = 72;
 
 const Header: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const [displayName, setDisplayName] = useState("");
   const [accessiblePages, setAccessiblePages] = useState<string[]>([]);
-  const [sideMenuOpen, setSideMenuOpen] = useState(false);
 
   const location = useLocation();
   const navigate = useNavigate();
 
-  const panelRef = useRef<HTMLDivElement>(null);
-  const firstFocusRef = useRef<HTMLButtonElement>(null);
-  const previouslyFocused = useRef<HTMLElement | null>(null);
-
-  const toggleSideMenu = () => setSideMenuOpen((prev) => !prev);
-  const closeSideMenu = () => setSideMenuOpen(false);
+  const isMobile = useMediaQuery("(max-width: 768px)");
+  const [opened, { close, toggle }] = useDisclosure(false);
 
   // ===== Auth + accessi dalle collezioni =====
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
 
-      if (currentUser) {
-        const userRef = doc(db, "users", currentUser.uid);
-        const userSnap = await getDoc(userRef);
-
-        if (userSnap.exists()) {
-          const data = userSnap.data();
-          setDisplayName(data.displayName || "");
-
-          const ruolo = data.ruolo || "PublicUser";
-          const accessSnap = await getDoc(doc(db, "ruoliPagineAccesso", ruolo));
-          const accessData = accessSnap.data();
-          setAccessiblePages(accessData?.accessoPagine || []);
-        }
-      } else {
+      if (!currentUser) {
         setDisplayName("");
         setAccessiblePages([]);
+        return;
       }
+
+      const userRef = doc(db, "users", currentUser.uid);
+      const userSnap = await getDoc(userRef);
+
+      if (!userSnap.exists()) {
+        setDisplayName("");
+        setAccessiblePages([]);
+        return;
+      }
+
+      const data = userSnap.data();
+      setDisplayName(data.displayName || "");
+
+      const ruolo = data.ruolo || "PublicUser";
+      const accessSnap = await getDoc(doc(db, "ruoliPagineAccesso", ruolo));
+      const accessData = accessSnap.data();
+      setAccessiblePages(accessData?.accessoPagine || []);
     });
 
     return () => unsubscribe();
   }, []);
 
-  // ===== Chiudi menu quando cambi pagina =====
+  // chiudi drawer cambio route
   useEffect(() => {
-    setSideMenuOpen(false);
+    close();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
-
-  // ===== Chiudi cliccando fuori dal pannello =====
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (!sideMenuOpen) return;
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-        setSideMenuOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [sideMenuOpen]);
-
-  // ===== ESC per chiudere =====
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setSideMenuOpen(false);
-    };
-    if (sideMenuOpen) document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [sideMenuOpen]);
-
-  // ===== Focus trap + scroll lock =====
-  useEffect(() => {
-    if (sideMenuOpen) {
-      previouslyFocused.current = document.activeElement as HTMLElement;
-      document.body.style.overflow = "hidden";
-      // sposta il focus sul pulsante chiudi
-      setTimeout(() => firstFocusRef.current?.focus(), 0);
-
-      const focusableSelector =
-        'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
-      const keyHandler = (e: KeyboardEvent) => {
-        if (e.key !== "Tab" || !panelRef.current) return;
-        const focusables = Array.from(
-          panelRef.current.querySelectorAll<HTMLElement>(focusableSelector)
-        ).filter((el) => el.offsetParent !== null);
-        if (focusables.length === 0) return;
-
-        const first = focusables[0];
-        const last = focusables[focusables.length - 1];
-
-        if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        } else if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        }
-      };
-
-      document.addEventListener("keydown", keyHandler);
-      return () => {
-        document.removeEventListener("keydown", keyHandler);
-        document.body.style.overflow = "";
-        previouslyFocused.current?.focus?.();
-      };
-    }
-  }, [sideMenuOpen]);
-
-  // ===== Dati di navigazione =====
-  const servizi: NavItem[] = useMemo(
-    () => [
-      { path: "/printA4", label: "Stampa in A4", icon: "🖨️" },
-      { path: "/printA3", label: "Stampa in A3", icon: "🖨️" },
-      { path: "/3d", label: "Stampa in 3D", icon: "🖨️" },
-      { path: "/qrgen", label: "Generatore di QR Code", icon: "📱" },
-    ],
-    []
-  );
 
   const linkAccessibili: NavItem[] = useMemo(
     () => [
@@ -144,6 +103,17 @@ const Header: React.FC = () => {
     []
   );
 
+  // pagine pubbliche (mettici quelle reali del sito PV)
+  const linkPubblici: NavItem[] = useMemo(
+    () => [
+      { path: "/", label: "Home" },
+      // { path: "/servizi", label: "Servizi" },
+      // { path: "/portfolio", label: "Portfolio" },
+      // { path: "/contatti", label: "Contatti" },
+    ],
+    []
+  );
+
   const allowedGestionale = useMemo(
     () =>
       linkAccessibili
@@ -152,205 +122,257 @@ const Header: React.FC = () => {
     [accessiblePages, linkAccessibili]
   );
 
+  const hasGestionaleAccess = allowedGestionale.length > 0;
+
   const isActive = (path: string) => location.pathname === path;
 
   const go = (to: string) => {
-    closeSideMenu();
+    close();
     navigate(to);
   };
 
-  return (
-    <div className={classes.header}>
-      {/* Burger */}
-      <div className={classes["burger-section"]}>
-        <button
-          className={classes["burger-icon"]}
-          onClick={toggleSideMenu}
-          aria-label="Apri menu"
-          aria-expanded={sideMenuOpen}
-          aria-controls="pv-side-menu"
-        >
-          <FiMenu />
-          <span className={classes["sr-only"]}>Apri menu</span>
-        </button>
-      </div>
+  const onLogout = async () => {
+    await signOut(auth);
+    setUser(null);
+    setDisplayName("");
+    navigate("/");
+  };
 
-      {/* sinistra vuota per bilanciare il layout */}
-      <div className={classes["left-spacer"]} />
+  const NavButton = ({ item }: { item: NavItem }) => (
+    <UnstyledButton
+      onClick={() => go(item.path)}
+      style={{
+        width: "100%",
+        padding: "10px 12px",
+        borderRadius: 12,
+        border: isActive(item.path)
+          ? "1px solid var(--mantine-color-default-border)"
+          : "1px solid transparent",
+        background: isActive(item.path) ? "var(--mantine-color-default)" : "transparent",
+      }}
+    >
+      <Group justify="space-between" wrap="nowrap">
+        <Text fw={800}>{item.label}</Text>
+        <IconChevronRight size={16} />
+      </Group>
+    </UnstyledButton>
+  );
 
-      {/* Logo */}
-      <div className={classes["logo-section"]}>
-        <Link to="/" aria-label="Photo & Vision — Home">
-          <img src={logo} alt="PV" className={classes.Logo} />
+  const DesktopLink = ({ item }: { item: NavItem }) => (
+    <Button
+      variant={isActive(item.path) ? "filled" : "subtle"}
+      color={isActive(item.path) ? "yellow" : "gray"}
+      onClick={() => go(item.path)}
+      radius="xl"
+      styles={{ label: { fontWeight: 800 } }}
+    >
+      {item.label}
+    </Button>
+  );
+
+  // ====== HEADER UI ======
+  const NormalHeader = () => (
+    <Box
+      style={{
+        height: HEADER_H,
+        display: "grid",
+        gridTemplateColumns: "1fr auto 1fr",
+        alignItems: "center",
+      }}
+    >
+      <Box />
+
+      <Box style={{ justifySelf: "center" }}>
+        <Link to="/" aria-label="Photo & Vision — Home" style={{ display: "inline-flex" }}>
+          <Image src={logo} alt="PV" h={isMobile ? 40 : 44} fit="contain" />
         </Link>
-      </div>
+      </Box>
 
-
-      {/* Login/Logout header-right */}
-      <div className={classes["placeholder-section"]}>
-        {user ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <button
-              className={classes["menu-button-gold"]}
-              onClick={() => {
-                signOut(auth).then(() => {
-                  setUser(null);
-                  setDisplayName("");
-                  navigate("/");
-                });
-              }}
-            >
-              Logout
-            </button>
-          </div>
+      <Group gap={8} wrap="nowrap" style={{ justifySelf: "end" }}>
+        {!user ? (
+          <>
+            {!isMobile && (
+              <Button variant="subtle" color="gray" radius="xl" onClick={() => navigate("/register")}>
+                Registrati
+              </Button>
+            )}
+            <Button variant="filled" color="yellow" radius="xl" onClick={() => navigate("/login")}>
+              Login
+            </Button>
+          </>
         ) : (
-          <button
-            className={classes["menu-button-gold"]}
-            onClick={() => navigate("/login")}
-          >
-            Login
-          </button>
-        )}
-      </div>
-
-      {/* Overlay */}
-      {sideMenuOpen && (
-        <div
-          className={classes.backdrop}
-          onClick={closeSideMenu}
-          aria-hidden="true"
-        />
-      )}
-
-      {/* Side panel */}
-      {sideMenuOpen && (
-        <aside
-          ref={panelRef}
-          id="pv-side-menu"
-          className={classes["side-menu"]}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Menu laterale di navigazione"
-        >
-          {/* Header del pannello */}
-          <div className={classes["side-menu-header"]}>
-            <button
-              ref={firstFocusRef}
-              onClick={closeSideMenu}
-              className={classes["close-button"]}
-              aria-label="Chiudi menu"
-              title="Chiudi"
+          <Tooltip label={displayName || "Account"} withArrow>
+            <Button
+              variant="filled"
+              color="yellow"
+              radius="xl"
+              onClick={onLogout}
+              leftSection={<IconLogout size={16} />}
+              styles={{ label: { fontWeight: 800 } }}
             >
-              ✕
-            </button>
+              {isMobile ? "" : "Logout"}
+            </Button>
+          </Tooltip>
+        )}
+      </Group>
+    </Box>
+  );
 
-            {user ? (
-              <>
-                <div className={classes["welcome-user"]}>
-                  👋 Benvenuto/a, <strong>{displayName}</strong>
-                </div>
+  const GestionaleHeader = () => (
+    <Group h={HEADER_H} justify="space-between" wrap="nowrap">
+      {/* LEFT */}
+      <Group gap={10} wrap="nowrap">
+        {isMobile ? (
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            size="lg"
+            radius="xl"
+            onClick={toggle}
+            aria-label="Apri menu gestionale"
+          >
+            <IconMenu2 size={20} />
+          </ActionIcon>
+        ) : (
+          <Link to="/" aria-label="Photo & Vision — Home" style={{ display: "inline-flex" }}>
+            <Image src={logo} alt="PV" h={44} fit="contain" />
+          </Link>
+        )}
 
-                {/* Bottoni affiancati, subito sotto il benvenuto */}
-                <div className={classes.accountRow}>
-                  <button
-                    onClick={() => go("/account")}
-                    className={classes["account-button"]}
-                  >
-                    👤 Il mio Account
-                  </button>
+        {!isMobile && (
+          <Group gap={8} visibleFrom="sm">
+            {linkPubblici
+              .filter((l) => l.path !== "/")
+              .map((it) => (
+                <DesktopLink key={it.path} item={it} />
+              ))}
 
-                  <button
-                    onClick={() => {
-                      signOut(auth).then(() => {
-                        setUser(null);
-                        setDisplayName("");
-                        window.location.href = "/";
-                      });
-                    }}
-                    className={classes["logout-button"]}
-                  >
-                    Esci
-                  </button>
-                </div>
-              </>
-            ) : (
-              // Utente non loggato: Accedi + Registrati affiancati
-              <div className={classes.authRow}>
-                <button
-                  onClick={() => go("/login")}
-                  className={classes["login-button"]}
-                >
-                  Accedi
-                </button>
-                <button
-                  onClick={() => go("/register")}
-                  className={classes["register-button"]}
-                >
-                  Registrati
-                </button>
-              </div>
-            )}
+            <Divider orientation="vertical" />
+            <Badge variant="light" color="yellow">
+              Gestionale
+            </Badge>
 
-            {location.pathname !== "/" && (
-              <button
-                className={classes["home-link"]}
-                onClick={() => go("/")}
-              >
-                ⬅️ Torna alla Home
-              </button>
-            )}
-          </div>
+            {allowedGestionale.slice(0, 5).map((it) => (
+              <DesktopLink key={it.path} item={it} />
+            ))}
 
-          {/* Contenuto scrollabile */}
-          <div className={classes["side-menu-content"]}>
-            {/* Servizi */}
-            <div className={classes.section}>
-              <div className={classes["section-title"]}>Servizi</div>
-              <ul className={classes.list}>
-                {servizi.map(({ path, label, icon }) => (
-                  <li key={path} className={classes.item}>
-                    <button
-                      onClick={() => go(path)}
-                      className={`${classes.linkBtn} ${isActive(path) ? classes.active : ""}`}
-                      aria-current={isActive(path) ? "page" : undefined}
-                    >
-                      <span className={classes.icon}>{icon}</span>
-                      <span className={classes.label}>{label}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Area Gestionale (render solo se ci sono voci) */}
-            {allowedGestionale.length > 0 && (
-              <div className={classes.section}>
-                <div className={classes["section-title"]}>Area Gestionale</div>
-                <ul className={classes.list}>
-                  {allowedGestionale.map(({ path, label }) => (
-                    <li key={path} className={classes.item}>
-                      <button
-                        onClick={() => go(path)}
-                        className={`${classes.linkBtn} ${classes.linkBtnWrap} ${isActive(path) ? classes.active : ""}`}
-                        aria-current={isActive(path) ? "page" : undefined}
-                        title={label}
-                      >
-                        {/* niente colonna icona qui, massimizziamo lo spazio testo */}
-                        <span className={`${classes.label} ${classes.labelFull}`}>{label}</span>
-                      </button>
-                    </li>
+            {allowedGestionale.length > 5 && (
+              <Menu position="bottom-start" withinPortal shadow="md">
+                <Menu.Target>
+                  <Button variant="subtle" color="gray" radius="xl">
+                    Altro
+                  </Button>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  {allowedGestionale.slice(5).map((it) => (
+                    <Menu.Item key={it.path} onClick={() => go(it.path)}>
+                      {it.label}
+                    </Menu.Item>
                   ))}
-                </ul>
-              </div>
+                </Menu.Dropdown>
+              </Menu>
             )}
+          </Group>
+        )}
+      </Group>
 
-          </div>
-
-          {/* Footer fisso con Account/Logout o Login/Registrati */}
-
-        </aside>
+      {/* CENTER (mobile logo) */}
+      {isMobile && (
+        <Link to="/" aria-label="Photo & Vision — Home" style={{ display: "inline-flex" }}>
+          <Image src={logo} alt="PV" h={40} fit="contain" />
+        </Link>
       )}
-    </div>
+
+      {/* RIGHT */}
+      <Group gap={10} wrap="nowrap">
+        {user ? (
+          <Menu position="bottom-end" withinPortal shadow="md">
+            <Menu.Target>
+              <Button
+                variant="light"
+                color="yellow"
+                radius="xl"
+                leftSection={<IconUser size={16} />}
+                styles={{ label: { fontWeight: 800 } }}
+              >
+                {isMobile ? "Account" : displayName || "Account"}
+              </Button>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item leftSection={<IconSettings size={16} />} onClick={() => go("/account")}>
+                Il mio account
+              </Menu.Item>
+              <Menu.Divider />
+              <Menu.Item color="red" leftSection={<IconLogout size={16} />} onClick={onLogout}>
+                Logout
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
+        ) : (
+          <Group gap={8} wrap="nowrap" ml="auto">
+            {!isMobile && (
+              <Button variant="subtle" color="gray" radius="xl" onClick={() => go("/register")}>
+                Registrati
+              </Button>
+            )}
+            <Button variant="filled" color="yellow" radius="xl" onClick={() => go("/login")}>
+              Login
+            </Button>
+          </Group>
+        )}
+
+      </Group>
+    </Group>
+  );
+
+  return (
+    <>
+      <Box
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 200,
+          height: HEADER_H,
+          background: "rgba(0,0,0,.92)",
+          borderBottom: "1px solid rgba(255,255,255,.08)",
+          backdropFilter: "blur(8px)",
+        }}
+      >
+        <Container size="xl" h={HEADER_H}>
+          {hasGestionaleAccess ? <GestionaleHeader /> : <NormalHeader />}
+        </Container>
+      </Box>
+
+      {/* Drawer SOLO per gestionale (mobile) */}
+      {isMobile && hasGestionaleAccess && (
+        <Drawer
+          opened={opened}
+          onClose={close}
+          position="left"
+          size={360}
+          withCloseButton={false}
+          padding="md"
+          radius="lg"
+        >
+          <Group justify="space-between" mb="sm">
+            <Text fw={900}>Area Gestionale</Text>
+            <ActionIcon variant="subtle" onClick={close} radius="xl" aria-label="Chiudi">
+              <IconX size={18} />
+            </ActionIcon>
+          </Group>
+
+          <Divider my="md" />
+
+          <ScrollArea h="calc(100dvh - 140px)" type="auto">
+            <Stack gap={8}>
+              {allowedGestionale.map((it) => (
+                <NavButton key={it.path} item={it} />
+              ))}
+            </Stack>
+          </ScrollArea>
+        </Drawer>
+      )}
+    </>
   );
 };
 

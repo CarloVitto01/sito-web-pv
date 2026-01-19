@@ -7,7 +7,6 @@ import styles from "./RichiestaStampa3D.module.css";
 import Header from "../HeaderComponents/Header";
 import Footer from "../FooterComponents/Footer";
 import ModelPreview from "../3D/ModelPreview";
-import Intro from "../IntroComponents/Intro";
 import Banner from "../Banner/Banner";
 
 // ⬇️ NEW: Storage (upload + url)
@@ -259,10 +258,6 @@ ${escapeMd(notes || "(nessuna nota)")}
       <Header />
       <Banner />
       <div className={styles.container}>
-        <Intro
-          title={"STAMPA I TUOI PROGETTI 3D"}
-          text={"Carica il modello, scegli la bobina colore e descrivi brevemente cosa ti serve. Ti ricontatteremo con un preventivo."}
-        />
         <section className={styles.config}>
           <div className={styles.formGrid}>
             {/* Colonna SX */}

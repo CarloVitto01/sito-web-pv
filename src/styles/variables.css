@@ -1,16 +1,11 @@
-:root {
-  /* 🎨 Colori principali */
-  --color-gold: rgb(199, 171, 43);
-  --color-background: #e5e4a6;
-  --color-text: #ffffff;
-  --color-error: red;
-  --color-dropzone: rgb(173, 162, 0);
+:root{
+  --color-bg-base: #f5e400;
 
-  /* 🔠 Font */
+  --diamond-size: 64px;
+
+  --diamond-light: rgba(255,255,255,0.55);
+
+  /* se già le hai altrove ok, altrimenti tienile */
+  --color-text-primary: #1c1c1c;
   --font-main: "Segoe UI", sans-serif;
-
-  /* 📏 Dimensioni */
-  --radius: 12px;
-  --transition-fast: 0.3s;
-  --shadow-light: 0 4px 8px rgba(0, 0, 0, 0.1);
 }

@@ -1,19 +1,16 @@
-@font-face {
-  font-family: 'Oswald';
-  src: url('./assets/fonts/Oswald.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap; /* per migliorare il caricamento */
+/* index.css – SOLO RESET, NESSUNO SFONDO */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
 }
 
 body {
-  background-color: black;
   margin: 0;
-  font-family: 'Oswald', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-code {
-  font-family: 'Source Code Pro', Menlo, Monaco, Consolas, "Courier New", monospace;
 }
