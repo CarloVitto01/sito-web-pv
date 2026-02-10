@@ -18,9 +18,10 @@ import {
   Divider,
   ThemeIcon,
   List,
+  Alert,
+  Anchor,
 } from "@mantine/core";
-import { useMediaQuery } from "@mantine/hooks";
-import { IconCheck, IconAt, IconLock } from "@tabler/icons-react";
+import { IconCheck, IconAt, IconAlertCircle, IconLock } from "@tabler/icons-react";
 import logoPV from "../../../assets/images/logo_b.png";
 
 const ACCENT = "#d1ab63";
@@ -30,7 +31,6 @@ const RecoverEmailPage: React.FC = () => {
   const [emailRecuperata, setEmailRecuperata] = useState("");
   const [errore, setErrore] = useState("");
   const navigate = useNavigate();
-  const isMobile = useMediaQuery("(max-width: 900px)");
 
   const cercaEmail = async () => {
     setErrore("");
@@ -44,6 +44,7 @@ const RecoverEmailPage: React.FC = () => {
       });
 
       if (utente) {
+        // NB: assicurati che il campo sia davvero "email" nel documento user
         setEmailRecuperata(utente.data().email);
       } else {
         setErrore("Nessun utente trovato con questo numero.");
@@ -54,22 +55,34 @@ const RecoverEmailPage: React.FC = () => {
     }
   };
 
+  // ✅ stile “chiaro” come Login (stessa tecnica), LEFT invariata (non oscurata qui)
+  const pageBg = "#F6F7FB";
+  const cardBg = "rgba(255,255,255,0.78)";
+  const borderSoft = "rgba(15,23,42,0.10)";
+  const textPrimary = "#0B1220";
+  const textMuted = "rgba(11,18,32,0.68)";
+  const inputBg = "rgba(15,23,42,0.04)";
+  const inputBorder = "rgba(15,23,42,0.12)";
+
   return (
     <Box
       mih="100vh"
       style={{
-        background: "#070A0F",
+        background: pageBg,
         position: "relative",
         overflow: "hidden",
       }}
     >
-      {/* Glow */}
+      {/* Glow (chiaro) */}
       <Box
         style={{
           position: "absolute",
           inset: 0,
-          background:
-            "radial-gradient(900px 600px at 18% 30%, rgba(209,171,99,0.16), transparent 60%), radial-gradient(700px 480px at 75% 65%, rgba(209,171,99,0.08), transparent 60%)",
+          background: [
+            "radial-gradient(900px 600px at 18% 30%, rgba(209,171,99,0.22), transparent 60%)",
+            "radial-gradient(700px 480px at 75% 65%, rgba(209,171,99,0.12), transparent 60%)",
+            "linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(246,247,251,1) 55%, rgba(246,247,251,1) 100%)",
+          ].join(","),
           pointerEvents: "none",
         }}
       />
@@ -81,20 +94,20 @@ const RecoverEmailPage: React.FC = () => {
             mih="100vh"
             style={{
               position: "relative",
-              borderRight: "1px solid rgba(255,255,255,0.08)",
+              borderRight: `1px solid ${borderSoft}`,
               overflow: "hidden",
             }}
           >
-            {/* Backdrop */}
+            {/* Backdrop (stessa “tecnica” chiara) */}
             <Box
               style={{
                 position: "absolute",
                 inset: 0,
                 background: [
-                  "radial-gradient(900px 650px at 18% 30%, rgba(209,171,99,0.18), transparent 62%)",
-                  "radial-gradient(700px 520px at 70% 65%, rgba(209,171,99,0.10), transparent 60%)",
-                  "linear-gradient(135deg, rgba(209,171,99,0.10) 0%, rgba(0,0,0,0) 55%)",
-                  "linear-gradient(180deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.65) 100%)",
+                  "radial-gradient(900px 650px at 18% 30%, rgba(209,171,99,0.26), transparent 62%)",
+                  "radial-gradient(700px 520px at 70% 65%, rgba(209,171,99,0.14), transparent 60%)",
+                  "linear-gradient(135deg, rgba(209,171,99,0.10) 0%, rgba(255,255,255,0) 55%)",
+                  "linear-gradient(180deg, rgba(255,255,255,0.75) 0%, rgba(246,247,251,1) 100%)",
                 ].join(","),
               }}
             />
@@ -105,31 +118,30 @@ const RecoverEmailPage: React.FC = () => {
                 position: "absolute",
                 inset: -80,
                 background: [
-                  "repeating-linear-gradient(135deg, rgba(255,255,255,0.06) 0 1px, transparent 1px 18px)",
-                  "repeating-linear-gradient(45deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 26px)",
-                  "radial-gradient(500px 240px at 35% 85%, rgba(209,171,99,0.12), transparent 65%)",
+                  "repeating-linear-gradient(135deg, rgba(15,23,42,0.06) 0 1px, transparent 1px 18px)",
+                  "repeating-linear-gradient(45deg, rgba(15,23,42,0.04) 0 1px, transparent 1px 26px)",
+                  "radial-gradient(500px 240px at 35% 85%, rgba(209,171,99,0.14), transparent 65%)",
                 ].join(","),
-                opacity: 0.35,
+                opacity: 0.25,
                 transform: "rotate(-6deg)",
-                mixBlendMode: "overlay",
+                mixBlendMode: "multiply",
               }}
             />
 
-            {/* Vignette */}
+            {/* Vignette (chiara, non oscurata extra) */}
             <Box
               style={{
                 position: "absolute",
                 inset: 0,
                 background:
-                  "linear-gradient(90deg, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.55) 55%, rgba(0,0,0,0.35) 100%)",
+                  "linear-gradient(90deg, rgba(246,247,251,0.88) 0%, rgba(246,247,251,0.72) 55%, rgba(246,247,251,0.55) 100%)",
               }}
             />
             <Box
               style={{
                 position: "absolute",
                 inset: 0,
-                boxShadow:
-                  "inset 0 0 0 1px rgba(255,255,255,0.05), inset 0 0 140px rgba(0,0,0,0.85)",
+                boxShadow: "inset 0 0 0 1px rgba(15,23,42,0.06), inset 0 0 140px rgba(15,23,42,0.06)",
                 pointerEvents: "none",
               }}
             />
@@ -144,9 +156,9 @@ const RecoverEmailPage: React.FC = () => {
                 height: 180,
                 borderRadius: 999,
                 background:
-                  "radial-gradient(circle at 30% 30%, rgba(209,171,99,0.30), rgba(209,171,99,0.06) 55%, transparent 70%)",
+                  "radial-gradient(circle at 30% 30%, rgba(209,171,99,0.26), rgba(209,171,99,0.08) 55%, transparent 70%)",
                 filter: "blur(2px)",
-                opacity: 0.65,
+                opacity: 0.7,
               }}
             />
             <Box
@@ -158,9 +170,9 @@ const RecoverEmailPage: React.FC = () => {
                 height: 240,
                 borderRadius: 999,
                 background:
-                  "radial-gradient(circle at 30% 30%, rgba(209,171,99,0.22), rgba(209,171,99,0.05) 55%, transparent 72%)",
+                  "radial-gradient(circle at 30% 30%, rgba(209,171,99,0.18), rgba(209,171,99,0.06) 55%, transparent 72%)",
                 filter: "blur(3px)",
-                opacity: 0.55,
+                opacity: 0.65,
               }}
             />
 
@@ -183,8 +195,6 @@ const RecoverEmailPage: React.FC = () => {
                 style={{
                   width: "22%",
                   maxWidth: 460,
-                  opacity: 0.12,
-                  filter: "blur(3px)",
                   transform: "translateY(12px) scale(1.02)",
                   userSelect: "none",
                 }}
@@ -215,11 +225,11 @@ const RecoverEmailPage: React.FC = () => {
                     Recupero accesso
                   </Text>
 
-                  <Title order={1} style={{ color: "#fff", letterSpacing: -0.9, lineHeight: 1.05 }}>
+                  <Title order={1} style={{ color: textPrimary, letterSpacing: -0.9, lineHeight: 1.05 }}>
                     Recupera l’email associata al tuo account.
                   </Title>
 
-                  <Text style={{ color: "rgba(255,255,255,0.74)", lineHeight: 1.75 }}>
+                  <Text style={{ color: textMuted, lineHeight: 1.75 }}>
                     Inserisci il numero di telefono usato in fase di registrazione: ti mostreremo l’email collegata.
                   </Text>
 
@@ -230,10 +240,10 @@ const RecoverEmailPage: React.FC = () => {
                     w="100%"
                     mx="auto"
                     style={{
-                      background: "rgba(10,12,16,0.55)",
-                      border: "1px solid rgba(255,255,255,0.10)",
+                      background: "rgba(255,255,255,0.70)",
+                      border: `1px solid ${borderSoft}`,
                       backdropFilter: "blur(10px)",
-                      boxShadow: "0 18px 50px rgba(0,0,0,0.45)",
+                      boxShadow: "0 18px 50px rgba(15,23,42,0.10)",
                     }}
                   >
                     <Group justify="space-between" align="center" mb="sm">
@@ -249,18 +259,18 @@ const RecoverEmailPage: React.FC = () => {
                         >
                           <IconLock size={16} />
                         </ThemeIcon>
-                        <Text style={{ color: "#fff", fontWeight: 800, letterSpacing: -0.2 }}>
+                        <Text style={{ color: textPrimary, fontWeight: 800, letterSpacing: -0.2 }}>
                           Nota privacy
                         </Text>
                       </Group>
-                      <Text size="sm" style={{ color: "rgba(255,255,255,0.60)" }}>
+                      <Text size="sm" style={{ color: textMuted }}>
                         dati
                       </Text>
                     </Group>
 
                     <List
                       spacing="sm"
-                      styles={{ itemLabel: { color: "rgba(255,255,255,0.74)", lineHeight: 1.6 } }}
+                      styles={{ itemLabel: { color: textMuted, lineHeight: 1.6 } }}
                       icon={
                         <ThemeIcon
                           radius="xl"
@@ -293,23 +303,35 @@ const RecoverEmailPage: React.FC = () => {
                 radius="xl"
                 p="xl"
                 style={{
-                  background: "rgba(10,12,16,0.78)",
-                  border: "1px solid rgba(255,255,255,0.10)",
-                  boxShadow: "0 20px 60px rgba(0,0,0,0.55)",
+                  background: cardBg,
+                  border: `1px solid ${borderSoft}`,
+                  boxShadow: "0 22px 60px rgba(15,23,42,0.14)",
                   backdropFilter: "blur(10px)",
                 }}
               >
                 <Stack gap="md">
                   <Stack gap={4}>
-                    <Title order={2} style={{ color: "#fff", letterSpacing: -0.4 }}>
+                    <Title order={2} style={{ color: textPrimary, letterSpacing: -0.4 }}>
                       Recupera email
                     </Title>
-                    <Text style={{ color: "rgba(255,255,255,0.70)" }}>
-                      Inserisci il numero di telefono registrato
-                    </Text>
+                    <Text style={{ color: textMuted }}>Inserisci il numero di telefono registrato</Text>
                   </Stack>
 
-                  <Divider style={{ borderColor: "rgba(255,255,255,0.08)" }} />
+                  <Divider style={{ borderColor: borderSoft }} />
+
+                  {errore && (
+                    <Alert
+                      icon={<IconAlertCircle size={16} />}
+                      color="red"
+                      variant="light"
+                      styles={{
+                        root: { background: "rgba(255, 0, 0, 0.08)", borderColor: "rgba(255, 0, 0, 0.18)" },
+                        message: { color: textPrimary },
+                      }}
+                    >
+                      {errore}
+                    </Alert>
+                  )}
 
                   <TextInput
                     label="Telefono"
@@ -317,11 +339,11 @@ const RecoverEmailPage: React.FC = () => {
                     value={telefono}
                     onChange={(e) => setTelefono(e.currentTarget.value)}
                     styles={{
-                      label: { color: "rgba(255,255,255,0.85)" },
+                      label: { color: "rgba(11,18,32,0.85)" },
                       input: {
-                        backgroundColor: "rgba(255,255,255,0.06)",
-                        borderColor: "rgba(255,255,255,0.10)",
-                        color: "#fff",
+                        backgroundColor: inputBg,
+                        borderColor: inputBorder,
+                        color: textPrimary,
                       },
                     }}
                   />
@@ -343,8 +365,8 @@ const RecoverEmailPage: React.FC = () => {
                       radius="lg"
                       p="md"
                       style={{
-                        background: "rgba(255,255,255,0.04)",
-                        border: "1px solid rgba(255,255,255,0.10)",
+                        background: "rgba(15,23,42,0.03)",
+                        border: `1px solid ${borderSoft}`,
                       }}
                     >
                       <Group gap={10} align="flex-start">
@@ -361,46 +383,51 @@ const RecoverEmailPage: React.FC = () => {
                         </ThemeIcon>
 
                         <Stack gap={2}>
-                          <Text style={{ color: "rgba(255,255,255,0.80)" }} size="sm">
+                          <Text style={{ color: textMuted }} size="sm">
                             La tua email è:
                           </Text>
-                          <Text style={{ color: "#fff", fontWeight: 800 }}>
-                            {emailRecuperata}
-                          </Text>
+                          <Text style={{ color: textPrimary, fontWeight: 800 }}>{emailRecuperata}</Text>
                         </Stack>
                       </Group>
 
-                      <Button
-                        mt="md"
-                        radius="lg"
-                        variant="outline"
-                        onClick={() => navigate("/login")}
-                        style={{
-                          borderColor: "rgba(209,171,99,0.55)",
-                          color: ACCENT,
-                        }}
-                      >
-                        Torna al Login
-                      </Button>
-                    </Paper>
-                  )}
+                      <Group mt="md" gap="sm">
+                        <Button
+                          radius="lg"
+                          variant="outline"
+                          onClick={() => navigate("/login")}
+                          style={{
+                            borderColor: "rgba(209,171,99,0.60)",
+                            color: ACCENT,
+                          }}
+                        >
+                          Torna al Login
+                        </Button>
 
-                  {errore && (
-                    <Text size="sm" style={{ color: "#ff6b6b", lineHeight: 1.5 }}>
-                      {errore}
-                    </Text>
+                        <Anchor
+                          size="sm"
+                          style={{ color: "rgba(11,18,32,0.70)" }}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setEmailRecuperata("");
+                          }}
+                          href="#"
+                        >
+                          Chiudi
+                        </Anchor>
+                      </Group>
+                    </Paper>
                   )}
 
                   <Button
                     radius="lg"
                     variant="subtle"
                     onClick={() => navigate("/login")}
-                    style={{ color: "rgba(255,255,255,0.75)" }}
+                    style={{ color: "rgba(11,18,32,0.72)" }}
                   >
                     Torna al login
                   </Button>
 
-                  <Text size="xs" style={{ color: "rgba(255,255,255,0.50)", lineHeight: 1.5 }} mt={4}>
+                  <Text size="xs" style={{ color: "rgba(11,18,32,0.55)", lineHeight: 1.5 }} mt={4}>
                     Se non riconosci il numero, contatta l’assistenza.
                   </Text>
                 </Stack>

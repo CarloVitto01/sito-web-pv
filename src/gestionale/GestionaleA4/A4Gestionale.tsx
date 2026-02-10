@@ -1,5 +1,5 @@
 // src/gestionale/GestionaleA4/A4Gestionale.tsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { db } from "../../backend/firebase";
 import {
   collection,
@@ -9,9 +9,43 @@ import {
   onSnapshot,
   setDoc,
 } from "firebase/firestore";
-import styles from "./A4Gestionale.module.css";
-import Header from "../../components/HeaderComponents/Header";
 import { getStorage, ref, deleteObject } from "firebase/storage";
+
+import Header from "../../components/HeaderComponents/Header";
+
+import {
+  ActionIcon,
+  Badge,
+  Box,
+  Button,
+  Card,
+  Checkbox,
+  Container,
+  Divider,
+  Group,
+  NumberInput,
+  Paper,
+  ScrollArea,
+  Select,
+  Stack,
+  Table,
+  Text,
+  TextInput,
+  Title,
+  Tooltip,
+} from "@mantine/core";
+import {
+  IconDeviceFloppy,
+  IconPlus,
+  IconTrash,
+  IconAlertTriangle,
+  IconCheck,
+  IconTool,
+  IconCoin,
+  IconPackage,
+  IconFolder,
+  IconChevronRight,
+} from "@tabler/icons-react";
 
 type Costi = {
   foglio: number;
@@ -54,25 +88,38 @@ const defaultCosti: Costi = {
   spirale: 2,
 };
 
-// NEW: default dei costi interni
 const defaultInterni: Costi = {
-  foglio: 0.009,        // carta comune a foglio
-  biancoNero: 0.005,    // inchiostro/manutenzione B/N a foglio
-  colore: 0.020,        // inchiostro/manutenzione colore a foglio
-  anelli: 0.50,         // materiale anelli
-  fascetta: 0.30,       // fascetta/busta
-  ciappatura: 0.05,     // punti
-  spirale: 0.80,        // spirale/buste/copertina
+  foglio: 0.009,
+  biancoNero: 0.005,
+  colore: 0.02,
+  anelli: 0.5,
+  fascetta: 0.3,
+  ciappatura: 0.05,
+  spirale: 0.8,
 };
 
 const defaultExtras: CostoExtra[] = [
-  { id: crypto.randomUUID(), nome: "Scarto lavorazione", unita: "percentuale", costo: 2, note: "2% sul lordo", attivo: true },
+  {
+    id: crypto.randomUUID(),
+    nome: "Scarto lavorazione",
+    unita: "percentuale",
+    costo: 2,
+    note: "2% sul lordo",
+    attivo: true,
+  },
 ];
+
+const fmtKeyLabel = (k: string) =>
+  k
+    .replace(/([A-Z])/g, " $1")
+    .replace(/^./, (m) => m.toUpperCase())
+    .trim();
 
 const A4Gestionale: React.FC = () => {
   const [costi, setCosti] = useState<Costi>(defaultCosti);
-  const [interni, setInterni] = useState<Costi>(defaultInterni); // NEW
+  const [interni, setInterni] = useState<Costi>(defaultInterni);
   const [costiAcquisto, setCostiAcquisto] = useState<CostoExtra[]>(defaultExtras);
+
   const [ordini, setOrdini] = useState<Ordine[]>([]);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
@@ -86,9 +133,9 @@ const A4Gestionale: React.FC = () => {
         setCostiAcquisto(defaultExtras);
         return;
       }
+
       const data = snap.data() as any;
 
-      // costi base (se li usi altrove)
       setCosti({
         foglio: Number(data?.foglio ?? defaultCosti.foglio) || 0,
         biancoNero: Number(data?.biancoNero ?? defaultCosti.biancoNero) || 0,
@@ -99,7 +146,6 @@ const A4Gestionale: React.FC = () => {
         spirale: Number(data?.spirale ?? defaultCosti.spirale) || 0,
       });
 
-      // NEW: costi interni dedicati
       const i = data?.interni ?? {};
       setInterni({
         foglio: Number(i?.foglio ?? defaultInterni.foglio) || 0,
@@ -111,7 +157,6 @@ const A4Gestionale: React.FC = () => {
         spirale: Number(i?.spirale ?? defaultInterni.spirale) || 0,
       });
 
-      // extra
       if (Array.isArray(data?.costiAcquisto)) {
         const safe: CostoExtra[] = data.costiAcquisto
           .map((x: any) => ({
@@ -130,6 +175,7 @@ const A4Gestionale: React.FC = () => {
         setCostiAcquisto(defaultExtras);
       }
     });
+
     return () => unsub();
   }, []);
 
@@ -150,18 +196,19 @@ const A4Gestionale: React.FC = () => {
             file: Array.isArray(data.file) ? data.file : [data.file].filter(Boolean),
           };
         })
-        .filter((doc) => doc.tipo === "A4");
+        .filter((d) => d.tipo === "A4");
       setOrdini(docs);
     };
     fetchOrdini();
   }, []);
 
-  // ======== Handlers base ========
-  const handleChangeBase = (e: React.ChangeEvent<HTMLInputElement>, setFn: React.Dispatch<React.SetStateAction<Costi>>) => {
-    const { name, value } = e.target;
-    const n = parseFloat(value.replace(",", "."));
-    setFn((prev) => ({ ...prev, [name]: isNaN(n) ? 0 : n }));
-  };
+  // ======== Helpers ========
+  const setNumberField =
+    <T extends object>(setter: React.Dispatch<React.SetStateAction<T>>, key: keyof T) =>
+    (v: number | string) => {
+      const n = typeof v === "number" ? v : parseFloat(String(v).replace(",", "."));
+      setter((prev) => ({ ...prev, [key]: Number.isFinite(n) ? n : 0 } as T));
+    };
 
   // ======== Extra ========
   const addExtraRow = () => {
@@ -193,6 +240,7 @@ const A4Gestionale: React.FC = () => {
     try {
       setSaveState("saving");
       const refDoc = doc(db, "configA4", "costi");
+
       const cleanedExtras = costiAcquisto
         .filter((x) => x.nome.trim().length > 0)
         .map((x) => ({
@@ -206,7 +254,7 @@ const A4Gestionale: React.FC = () => {
         refDoc,
         {
           ...costi,
-          interni: { ...interni }, // NEW: salvo i costi interni per campo
+          interni: { ...interni },
           costiAcquisto: cleanedExtras,
         },
         { merge: true }
@@ -241,170 +289,337 @@ const A4Gestionale: React.FC = () => {
         }
       }
     }
+
     await deleteDoc(doc(db, "StampePDFA4", id));
     setOrdini((prev) => prev.filter((o) => o.id !== id));
   };
 
-  // ======== UI ========
-  const renderGrid = (state: Costi, setFn: React.Dispatch<React.SetStateAction<Costi>>) => (
-    <div className={styles.grid}>
-      {Object.entries(state).map(([key, value]) => (
-        <div key={key} className={styles.field}>
-          <label className={styles.label} htmlFor={`${key}`}>{key}</label>
-          <input
-            id={`${key}`}
-            name={key}
-            type="number"
-            step="0.001"
-            min={0}
-            className={styles.input}
+  const saveBadge = useMemo(() => {
+    if (saveState === "saved") return <Badge color="green" leftSection={<IconCheck size={14} />}>Salvato</Badge>;
+    if (saveState === "error") return <Badge color="red" leftSection={<IconAlertTriangle size={14} />}>Errore</Badge>;
+    if (saveState === "saving") return <Badge color="yellow">Salvataggio…</Badge>;
+    return null;
+  }, [saveState]);
+
+  const FieldGrid = <T extends object>({
+    title,
+    icon,
+    state,
+    setFn,
+    helper,
+  }: {
+    title: string;
+    icon: React.ReactNode;
+    state: T;
+    setFn: React.Dispatch<React.SetStateAction<T>>;
+    helper?: React.ReactNode;
+  }) => (
+    <Card radius="xl" withBorder>
+      <Group justify="space-between" mb="sm">
+        <Group gap={10}>
+          {icon}
+          <Title order={3} fw={900}>
+            {title}
+          </Title>
+        </Group>
+      </Group>
+
+      <Divider mb="md" />
+
+      <Box
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+          gap: 12,
+        }}
+      >
+        {Object.entries(state as Record<string, number>).map(([key, value]) => (
+          <NumberInput
+            key={key}
+            label={fmtKeyLabel(key)}
             value={value}
-            onChange={(e) => handleChangeBase(e, setFn)}
+            onChange={(v) => setNumberField(setFn, key as keyof T)(v as any)}
+            decimalScale={3}
+            min={0}
+            step={0.001}
+            radius="lg"
           />
-        </div>
-      ))}
-    </div>
+        ))}
+      </Box>
+
+      {helper ? (
+        <Text mt="md" c="dimmed" size="sm">
+          {helper}
+        </Text>
+      ) : null}
+    </Card>
   );
 
   return (
-    <div className={styles.page}>
+    <Box>
       <Header />
-      <div className={styles.wrapper}>
-        <div className={styles.pageHeader}>
-          <div>
-            <h1 className={styles.pageTitle}>🛠️ Gestionale A4</h1>
-            <p className={styles.pageSubtitle}>
-              Imposta i <strong>costi base</strong> (facoltativi) e i <strong>costi interni</strong> per ogni voce. Questi ultimi verranno usati per il calcolo del margine netto.
-            </p>
-          </div>
 
-          <div className={styles.actionsBar} aria-live="polite" role="status">
-            <button onClick={handleSave} className={styles.primaryBtn} disabled={saveState === "saving"}>
-              {saveState === "saving" ? "⏳ Salvataggio…" : "💾 Salva impostazioni"}
-            </button>
-            {saveState === "saved" && <span className={styles.badgeSuccess}>✅ Salvato</span>}
-            {saveState === "error" && <span className={styles.badgeWarn}>⚠️ Errore</span>}
-          </div>
-        </div>
+      <Container size="xl" py="lg">
+        <Paper radius="xl" p="lg" withBorder>
+          <Group justify="space-between" align="flex-start" gap="md">
+            <Box>
+              <Title order={2} fw={900}>
+                Gestionale A4
+              </Title>
+              <Text c="dimmed" mt={6}>
+                Imposta i <strong>costi base</strong> (facoltativi) e i <strong>costi interni</strong>.
+                I costi interni verranno usati per il calcolo del margine netto.
+              </Text>
+            </Box>
 
-        {/* Costi base (eventuale listino) */}
-        <section className={styles.card}>
-          <div className={styles.cardHeader}>
-            <h2 className={styles.title}>⚙️ Costi base A4</h2>
-          </div>
-          {renderGrid(costi, setCosti)}
-        </section>
+            <Group gap="sm" aria-live="polite" role="status">
+              <Button
+                radius="xl"
+                leftSection={<IconDeviceFloppy size={18} />}
+                onClick={handleSave}
+                loading={saveState === "saving"}
+                color="yellow"
+              >
+                Salva impostazioni
+              </Button>
+              {saveBadge}
+            </Group>
+          </Group>
+        </Paper>
 
-        {/* NEW: Costi interni */}
-        <section className={styles.card}>
-          <div className={styles.cardHeader}>
-            <h2 className={styles.title}>💶 Costi interni A4</h2>
-          </div>
-          {renderGrid(interni, setInterni)}
-          <p className={styles.helper}>
-            Questi valori sono i <em>costi reali</em> per unità usati in <strong>Storico Dati</strong> per
-            calcolare “Costi interni (€)” e di conseguenza il “Margine netto (€)”.
-          </p>
-        </section>
+        <Stack mt="lg" gap="lg">
+          <FieldGrid
+            title="Costi base A4"
+            icon={<IconTool size={20} />}
+            state={costi}
+            setFn={setCosti}
+          />
 
-        {/* Extra condizionali */}
-        <section className={styles.card}>
-          <div className={styles.cardHeader}>
-            <h2 className={styles.title}>📦 Costi extra (condizionali)</h2>
-            <button className={styles.ghostBtn} onClick={addExtraRow}>➕ Aggiungi costo</button>
-          </div>
+          <FieldGrid
+            title="Costi interni A4"
+            icon={<IconCoin size={20} />}
+            state={interni}
+            setFn={setInterni}
+            helper={
+              <>
+                Questi valori sono i <em>costi reali</em> per unità usati in <strong>Storico Dati</strong> per
+                calcolare “Costi interni (€)” e quindi il “Margine netto (€)”.
+              </>
+            }
+          />
 
-          {costiAcquisto.length === 0 ? (
-            <p className={styles.muted}>Nessun extra. Aggiungi nuovi costi condizionali con “Aggiungi costo”.</p>
-          ) : (
-            <div className={styles.tableWrap}>
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th>Attivo</th>
-                    <th>Nome</th>
-                    <th>Unità</th>
-                    <th>Valore</th>
-                    <th>Campo</th>
-                    <th>Match</th>
-                    <th>Note</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {costiAcquisto.map((row) => (
-                    <tr key={row.id}>
-                      <td>
-                        <label className={styles.switch}>
-                          <input type="checkbox" checked={row.attivo} onChange={(e) => updateExtra(row.id, "attivo", e.target.checked)} />
-                          <span className={styles.slider} />
-                        </label>
-                      </td>
-                      <td>
-                        <input className={styles.input} placeholder="Es. Carta premium 120g" value={row.nome} onChange={(e) => updateExtra(row.id, "nome", e.target.value)} />
-                      </td>
-                      <td>
-                        <select className={styles.select} value={row.unita} onChange={(e) => updateExtra(row.id, "unita", e.target.value as CostoExtra["unita"])}>
-                          <option value="per_foglio">Per foglio</option>
-                          <option value="per_fascicolo">Per fascicolo</option>
-                          <option value="per_ordine">Per ordine</option>
-                          <option value="percentuale">Percentuale (%)</option>
-                        </select>
-                      </td>
-                      <td>
-                        <input className={styles.input} type="number" step="0.001" min={0} value={row.costo} onChange={(e) => updateExtra(row.id, "costo", parseFloat(e.target.value) || 0)} />
-                      </td>
-                      <td>
-                        <input className={styles.input} placeholder='es. "rilegatura", "inchiostro", "grammatura"' value={row.campo ?? ""} onChange={(e) => updateExtra(row.id, "campo", e.target.value)} />
-                      </td>
-                      <td>
-                        <input className={styles.input} placeholder="stringa (case-insensitive)" value={row.match ?? ""} onChange={(e) => updateExtra(row.id, "match", e.target.value)} />
-                      </td>
-                      <td>
-                        <input className={styles.input} placeholder="Nota opzionale" value={row.note ?? ""} onChange={(e) => updateExtra(row.id, "note", e.target.value)} />
-                      </td>
-                      <td className={styles.cellRight}>
-                        <button className={styles.deleteButton} onClick={() => deleteExtra(row.id)}>🗑️</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <p className={styles.helper}>
-                “Percentuale” applica una % sul lordo; le altre unità moltiplicano per fogli/fascicoli/ordine.
-                Se imposti <strong>Campo/Match</strong>, l’extra si applica solo quando il campo dell’ordine contiene il testo indicato.
-              </p>
-            </div>
-          )}
-        </section>
+          <Card radius="xl" withBorder>
+            <Group justify="space-between" mb="sm">
+              <Group gap={10}>
+                <IconPackage size={20} />
+                <Title order={3} fw={900}>
+                  Costi extra (condizionali)
+                </Title>
+              </Group>
 
-        {/* ORDINI */}
-        <section className={styles.card}>
-          <div className={styles.cardHeader}>
-            <h2 className={styles.title}>📁 Ordini A4</h2>
-          </div>
-          <ul className={styles.orderList}>
-            {ordini.map((ordine) => (
-              <li key={ordine.id} className={styles.orderItem}>
-                <div className={styles.orderInfo}>
-                  <div className={styles.orderName}>{ordine.nome} {ordine.cognome}</div>
-                  <div className={styles.orderMeta}>{ordine.telefono} · {ordine.email}</div>
-                  {ordine.file?.length ? (
-                    <ul className={styles.fileList}>
-                      {ordine.file.map((link, index) => (
-                        <li key={index}><a href={link} target="_blank" rel="noopener noreferrer">📄 PDF {index + 1}</a></li>
+              <Button
+                radius="xl"
+                variant="light"
+                leftSection={<IconPlus size={18} />}
+                onClick={addExtraRow}
+              >
+                Aggiungi costo
+              </Button>
+            </Group>
+
+            <Divider mb="md" />
+
+            {costiAcquisto.length === 0 ? (
+              <Text c="dimmed">
+                Nessun extra. Aggiungi nuovi costi condizionali con “Aggiungi costo”.
+              </Text>
+            ) : (
+              <>
+                <ScrollArea type="auto">
+                  <Table verticalSpacing="sm" highlightOnHover withTableBorder>
+                    <Table.Thead>
+                      <Table.Tr>
+                        <Table.Th>Attivo</Table.Th>
+                        <Table.Th>Nome</Table.Th>
+                        <Table.Th>Unità</Table.Th>
+                        <Table.Th>Valore</Table.Th>
+                        <Table.Th>Campo</Table.Th>
+                        <Table.Th>Match</Table.Th>
+                        <Table.Th>Note</Table.Th>
+                        <Table.Th style={{ width: 60 }} />
+                      </Table.Tr>
+                    </Table.Thead>
+
+                    <Table.Tbody>
+                      {costiAcquisto.map((row) => (
+                        <Table.Tr key={row.id}>
+                          <Table.Td>
+                            <Checkbox
+                              checked={row.attivo}
+                              onChange={(e) => updateExtra(row.id, "attivo", e.currentTarget.checked)}
+                            />
+                          </Table.Td>
+
+                          <Table.Td>
+                            <TextInput
+                              placeholder="Es. Carta premium 120g"
+                              value={row.nome}
+                              onChange={(e) => updateExtra(row.id, "nome", e.currentTarget.value)}
+                              radius="md"
+                            />
+                          </Table.Td>
+
+                          <Table.Td>
+                            <Select
+                              value={row.unita}
+                              onChange={(v) =>
+                                updateExtra(row.id, "unita", (v as CostoExtra["unita"]) ?? "per_ordine")
+                              }
+                              data={[
+                                { value: "per_foglio", label: "Per foglio" },
+                                { value: "per_fascicolo", label: "Per fascicolo" },
+                                { value: "per_ordine", label: "Per ordine" },
+                                { value: "percentuale", label: "Percentuale (%)" },
+                              ]}
+                              radius="md"
+                              allowDeselect={false}
+                            />
+                          </Table.Td>
+
+                          <Table.Td>
+                            <NumberInput
+                              value={row.costo}
+                              onChange={(v) => updateExtra(row.id, "costo", typeof v === "number" ? v : 0)}
+                              decimalScale={3}
+                              min={0}
+                              step={0.001}
+                              radius="md"
+                            />
+                          </Table.Td>
+
+                          <Table.Td>
+                            <TextInput
+                              placeholder='es. "rilegatura", "inchiostro", "grammatura"'
+                              value={row.campo ?? ""}
+                              onChange={(e) => updateExtra(row.id, "campo", e.currentTarget.value)}
+                              radius="md"
+                            />
+                          </Table.Td>
+
+                          <Table.Td>
+                            <TextInput
+                              placeholder="stringa (case-insensitive)"
+                              value={row.match ?? ""}
+                              onChange={(e) => updateExtra(row.id, "match", e.currentTarget.value)}
+                              radius="md"
+                            />
+                          </Table.Td>
+
+                          <Table.Td>
+                            <TextInput
+                              placeholder="Nota opzionale"
+                              value={row.note ?? ""}
+                              onChange={(e) => updateExtra(row.id, "note", e.currentTarget.value)}
+                              radius="md"
+                            />
+                          </Table.Td>
+
+                          <Table.Td>
+                            <Tooltip label="Elimina" withArrow>
+                              <ActionIcon
+                                color="red"
+                                variant="light"
+                                radius="xl"
+                                onClick={() => deleteExtra(row.id)}
+                                aria-label="Elimina costo extra"
+                              >
+                                <IconTrash size={18} />
+                              </ActionIcon>
+                            </Tooltip>
+                          </Table.Td>
+                        </Table.Tr>
                       ))}
-                    </ul>
-                  ) : null}
-                </div>
-                <button onClick={() => handleDelete(ordine.id)} className={styles.dangerBtn}>🗑️ Elimina ordine</button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      </div>
-    </div>
+                    </Table.Tbody>
+                  </Table>
+                </ScrollArea>
+
+                <Text c="dimmed" size="sm" mt="md">
+                  “Percentuale” applica una % sul lordo; le altre unità moltiplicano per fogli/fascicoli/ordine.
+                  Se imposti <strong>Campo/Match</strong>, l’extra si applica solo quando il campo dell’ordine contiene
+                  il testo indicato.
+                </Text>
+              </>
+            )}
+          </Card>
+
+          <Card radius="xl" withBorder>
+            <Group justify="space-between" mb="sm">
+              <Group gap={10}>
+                <IconFolder size={20} />
+                <Title order={3} fw={900}>
+                  Ordini A4
+                </Title>
+              </Group>
+              <Badge variant="light">{ordini.length}</Badge>
+            </Group>
+
+            <Divider mb="md" />
+
+            {ordini.length === 0 ? (
+              <Text c="dimmed">Nessun ordine A4 presente.</Text>
+            ) : (
+              <Stack gap="sm">
+                {ordini.map((ordine) => (
+                  <Paper key={ordine.id} radius="lg" withBorder p="md">
+                    <Group justify="space-between" align="flex-start" gap="md">
+                      <Box>
+                        <Text fw={900}>
+                          {ordine.nome} {ordine.cognome}
+                        </Text>
+                        <Text c="dimmed" size="sm">
+                          {ordine.telefono} · {ordine.email}
+                        </Text>
+
+                        {ordine.file?.length ? (
+                          <Stack gap={6} mt="sm">
+                            {ordine.file.map((link, idx) => (
+                              <Group key={idx} gap={8}>
+                                <IconChevronRight size={16} />
+                                <Text
+                                  component="a"
+                                  href={link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  size="sm"
+                                  style={{ textDecoration: "underline" }}
+                                >
+                                  PDF {idx + 1}
+                                </Text>
+                              </Group>
+                            ))}
+                          </Stack>
+                        ) : null}
+                      </Box>
+
+                      <Button
+                        color="red"
+                        variant="light"
+                        radius="xl"
+                        leftSection={<IconTrash size={18} />}
+                        onClick={() => handleDelete(ordine.id)}
+                      >
+                        Elimina ordine
+                      </Button>
+                    </Group>
+                  </Paper>
+                ))}
+              </Stack>
+            )}
+          </Card>
+        </Stack>
+      </Container>
+    </Box>
   );
 };
 
-export default A4Gestionale;
+export default React.memo(A4Gestionale);

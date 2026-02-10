@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { confirmPasswordReset } from "firebase/auth";
 import { auth } from "../../../backend/firebase";
-import { useMediaQuery } from "@mantine/hooks";
 import {
   Box,
   Grid,
@@ -37,7 +36,6 @@ const ResetPassword: React.FC = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const isMobile = useMediaQuery("(max-width: 900px)");
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -190,8 +188,6 @@ const ResetPassword: React.FC = () => {
                 style={{
                   width: "22%", // <-- riduci qui per rimpicciolirlo
                   maxWidth: 460,
-                  opacity: 0.12,
-                  filter: "blur(3px)",
                   transform: "translateY(12px) scale(1.02)",
                   userSelect: "none",
                 }}

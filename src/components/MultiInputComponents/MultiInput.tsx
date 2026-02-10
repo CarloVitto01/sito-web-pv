@@ -45,7 +45,6 @@ const MultiInput: React.FC<PropsContainer> = ({ onSendData }) => {
   const currentFilePages = currentFileIndex !== null ? numPages[currentFileIndex] || 0 : 0;
 
   const totalPages = React.useMemo(() => numPages.reduce((acc, n) => acc + (n || 0), 0), [numPages]);
-  const [hoveredIndex, setHoveredIndex] = React.useState<number | null>(null);
   React.useEffect(() => {
     const payload: FileHandler[] = files.map((file, i) => ({
       file,

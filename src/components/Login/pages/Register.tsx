@@ -1,4 +1,4 @@
-// src/pages/RegisterPage.tsx (UI split: sinistra identica al Login, solo form su mobile)
+// src/pages/RegisterPage.tsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { registerUser } from "../utils/registerUsers";
@@ -84,40 +84,52 @@ export default function RegisterPage() {
     }
   };
 
+  // ✅ tecnica “chiara” come Login/Recover*
+  const pageBg = "#F6F7FB";
+  const cardBg = "rgba(255,255,255,0.78)";
+  const borderSoft = "rgba(15,23,42,0.10)";
+  const textPrimary = "#0B1220";
+  const textMuted = "rgba(11,18,32,0.68)";
+  const inputBg = "rgba(15,23,42,0.04)";
+  const inputBorder = "rgba(15,23,42,0.12)";
+
   return (
-    <Box mih="100vh" style={{ background: "#070A0F", position: "relative", overflow: "hidden" }}>
-      {/* Glow */}
+    <Box mih="100vh" style={{ background: pageBg, position: "relative", overflow: "hidden" }}>
+      {/* Glow (chiaro) */}
       <Box
         style={{
           position: "absolute",
           inset: 0,
-          background:
-            "radial-gradient(900px 600px at 18% 30%, rgba(209,171,99,0.16), transparent 60%), radial-gradient(700px 480px at 75% 65%, rgba(209,171,99,0.08), transparent 60%)",
+          background: [
+            "radial-gradient(900px 600px at 18% 30%, rgba(209,171,99,0.22), transparent 60%)",
+            "radial-gradient(700px 480px at 75% 65%, rgba(209,171,99,0.12), transparent 60%)",
+            "linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(246,247,251,1) 55%, rgba(246,247,251,1) 100%)",
+          ].join(","),
           pointerEvents: "none",
         }}
       />
 
       <Grid mih="100vh" gutter={0} style={{ position: "relative" }}>
-        {/* LEFT (desktop only) - IDENTICA A LOGIN */}
+        {/* LEFT (desktop only) */}
         <Grid.Col span={{ base: 12, md: 7 }} visibleFrom="md">
           <Box
             mih="100vh"
             style={{
               position: "relative",
-              borderRight: "1px solid rgba(255,255,255,0.08)",
+              borderRight: `1px solid ${borderSoft}`,
               overflow: "hidden",
             }}
           >
-            {/* BACKDROP: 100% CSS */}
+            {/* BACKDROP */}
             <Box
               style={{
                 position: "absolute",
                 inset: 0,
                 background: [
-                  "radial-gradient(900px 650px at 18% 30%, rgba(209,171,99,0.18), transparent 62%)",
-                  "radial-gradient(700px 520px at 70% 65%, rgba(209,171,99,0.10), transparent 60%)",
-                  "linear-gradient(135deg, rgba(209,171,99,0.10) 0%, rgba(0,0,0,0) 55%)",
-                  "linear-gradient(180deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.65) 100%)",
+                  "radial-gradient(900px 650px at 18% 30%, rgba(209,171,99,0.26), transparent 62%)",
+                  "radial-gradient(700px 520px at 70% 65%, rgba(209,171,99,0.14), transparent 60%)",
+                  "linear-gradient(135deg, rgba(209,171,99,0.10) 0%, rgba(255,255,255,0) 55%)",
+                  "linear-gradient(180deg, rgba(255,255,255,0.75) 0%, rgba(246,247,251,1) 100%)",
                 ].join(","),
               }}
             />
@@ -128,13 +140,13 @@ export default function RegisterPage() {
                 position: "absolute",
                 inset: -80,
                 background: [
-                  "repeating-linear-gradient(135deg, rgba(255,255,255,0.06) 0 1px, transparent 1px 18px)",
-                  "repeating-linear-gradient(45deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 26px)",
-                  "radial-gradient(500px 240px at 35% 85%, rgba(209,171,99,0.12), transparent 65%)",
+                  "repeating-linear-gradient(135deg, rgba(15,23,42,0.06) 0 1px, transparent 1px 18px)",
+                  "repeating-linear-gradient(45deg, rgba(15,23,42,0.04) 0 1px, transparent 1px 26px)",
+                  "radial-gradient(500px 240px at 35% 85%, rgba(209,171,99,0.14), transparent 65%)",
                 ].join(","),
-                opacity: 0.35,
+                opacity: 0.25,
                 transform: "rotate(-6deg)",
-                mixBlendMode: "overlay",
+                mixBlendMode: "multiply",
               }}
             />
 
@@ -144,14 +156,14 @@ export default function RegisterPage() {
                 position: "absolute",
                 inset: 0,
                 background:
-                  "linear-gradient(90deg, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.55) 55%, rgba(0,0,0,0.35) 100%)",
+                  "linear-gradient(90deg, rgba(246,247,251,0.88) 0%, rgba(246,247,251,0.72) 55%, rgba(246,247,251,0.55) 100%)",
               }}
             />
             <Box
               style={{
                 position: "absolute",
                 inset: 0,
-                boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.05), inset 0 0 140px rgba(0,0,0,0.85)",
+                boxShadow: "inset 0 0 0 1px rgba(15,23,42,0.06), inset 0 0 140px rgba(15,23,42,0.06)",
                 pointerEvents: "none",
               }}
             />
@@ -166,9 +178,9 @@ export default function RegisterPage() {
                 height: 180,
                 borderRadius: 999,
                 background:
-                  "radial-gradient(circle at 30% 30%, rgba(209,171,99,0.30), rgba(209,171,99,0.06) 55%, transparent 70%)",
+                  "radial-gradient(circle at 30% 30%, rgba(209,171,99,0.26), rgba(209,171,99,0.08) 55%, transparent 70%)",
                 filter: "blur(2px)",
-                opacity: 0.65,
+                opacity: 0.7,
               }}
             />
             <Box
@@ -180,9 +192,9 @@ export default function RegisterPage() {
                 height: 240,
                 borderRadius: 999,
                 background:
-                  "radial-gradient(circle at 30% 30%, rgba(209,171,99,0.22), rgba(209,171,99,0.05) 55%, transparent 72%)",
+                  "radial-gradient(circle at 30% 30%, rgba(209,171,99,0.18), rgba(209,171,99,0.06) 55%, transparent 72%)",
                 filter: "blur(3px)",
-                opacity: 0.55,
+                opacity: 0.65,
               }}
             />
 
@@ -203,10 +215,8 @@ export default function RegisterPage() {
                 src={logoPV}
                 alt="Photo & Vision"
                 style={{
-                  width: "18%",
+                  width: "22%",
                   maxWidth: 360,
-                  opacity: 0.12,
-                  filter: "blur(3px)",
                   transform: "translateY(12px) scale(1.02)",
                   userSelect: "none",
                 }}
@@ -216,15 +226,24 @@ export default function RegisterPage() {
             <Container size="lg" h="100%" style={{ position: "relative", zIndex: 2 }}>
               <Stack justify="center" h="100%" py={48} gap={32}>
                 <Stack gap={12} maw={760} w="100%" mx="auto" style={{ textAlign: "center" }}>
-                  <Text style={{ color: ACCENT, fontWeight: 800, letterSpacing: 1, textTransform: "uppercase", fontSize: 12, marginTop: 150 }}>
+                  <Text
+                    style={{
+                      color: ACCENT,
+                      fontWeight: 800,
+                      letterSpacing: 1,
+                      textTransform: "uppercase",
+                      fontSize: 12,
+                      marginTop: 150,
+                    }}
+                  >
                     Crea il tuo account
                   </Text>
 
-                  <Title order={1} style={{ color: "#fff", letterSpacing: -0.9, lineHeight: 1.05 }}>
+                  <Title order={1} style={{ color: textPrimary, letterSpacing: -0.9, lineHeight: 1.05 }}>
                     Registrati per gestire ordini e storico in modo rapido.
                   </Title>
 
-                  <Text style={{ color: "rgba(255,255,255,0.74)", lineHeight: 1.75 }}>
+                  <Text style={{ color: textMuted, lineHeight: 1.75 }}>
                     Inserisci i tuoi dati per creare l’account. Se sei uno studente, potrai aggiungere anche corso e anno accademico.
                   </Text>
 
@@ -238,7 +257,7 @@ export default function RegisterPage() {
                         boxShadow: "0 0 32px rgba(209,171,99,0.22)",
                       }}
                     />
-                    <Text size="sm" style={{ color: "rgba(255,255,255,0.65)" }}>
+                    <Text size="sm" style={{ color: textMuted }}>
                       Registrazione in meno di 1 minuto
                     </Text>
                   </Group>
@@ -251,25 +270,25 @@ export default function RegisterPage() {
                   w="100%"
                   mx="auto"
                   style={{
-                    background: "rgba(10,12,16,0.55)",
-                    border: "1px solid rgba(255,255,255,0.10)",
+                    background: "rgba(255,255,255,0.70)",
+                    border: `1px solid ${borderSoft}`,
                     backdropFilter: "blur(10px)",
-                    boxShadow: "0 18px 50px rgba(0,0,0,0.45)",
+                    boxShadow: "0 18px 50px rgba(15,23,42,0.10)",
                     maxWidth: 760,
                   }}
                 >
                   <Group justify="space-between" align="center" mb="sm">
-                    <Text style={{ color: "#fff", fontWeight: 800, letterSpacing: -0.2 }}>
+                    <Text style={{ color: textPrimary, fontWeight: 800, letterSpacing: -0.2 }}>
                       Vantaggi dell’account
                     </Text>
-                    <Text size="sm" style={{ color: "rgba(255,255,255,0.60)" }}>
+                    <Text size="sm" style={{ color: textMuted }}>
                       subito disponibili
                     </Text>
                   </Group>
 
                   <List
                     spacing="sm"
-                    styles={{ itemLabel: { color: "rgba(255,255,255,0.74)", lineHeight: 1.6 } }}
+                    styles={{ itemLabel: { color: textMuted, lineHeight: 1.6 } }}
                     icon={
                       <ThemeIcon
                         radius="xl"
@@ -302,24 +321,22 @@ export default function RegisterPage() {
                 radius="xl"
                 p="xl"
                 style={{
-                  background: "rgba(10,12,16,0.78)",
-                  border: "1px solid rgba(255,255,255,0.10)",
-                  boxShadow: "0 20px 60px rgba(0,0,0,0.55)",
+                  background: cardBg,
+                  border: `1px solid ${borderSoft}`,
+                  boxShadow: "0 22px 60px rgba(15,23,42,0.14)",
                   backdropFilter: "blur(10px)",
                 }}
               >
                 <form onSubmit={handleSubmit}>
                   <Stack gap="md">
                     <Stack gap={4}>
-                      <Title order={2} style={{ color: "#fff", letterSpacing: -0.4 }}>
+                      <Title order={2} style={{ color: textPrimary, letterSpacing: -0.4 }}>
                         Registrazione
                       </Title>
-                      <Text style={{ color: "rgba(255,255,255,0.70)" }}>
-                        Compila i campi per creare l’account
-                      </Text>
+                      <Text style={{ color: textMuted }}>Compila i campi per creare l’account</Text>
                     </Stack>
 
-                    <Divider style={{ borderColor: "rgba(255,255,255,0.08)" }} />
+                    <Divider style={{ borderColor: borderSoft }} />
 
                     {error && (
                       <Alert
@@ -328,7 +345,7 @@ export default function RegisterPage() {
                         variant="light"
                         styles={{
                           root: { background: "rgba(255, 0, 0, 0.08)", borderColor: "rgba(255, 0, 0, 0.18)" },
-                          message: { color: "rgba(255,255,255,0.85)" },
+                          message: { color: textPrimary },
                         }}
                       >
                         {error}
@@ -342,8 +359,8 @@ export default function RegisterPage() {
                         onChange={(e) => setDisplayName(e.currentTarget.value)}
                         required
                         styles={{
-                          label: { color: "rgba(255,255,255,0.85)" },
-                          input: { backgroundColor: "rgba(255,255,255,0.06)", borderColor: "rgba(255,255,255,0.10)", color: "#fff" },
+                          label: { color: "rgba(11,18,32,0.85)" },
+                          input: { backgroundColor: inputBg, borderColor: inputBorder, color: textPrimary },
                         }}
                       />
                       <TextInput
@@ -352,8 +369,8 @@ export default function RegisterPage() {
                         onChange={(e) => setSurname(e.currentTarget.value)}
                         required
                         styles={{
-                          label: { color: "rgba(255,255,255,0.85)" },
-                          input: { backgroundColor: "rgba(255,255,255,0.06)", borderColor: "rgba(255,255,255,0.10)", color: "#fff" },
+                          label: { color: "rgba(11,18,32,0.85)" },
+                          input: { backgroundColor: inputBg, borderColor: inputBorder, color: textPrimary },
                         }}
                       />
                     </Group>
@@ -364,8 +381,8 @@ export default function RegisterPage() {
                       onChange={(e) => setEmail(e.currentTarget.value)}
                       required
                       styles={{
-                        label: { color: "rgba(255,255,255,0.85)" },
-                        input: { backgroundColor: "rgba(255,255,255,0.06)", borderColor: "rgba(255,255,255,0.10)", color: "#fff" },
+                        label: { color: "rgba(11,18,32,0.85)" },
+                        input: { backgroundColor: inputBg, borderColor: inputBorder, color: textPrimary },
                       }}
                     />
 
@@ -377,12 +394,8 @@ export default function RegisterPage() {
                       visible={showPassword}
                       onVisibilityChange={setShowPassword}
                       styles={{
-                        label: { color: "rgba(255,255,255,0.85)" },
-                        input: {
-                          backgroundColor: "rgba(255,255,255,0.06)",
-                          borderColor: "rgba(255,255,255,0.10)",
-                          color: "#fff",
-                        },
+                        label: { color: "rgba(11,18,32,0.85)" },
+                        input: { backgroundColor: inputBg, borderColor: inputBorder, color: textPrimary },
                       }}
                     />
 
@@ -394,12 +407,8 @@ export default function RegisterPage() {
                       visible={showConfirmPassword}
                       onVisibilityChange={setShowConfirmPassword}
                       styles={{
-                        label: { color: "rgba(255,255,255,0.85)" },
-                        input: {
-                          backgroundColor: "rgba(255,255,255,0.06)",
-                          borderColor: "rgba(255,255,255,0.10)",
-                          color: "#fff",
-                        },
+                        label: { color: "rgba(11,18,32,0.85)" },
+                        input: { backgroundColor: inputBg, borderColor: inputBorder, color: textPrimary },
                       }}
                     />
 
@@ -409,8 +418,8 @@ export default function RegisterPage() {
                       onChange={(e) => setTelefono(e.currentTarget.value)}
                       required
                       styles={{
-                        label: { color: "rgba(255,255,255,0.85)" },
-                        input: { backgroundColor: "rgba(255,255,255,0.06)", borderColor: "rgba(255,255,255,0.10)", color: "#fff" },
+                        label: { color: "rgba(11,18,32,0.85)" },
+                        input: { backgroundColor: inputBg, borderColor: inputBorder, color: textPrimary },
                       }}
                     />
 
@@ -419,8 +428,8 @@ export default function RegisterPage() {
                       onChange={(e) => setIsStudente(e.currentTarget.checked)}
                       label="Sei uno studente universitario (Ecotekne)?"
                       styles={{
-                        label: { color: "rgba(255,255,255,0.78)" },
-                        input: { borderColor: "rgba(255,255,255,0.18)", backgroundColor: "rgba(255,255,255,0.04)" },
+                        label: { color: "rgba(11,18,32,0.78)" },
+                        input: { borderColor: "rgba(15,23,42,0.18)", backgroundColor: "rgba(15,23,42,0.04)" },
                       }}
                     />
 
@@ -432,8 +441,8 @@ export default function RegisterPage() {
                           onChange={(e) => setCorsoLaurea(e.currentTarget.value)}
                           required
                           styles={{
-                            label: { color: "rgba(255,255,255,0.85)" },
-                            input: { backgroundColor: "rgba(255,255,255,0.06)", borderColor: "rgba(255,255,255,0.10)", color: "#fff" },
+                            label: { color: "rgba(11,18,32,0.85)" },
+                            input: { backgroundColor: inputBg, borderColor: inputBorder, color: textPrimary },
                           }}
                         />
                         <TextInput
@@ -442,8 +451,8 @@ export default function RegisterPage() {
                           onChange={(e) => setAnnoAccademico(e.currentTarget.value)}
                           required
                           styles={{
-                            label: { color: "rgba(255,255,255,0.85)" },
-                            input: { backgroundColor: "rgba(255,255,255,0.06)", borderColor: "rgba(255,255,255,0.10)", color: "#fff" },
+                            label: { color: "rgba(11,18,32,0.85)" },
+                            input: { backgroundColor: inputBg, borderColor: inputBorder, color: textPrimary },
                           }}
                         />
                       </Group>
@@ -465,7 +474,7 @@ export default function RegisterPage() {
                         radius="lg"
                         variant="outline"
                         onClick={() => navigate("/login")}
-                        style={{ borderColor: "rgba(209,171,99,0.55)", color: ACCENT }}
+                        style={{ borderColor: "rgba(209,171,99,0.60)", color: ACCENT }}
                       >
                         Hai un account?
                       </Button>
@@ -476,12 +485,12 @@ export default function RegisterPage() {
                       radius="lg"
                       variant="subtle"
                       onClick={() => navigate("/")}
-                      style={{ color: "rgba(255,255,255,0.75)" }}
+                      style={{ color: "rgba(11,18,32,0.72)" }}
                     >
                       Torna alla Home
                     </Button>
 
-                    <Text size="xs" style={{ color: "rgba(255,255,255,0.50)", lineHeight: 1.5 }} mt={4}>
+                    <Text size="xs" style={{ color: "rgba(11,18,32,0.55)", lineHeight: 1.5 }} mt={4}>
                       Creando un account accetti i Termini di servizio e l’Informativa Privacy.
                     </Text>
                   </Stack>

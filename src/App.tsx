@@ -9,29 +9,23 @@ import {
 } from "react-router-dom";
 
 import "./App.css";
-
 import Login from "./components/Login/pages/Login";
 import Register from "./components/Login/pages/Register";
 import AccountPage from "./components/Login/pages/AccountPage";
 import RecoverPassword from "./components/Login/pages/RecoverPassword";
 import ResetPassword from "./components/Login/pages/ResetPassword";
 import RecoverEmail from "./components/Login/pages/RecoverEmail";
-
 import Privacy from "./components/Privacy/Privacy";
 import Cookie from "./components/Privacy/Cookie";
 import Terms from "./components/Privacy/Terms";
 import CookieInfoBar from "./components/Privacy/CookieInfoBar";
-
-import RichiestaStampa3D from "./components/3D/RichiestaStampa3D";
 import PdfPrintPage from "./components/StampaPdf/PdfPrintPage";
-
 import A4Gestionale from "./gestionale/GestionaleA4/A4Gestionale";
 import A3Gestionale from "./gestionale/GestionaleA3/A3Gestionale";
 import UtentiGestionale from "./gestionale/GestionaleUtenti/UtentiGestionale";
 import StoricoDati from "./gestionale/GestionaleDati/StoricoDati";
 import GestioneAccessi from "./gestionale/GestionaleAccessi/GestioneAccessi";
 import QRCodeGenerator from "./gestionale/GestionaleQR/QRCodeGenerator";
-import BobinePLAGestionale from "./gestionale/GestionaleBobine/BobineGestionale";
 import TasseGestionale from "./gestionale/GestionaleTasse/TasseGestionale";
 import BannerGestionale from "./gestionale/GestionaleBanner/BannerGestionale";
 import ConsegneGestionale from "./gestionale/GestionaleConsegne/ConsegneGestionale";
@@ -39,10 +33,8 @@ import ScontiGestionale from "./gestionale/GestioneFestivita/ScontiGestionale";
 
 import { auth, db } from "./backend/firebase";
 import { getDoc, doc } from "firebase/firestore";
+import PlasticheGestionale from "./gestionale/GestionalePlastiche/PlasticheGestionale";
 
-// Se hai già un Header/Footer globali, importali qui.
-// import Header from "./components/Header/Header";
-// import Footer from "./components/Footer/Footer";
 
 const ScrollToTop: React.FC = () => {
   const navigationType = useNavigationType();
@@ -81,10 +73,7 @@ const ProtectedRoute: React.FC<{ element: JSX.Element; page: string }> = ({ elem
   return canAccess ? element : <Navigate to="/" replace />;
 };
 
-/**
- * Wrapper che applica lo sfondo SOLO al contenuto.
- * Header/Footer devono stare FUORI da questo wrapper.
- */
+
 const PageBackground: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <div className="pageBg">
@@ -115,9 +104,6 @@ const App: React.FC = () => {
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/cookie-policy" element={<Cookie />} />
           <Route path="/termini" element={<Terms />} />
-
-          <Route path="/3d" element={<RichiestaStampa3D />} />
-
           <Route
             path="/gestionaleA4"
             element={<ProtectedRoute page="gestionaleA4" element={<A4Gestionale />} />}
@@ -142,8 +128,8 @@ const App: React.FC = () => {
             path="/qr-generator"
             element={<ProtectedRoute page="qr-generator" element={<QRCodeGenerator />} />}
           />
-          <Route path="/bobine" element={<ProtectedRoute page="bobine" element={<BobinePLAGestionale />} />} />
           <Route path="/tasse" element={<ProtectedRoute page="tasse" element={<TasseGestionale />} />} />
+          <Route path="/plastiche" element={<ProtectedRoute page="plastiche" element={<PlasticheGestionale />} />} />
           <Route path="/banner" element={<ProtectedRoute page="banner" element={<BannerGestionale />} />} />
           <Route path="/consegna" element={<ProtectedRoute page="consegna" element={<ConsegneGestionale />} />} />
           <Route path="/sconti" element={<ProtectedRoute page="sconti" element={<ScontiGestionale />} />} />

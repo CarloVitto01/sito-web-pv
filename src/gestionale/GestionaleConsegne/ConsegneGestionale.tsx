@@ -1,19 +1,47 @@
+// src/gestionale/GestionaleConsegne/ConsegneGestionale.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import { db } from "../../backend/firebase";
 import { doc, setDoc, onSnapshot } from "firebase/firestore";
-import styles from "./ConsegneGestionale.module.css";
 import Header from "../../components/HeaderComponents/Header";
+
+import {
+  ActionIcon,
+  Badge,
+  Box,
+  Button,
+  Card,
+  Container,
+  Divider,
+  Group,
+  Modal,
+  NumberInput,
+  Paper,
+  Stack,
+  Switch,
+  Text,
+  TextInput,
+  Title,
+} from "@mantine/core";
+import { TimeInput } from "@mantine/dates";
+import {
+  IconCalendar,
+  IconClock,
+  IconDeviceFloppy,
+  IconPlus,
+  IconTrash,
+  IconX,
+} from "@tabler/icons-react";
 
 type TimeRange = { start: string; end: string };
 type BlacklistRange = { from: string; to: string };
 
 type DeliveryConfig = {
-  weekdays: number[];         // 1..7 (1=Lun ... 7=Dom)
-  timeRanges: TimeRange[];    // una o più fasce orarie
-  slotsAhead: number;         // quanti slot totali generare
-  timezone?: string;          // es. "Europe/Rome"
-  blacklistDates?: string[];  // YYYY-MM-DD singole
-  blacklistRanges?: BlacklistRange[]; // intervalli [from,to] in YYYY-MM-DD
+  weekdays: number[]; // 1..7 (1=Lun ... 7=Dom)
+  timeRanges: TimeRange[];
+  slotsAhead: number;
+  timezone?: string;
+  blacklistDates?: string[]; // YYYY-MM-DD
+  blacklistRanges?: BlacklistRange[];
 };
 
 const COLL = "configConsegne";
@@ -30,14 +58,12 @@ const DEFAULT_CFG: DeliveryConfig = {
 
 const DAY_LABELS = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
 
-/** Utils formattazione */
+// Utils
 const toIt = (iso: string) => {
-  // iso: YYYY-MM-DD
   const [y, m, d] = iso.split("-").map(Number);
   if (!y || !m || !d) return iso;
   return `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${y}`;
 };
-
 const sortISO = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 const sortRange = (a: BlacklistRange, b: BlacklistRange) =>
   a.from === b.from ? sortISO(a.to, b.to) : sortISO(a.from, b.from);
@@ -48,12 +74,12 @@ const ConsegneGestionale: React.FC = () => {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Modal state
+  // Modal
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"single" | "range">("single");
-  const [singleDate, setSingleDate] = useState<string>(""); // YYYY-MM-DD
-  const [rangeFrom, setRangeFrom] = useState<string>(""); // YYYY-MM-DD
-  const [rangeTo, setRangeTo] = useState<string>(""); // YYYY-MM-DD
+  const [singleDate, setSingleDate] = useState<string>("");
+  const [rangeFrom, setRangeFrom] = useState<string>("");
+  const [rangeTo, setRangeTo] = useState<string>("");
   const [modalError, setModalError] = useState<string | null>(null);
 
   // live load
@@ -73,14 +99,8 @@ const ConsegneGestionale: React.FC = () => {
               Array.isArray(data.timeRanges) && data.timeRanges.length
                 ? (data.timeRanges as TimeRange[])
                 : DEFAULT_CFG.timeRanges,
-            slotsAhead:
-              typeof data.slotsAhead === "number"
-                ? data.slotsAhead
-                : DEFAULT_CFG.slotsAhead,
-            timezone:
-              typeof data.timezone === "string" && data.timezone
-                ? data.timezone
-                : DEFAULT_CFG.timezone,
+            slotsAhead: typeof data.slotsAhead === "number" ? data.slotsAhead : DEFAULT_CFG.slotsAhead,
+            timezone: typeof data.timezone === "string" && data.timezone ? data.timezone : DEFAULT_CFG.timezone,
             blacklistDates: Array.isArray(data.blacklistDates)
               ? (data.blacklistDates as string[]).slice().sort(sortISO)
               : [],
@@ -105,9 +125,7 @@ const ConsegneGestionale: React.FC = () => {
   const toggleWeekday = (wd: number) => {
     setCfg((prev) => {
       const has = prev.weekdays.includes(wd);
-      const weekdays = has
-        ? prev.weekdays.filter((x) => x !== wd)
-        : [...prev.weekdays, wd];
+      const weekdays = has ? prev.weekdays.filter((x) => x !== wd) : [...prev.weekdays, wd];
       weekdays.sort((a, b) => a - b);
       return { ...prev, weekdays };
     });
@@ -132,14 +150,11 @@ const ConsegneGestionale: React.FC = () => {
     setCfg((prev) => {
       const tr = [...prev.timeRanges];
       tr.splice(idx, 1);
-      return {
-        ...prev,
-        timeRanges: tr.length ? tr : [{ start: "12:00", end: "13:00" }],
-      };
+      return { ...prev, timeRanges: tr.length ? tr : [{ start: "12:00", end: "13:00" }] };
     });
   };
 
-  // === Blacklist: Modal openers ===
+  // Modal openers
   const openAddSingle = () => {
     setModalMode("single");
     setSingleDate("");
@@ -148,6 +163,7 @@ const ConsegneGestionale: React.FC = () => {
     setModalError(null);
     setModalOpen(true);
   };
+
   const openAddRange = () => {
     setModalMode("range");
     setSingleDate("");
@@ -157,7 +173,7 @@ const ConsegneGestionale: React.FC = () => {
     setModalOpen(true);
   };
 
-  // === Blacklist: Add/Remove ===
+  // Blacklist ops
   const addBlacklistSingle = () => {
     if (!singleDate) {
       setModalError("Seleziona una data.");
@@ -177,7 +193,7 @@ const ConsegneGestionale: React.FC = () => {
       return;
     }
     if (rangeFrom > rangeTo) {
-      setModalError("L'intervallo non è valido: 'dal' è successivo ad 'al'.");
+      setModalError("Intervallo non valido: 'dal' è successivo ad 'al'.");
       return;
     }
     setCfg((prev) => {
@@ -189,18 +205,13 @@ const ConsegneGestionale: React.FC = () => {
   };
 
   const removeBlacklistDate = (d: string) => {
-    setCfg((prev) => ({
-      ...prev,
-      blacklistDates: (prev.blacklistDates || []).filter((x) => x !== d),
-    }));
+    setCfg((prev) => ({ ...prev, blacklistDates: (prev.blacklistDates || []).filter((x) => x !== d) }));
   };
 
   const removeBlacklistRange = (r: BlacklistRange) => {
     setCfg((prev) => ({
       ...prev,
-      blacklistRanges: (prev.blacklistRanges || []).filter(
-        (x) => !(x.from === r.from && x.to === r.to)
-      ),
+      blacklistRanges: (prev.blacklistRanges || []).filter((x) => !(x.from === r.from && x.to === r.to)),
     }));
   };
 
@@ -232,9 +243,7 @@ const ConsegneGestionale: React.FC = () => {
   const preview = useMemo(() => {
     const singles =
       (cfg.blacklistDates || []).length
-        ? `Escluse singole: ${(cfg.blacklistDates || [])
-          .map(toIt)
-          .join(", ")}`
+        ? `Escluse singole: ${(cfg.blacklistDates || []).map(toIt).join(", ")}`
         : "";
     const ranges =
       (cfg.blacklistRanges || []).length
@@ -258,213 +267,337 @@ const ConsegneGestionale: React.FC = () => {
   }, [cfg]);
 
   return (
-    <div className={styles.page}>
+    <Box>
       <Header />
-      <div className={styles.wrapper}>
-        <h2 className={styles.title}>Gestione Consegne (Riepilogo A4/A3)</h2>
-        {!loaded ? <p>Caricamento…</p> : null}
-        {error ? <p className={styles.error}>{error}</p> : null}
 
-        {/* Giorni */}
-        <section className={styles.card}>
-          <h3>Giorni della settimana</h3>
-          <div className={styles.daysGrid}>
-            {DAY_LABELS.map((lab, i) => {
-              const wd = i === 0 ? 7 : i; // 1..7 con 7=Dom
-              const checked = cfg.weekdays.includes(wd);
-              return (
-                <label
-                  key={wd}
-                  className={`${styles.day} ${checked ? styles.dayOn : ""}`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={() => toggleWeekday(wd)}
-                  />
-                  {lab}
-                </label>
-              );
-            })}
-          </div>
-        </section>
+      <Container size="xl" py="lg">
+        <Paper radius="xl" p="lg" withBorder>
+          <Group justify="space-between" align="flex-start" gap="md">
+            <Box>
+              <Title order={2} fw={900}>
+                Gestione consegne
+              </Title>
+              <Text c="dimmed" mt={6}>
+                Configura giorni, fasce orarie e date escluse (festivi/chiusure). Questa configurazione viene usata
+                per A4 e A3.
+              </Text>
+            </Box>
 
-        {/* Fasce orarie */}
-        <section className={styles.card}>
-          <h3>Fasce orarie</h3>
-          {cfg.timeRanges.map((tr, idx) => (
-            <div key={idx} className={styles.rangeRow}>
-              <div>
-                <label>Inizio</label>
-                <input
-                  type="time"
-                  value={tr.start}
-                  onChange={(e) => updateTimeRange(idx, "start", e.target.value)}
-                />
-              </div>
-              <div>
-                <label>Fine</label>
-                <input
-                  type="time"
-                  value={tr.end}
-                  onChange={(e) => updateTimeRange(idx, "end", e.target.value)}
-                />
-              </div>
-              <button
-                type="button"
-                className={styles.removeBtn}
-                onClick={() => removeTimeRange(idx)}
+            <Group gap="sm">
+              <Badge variant="light" color={loaded ? "green" : "gray"}>
+                {loaded ? "Caricato" : "Caricamento…"}
+              </Badge>
+              <Button
+                radius="xl"
+                color="yellow"
+                leftSection={<IconDeviceFloppy size={18} />}
+                onClick={save}
+                loading={saving}
               >
-                Rimuovi
-              </button>
-            </div>
-          ))}
-          <button type="button" className={styles.addBtn} onClick={addTimeRange}>
-            + Aggiungi fascia
-          </button>
-        </section>
+                Salva
+              </Button>
+            </Group>
+          </Group>
+        </Paper>
 
-        {/* Altri parametri */}
-        <section className={styles.card}>
-          <h3>Impostazioni</h3>
-          <div className={styles.inline}>
-            <label>Slots da mostrare</label>
-            <input
-              type="number"
-              min={1}
-              max={48}
-              value={cfg.slotsAhead}
-              onChange={(e) =>
-                setCfg((prev) => ({
-                  ...prev,
-                  slotsAhead: Math.max(
-                    1,
-                    Math.min(48, Number(e.target.value) || 1)
-                  ),
-                }))
-              }
-            />
-          </div>
-          <div className={styles.inline}>
-            <label>Timezone</label>
-            <input
-              type="text"
-              value={cfg.timezone || ""}
-              placeholder="Europe/Rome"
-              onChange={(e) =>
-                setCfg((prev) => ({ ...prev, timezone: e.target.value }))
-              }
-            />
-          </div>
-        </section>
+        <Stack mt="lg" gap="lg">
+          {error ? (
+            <Paper radius="lg" p="md" withBorder style={{ borderColor: "rgba(255,0,0,.25)" }}>
+              <Text c="red" fw={700}>
+                {error}
+              </Text>
+            </Paper>
+          ) : null}
 
-        {/* Date da escludere */}
-        <section className={styles.card}>
-          <h3>Date da escludere (festivi/chiusure)</h3>
+          {/* Giorni */}
+          <Card radius="xl" withBorder>
+            <Group gap={10} mb="sm">
+              <IconCalendar size={20} />
+              <Title order={3} fw={900}>
+                Giorni della settimana
+              </Title>
+            </Group>
+            <Divider mb="md" />
 
-          {(cfg.blacklistDates && cfg.blacklistDates.length > 0) || (cfg.blacklistRanges && cfg.blacklistRanges.length > 0) ? (
-            <>
-              <div className={styles.blacklist}>
+            <Box
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+                gap: 10,
+              }}
+            >
+              {DAY_LABELS.map((lab, i) => {
+                const wd = i === 0 ? 7 : i; // 1..7 con 7=Dom
+                const checked = cfg.weekdays.includes(wd);
+                return (
+                  <Paper
+                    key={wd}
+                    radius="lg"
+                    withBorder
+                    p="sm"
+                    style={{
+                      cursor: "pointer",
+                      userSelect: "none",
+                      borderColor: checked ? "rgba(199,171,43,.55)" : undefined,
+                      background: checked ? "rgba(199,171,43,.10)" : undefined,
+                    }}
+                    onClick={() => toggleWeekday(wd)}
+                  >
+                    <Group justify="space-between" wrap="nowrap">
+                      <Text fw={900}>{lab}</Text>
+                      <Switch checked={checked} onChange={() => toggleWeekday(wd)} />
+                    </Group>
+                  </Paper>
+                );
+              })}
+            </Box>
+
+            <Text c="dimmed" size="sm" mt="md">
+              Tip: seleziona i giorni in cui accetti consegne (Lun–Dom).
+            </Text>
+          </Card>
+
+          {/* Fasce orarie */}
+          <Card radius="xl" withBorder>
+            <Group justify="space-between" align="center" mb="sm">
+              <Group gap={10}>
+                <IconClock size={20} />
+                <Title order={3} fw={900}>
+                  Fasce orarie
+                </Title>
+              </Group>
+
+              <Button
+                radius="xl"
+                variant="light"
+                leftSection={<IconPlus size={18} />}
+                onClick={addTimeRange}
+              >
+                Aggiungi fascia
+              </Button>
+            </Group>
+
+            <Divider mb="md" />
+
+            <Stack gap="sm">
+              {cfg.timeRanges.map((tr, idx) => (
+                <Paper key={idx} radius="lg" withBorder p="md">
+                  <Group justify="space-between" align="flex-end" gap="md" wrap="wrap">
+                    <Group gap="md" wrap="wrap">
+                      <TimeInput
+                        label="Inizio"
+                        value={tr.start}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          updateTimeRange(idx, "start", e.currentTarget.value)
+                        }
+                        radius="lg"
+                      />
+
+                      <TimeInput
+                        label="Fine"
+                        value={tr.end}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          updateTimeRange(idx, "end", e.currentTarget.value)
+                        }
+                        radius="lg"
+                      />
+                    </Group>
+
+                    <ActionIcon
+                      color="red"
+                      variant="light"
+                      radius="xl"
+                      size="lg"
+                      onClick={() => removeTimeRange(idx)}
+                      aria-label="Rimuovi fascia"
+                    >
+                      <IconTrash size={18} />
+                    </ActionIcon>
+                  </Group>
+                </Paper>
+              ))}
+            </Stack>
+          </Card>
+
+          {/* Impostazioni */}
+          <Card radius="xl" withBorder>
+            <Group gap={10} mb="sm">
+              <Title order={3} fw={900}>
+                Impostazioni
+              </Title>
+            </Group>
+            <Divider mb="md" />
+
+            <Group gap="md" align="flex-end" wrap="wrap">
+              <NumberInput
+                label="Slots da mostrare"
+                value={cfg.slotsAhead}
+                min={1}
+                max={48}
+                clampBehavior="strict"
+                onChange={(v) =>
+                  setCfg((prev) => ({
+                    ...prev,
+                    slotsAhead: Math.max(1, Math.min(48, Number(v) || 1)),
+                  }))
+                }
+                radius="lg"
+              />
+
+              <TextInput
+                label="Timezone"
+                value={cfg.timezone || ""}
+                placeholder="Europe/Rome"
+                onChange={(e) => setCfg((prev) => ({ ...prev, timezone: e.currentTarget.value }))}
+                radius="lg"
+              />
+            </Group>
+          </Card>
+
+          {/* Blacklist */}
+          <Card radius="xl" withBorder>
+            <Group justify="space-between" align="center" mb="sm" wrap="wrap">
+              <Group gap={10}>
+                <IconCalendar size={20} />
+                <Title order={3} fw={900}>
+                  Date da escludere
+                </Title>
+              </Group>
+
+              <Group gap="sm">
+                <Button radius="xl" variant="light" leftSection={<IconPlus size={18} />} onClick={openAddSingle}>
+                  Data singola
+                </Button>
+                <Button radius="xl" variant="light" leftSection={<IconPlus size={18} />} onClick={openAddRange}>
+                  Intervallo
+                </Button>
+              </Group>
+            </Group>
+
+            <Divider mb="md" />
+
+            {(cfg.blacklistDates?.length || 0) > 0 || (cfg.blacklistRanges?.length || 0) > 0 ? (
+              <Group gap="sm" wrap="wrap">
                 {(cfg.blacklistDates || []).map((d) => (
-                  <span key={`d-${d}`} className={styles.badge}>
-                    {toIt(d)}{" "}
-                    <button
-                      onClick={() => removeBlacklistDate(d)}
-                      title="Rimuovi"
-                    >
-                      ×
-                    </button>
-                  </span>
+                  <Badge
+                    key={`d-${d}`}
+                    variant="light"
+                    radius="md"
+                    rightSection={
+                      <ActionIcon
+                        size="xs"
+                        radius="xl"
+                        variant="subtle"
+                        onClick={() => removeBlacklistDate(d)}
+                        aria-label="Rimuovi data"
+                      >
+                        <IconX size={12} />
+                      </ActionIcon>
+                    }
+                  >
+                    {toIt(d)}
+                  </Badge>
                 ))}
+
                 {(cfg.blacklistRanges || []).map((r, i) => (
-                  <span key={`r-${i}-${r.from}-${r.to}`} className={`${styles.badge} ${styles.badgeRange}`}>
-                    {toIt(r.from)} → {toIt(r.to)}{" "}
-                    <button
-                      onClick={() => removeBlacklistRange(r)}
-                      title="Rimuovi intervallo"
-                    >
-                      ×
-                    </button>
-                  </span>
+                  <Badge
+                    key={`r-${i}-${r.from}-${r.to}`}
+                    color="grape"
+                    variant="light"
+                    radius="md"
+                    rightSection={
+                      <ActionIcon
+                        size="xs"
+                        radius="xl"
+                        variant="subtle"
+                        onClick={() => removeBlacklistRange(r)}
+                        aria-label="Rimuovi intervallo"
+                      >
+                        <IconX size={12} />
+                      </ActionIcon>
+                    }
+                  >
+                    {toIt(r.from)} → {toIt(r.to)}
+                  </Badge>
                 ))}
-              </div>
-            </>
+              </Group>
+            ) : (
+              <Text c="dimmed">Nessuna data o intervallo escluso.</Text>
+            )}
+          </Card>
+
+          {/* Anteprima */}
+          <Card radius="xl" withBorder>
+            <Title order={3} fw={900}>
+              Anteprima
+            </Title>
+            <Divider my="md" />
+            <Text>{preview}</Text>
+          </Card>
+        </Stack>
+      </Container>
+
+      {/* Modal: aggiunta data/intervallo */}
+      <Modal
+        opened={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={modalMode === "single" ? "Aggiungi data singola" : "Aggiungi intervallo"}
+        centered
+        radius="lg"
+        overlayProps={{ blur: 2 }}
+      >
+        <Stack gap="md">
+          {modalMode === "single" ? (
+            <TextInput
+              label="Data (YYYY-MM-DD)"
+              type="date"
+              value={singleDate}
+              onChange={(e) => setSingleDate(e.currentTarget.value)}
+              radius="lg"
+            />
           ) : (
-            <p className={styles.muted}>Nessuna data o intervallo escluso.</p>
+            <>
+              <TextInput
+                label="Dal (YYYY-MM-DD)"
+                type="date"
+                value={rangeFrom}
+                onChange={(e) => setRangeFrom(e.currentTarget.value)}
+                radius="lg"
+              />
+              <TextInput
+                label="Al (YYYY-MM-DD)"
+                type="date"
+                value={rangeTo}
+                onChange={(e) => setRangeTo(e.currentTarget.value)}
+                radius="lg"
+              />
+            </>
           )}
 
-          <div className={styles.actionsRow}>
-            <button type="button" className={styles.addBtn} onClick={openAddSingle}>
-              + Aggiungi data singola
-            </button>
-            <button type="button" className={styles.addBtn} onClick={openAddRange}>
-              + Aggiungi intervallo
-            </button>
-          </div>
-        </section>
+          {modalError ? (
+            <Text c="red" fw={700}>
+              {modalError}
+            </Text>
+          ) : null}
 
-        <section className={styles.card}>
-          <h3>Anteprima</h3>
-          <p className={styles.preview}>{preview}</p>
-        </section>
-
-        <div className={styles.actions}>
-          <button className={styles.saveBtn} onClick={save} disabled={saving}>
-            {saving ? "Salvataggio…" : "Salva configurazione"}
-          </button>
-        </div>
-      </div>
-
-      {modalOpen && (
-        <>
-          <div className={styles.backdrop} onClick={() => setModalOpen(false)} />
-          <div className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="dlg-title">
-            {/* 👇 UNICO PANNELLO */}
-            <div className={styles.modalPanel}>
-              <div className={styles.modalHeader}>
-                <h3 id="dlg-title">
-                  {modalMode === "single" ? "Aggiungi data singola" : "Aggiungi intervallo date"}
-                </h3>
-              </div>
-
-              <div className={styles.modalBody}>
-                {modalMode === "single" ? (
-                  <div className={styles.inline}>
-                    <label>Data (DD/MM/YYYY)</label>
-                    <input type="date" value={singleDate} onChange={(e) => setSingleDate(e.target.value)} />
-                  </div>
-                ) : (
-                  <>
-                    <div className={styles.inline}>
-                      <label>Dal (DD/MM/YYYY)</label>
-                      <input type="date" value={rangeFrom} onChange={(e) => setRangeFrom(e.target.value)} />
-                    </div>
-                    <div className={styles.inline}>
-                      <label>Al (DD/MM/YYYY)</label>
-                      <input type="date" value={rangeTo} onChange={(e) => setRangeTo(e.target.value)} />
-                    </div>
-                  </>
-                )}
-                {modalError && <p className={styles.error}>{modalError}</p>}
-              </div>
-
-              <div className={styles.modalFooter}>
-                <div className={styles.modalActions}>
-                  <button onClick={() => setModalOpen(false)} className={styles.secondaryBtn}>Annulla</button>
-                  {modalMode === "single" ? (
-                    <button onClick={addBlacklistSingle} className={styles.primaryBtn}>Aggiungi</button>
-                  ) : (
-                    <button onClick={addBlacklistRange} className={styles.primaryBtn}>Aggiungi intervallo</button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-
-    </div>
+          <Group justify="flex-end">
+            <Button radius="xl" variant="subtle" onClick={() => setModalOpen(false)}>
+              Annulla
+            </Button>
+            {modalMode === "single" ? (
+              <Button radius="xl" color="yellow" onClick={addBlacklistSingle}>
+                Aggiungi
+              </Button>
+            ) : (
+              <Button radius="xl" color="yellow" onClick={addBlacklistRange}>
+                Aggiungi intervallo
+              </Button>
+            )}
+          </Group>
+        </Stack>
+      </Modal>
+    </Box>
   );
 };
 
-export default ConsegneGestionale;
+export default React.memo(ConsegneGestionale);

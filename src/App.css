@@ -1,52 +1,102 @@
-:root{
-  --color-bg-base: #f1e9e9;
-
-  /* più piccoli e più fitti */
-  --pv-pattern-size: 34px;
-  --pv-pattern-opacity: 0.42;
-
-  /* se vuoi calcolare al millimetro la min-height del contenuto */
-  --header-h: 72px;
-  --footer-h: 0px; /* metti la tua altezza footer se vuoi */
+html, body, #root {
+  min-height: 100%;
 }
 
-html, body, #root { min-height: 100%; }
-body{
+body {
   margin: 0;
   background: var(--color-bg-base);
+  font-family: var(--font-main);
+  color: var(--color-text-primary);
 }
 
-/* evita wrapper che coprono lo sfondo */
-#root, .App { background: transparent !important; }
+/* root sempre trasparente */
+#root, .App {
+  background: transparent !important;
+}
 
-/* wrapper contenuto (qui vive il pattern) */
-.pageBg{
+/* wrapper principale */
+.pageBg {
   position: relative;
-  min-height: calc(100dvh - var(--header-h) - var(--footer-h));
+  min-height: 100dvh;
+  overflow: hidden;
 }
 
-/* pattern SOLO sul contenuto */
-.pageBg::before{
-  content:"";
+/* SFONDO BASE (statico) */
+.pageBg::before {
+  content: "";
   position: absolute;
   inset: 0;
-  pointer-events: none;
   z-index: 0;
+  pointer-events: none;
 
-  background-image: url("/public/patterns/pv-diamond-beige-3d.svg"); /* ⚠️ NO /public */
-  background-repeat: repeat;
-  background-size: var(--pv-pattern-size) var(--pv-pattern-size);
-  opacity: var(--pv-pattern-opacity);
+  background:
+    radial-gradient(900px 600px at 20% 10%, var(--diamond-light), transparent 60%),
+    radial-gradient(700px 500px at 85% 40%, rgba(255,255,255,0.35), transparent 65%),
+    radial-gradient(1000px 700px at 50% 90%, rgba(255,255,255,0.25), transparent 70%),
+    linear-gradient(180deg, var(--color-bg-base) 0%, #e6d600 100%);
+
+  /* leggero smoothing */
+  filter: saturate(1.05);
 }
 
-/* contenuti sopra al pattern */
-.pageContent{
+/* LAYER ANIMATO (bagliori “vivi”) */
+.pageBg::after {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  z-index: 0;
+  pointer-events: none;
+
+  /* macchie di luce morbide + un filo di “sheen” */
+  background:
+    radial-gradient(800px 520px at 25% 25%, rgba(255,255,255,0.22), transparent 62%),
+    radial-gradient(900px 650px at 70% 35%, rgba(255,255,255,0.14), transparent 66%),
+    radial-gradient(950px 700px at 45% 80%, rgba(255,255,255,0.10), transparent 70%),
+    linear-gradient(120deg, rgba(255,255,255,0.06), transparent 40%, rgba(255,255,255,0.05));
+
+  /* blur per “diamante / luce” */
+  filter: blur(18px);
+  opacity: 0.85;
+
+  /* performance: anima transform (composited) */
+  transform: translate3d(0,0,0) scale(1.02);
+  will-change: transform, opacity;
+
+  animation: pv-bg-drift 16s ease-in-out infinite alternate;
+  mix-blend-mode: screen; /* se ti piace l’effetto “luce” */
+}
+
+/* contenuto sopra allo sfondo */
+.pageContent {
   position: relative;
   z-index: 1;
 }
 
-/* Mantine: Card/Paper restano bianchi puliti */
-.mantine-Paper-root,
-.mantine-Card-root {
-  background-color: #fff !important;
+/* Mantine: superfici pulite */
+.mantine-Card-root,
+.mantine-Paper-root {
+  background-color: #ffffff !important;
+}
+
+/* Animazione morbida */
+@keyframes pv-bg-drift {
+  0% {
+    transform: translate3d(-2%, -1%, 0) scale(1.03) rotate(-0.4deg);
+    opacity: 0.78;
+  }
+  50% {
+    transform: translate3d(1.5%, -2%, 0) scale(1.06) rotate(0.2deg);
+    opacity: 0.92;
+  }
+  100% {
+    transform: translate3d(2.5%, 1.5%, 0) scale(1.04) rotate(0.5deg);
+    opacity: 0.82;
+  }
+}
+
+/* Rispetta chi preferisce meno animazioni */
+@media (prefers-reduced-motion: reduce) {
+  .pageBg::after {
+    animation: none;
+  }
 }

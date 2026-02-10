@@ -1,11 +1,16 @@
 :root{
-  --color-bg-base: #f5e400;
+  /* BASE */
+  --color-bg-base: #e2e0be;
 
-  --diamond-size: 64px;
-
+  /* LUCI */
   --diamond-light: rgba(255,255,255,0.55);
+  --diamond-light-soft: rgba(255,255,255,0.25);
 
-  /* se già le hai altrove ok, altrimenti tienile */
+  /* ORO */
+  --gold-deep: #d6c700;
+  --gold-soft: #efe9a8;
+
+  /* TESTO */
   --color-text-primary: #1c1c1c;
   --font-main: "Segoe UI", sans-serif;
 }

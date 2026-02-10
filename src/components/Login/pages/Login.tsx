@@ -23,7 +23,7 @@ import {
   List,
   Alert,
 } from "@mantine/core";
-import { IconCheck, IconLock, IconAlertCircle } from "@tabler/icons-react";
+import { IconCheck, IconAlertCircle } from "@tabler/icons-react";
 
 import logoPV from "../../../assets/images/logo_b.png";
 
@@ -57,22 +57,34 @@ export default function LoginPage() {
     }
   };
 
+  // ✅ stile “chiaro” mantenendo la stessa struttura/tecnica
+  const pageBg = "#F6F7FB";
+  const cardBg = "rgba(255,255,255,0.78)";
+  const borderSoft = "rgba(15,23,42,0.10)";
+  const textPrimary = "#0B1220";
+  const textMuted = "rgba(11,18,32,0.68)";
+  const inputBg = "rgba(15,23,42,0.04)";
+  const inputBorder = "rgba(15,23,42,0.12)";
+
   return (
     <Box
       mih="100vh"
       style={{
-        background: "#070A0F",
+        background: pageBg,
         position: "relative",
         overflow: "hidden",
       }}
     >
-      {/* Glow */}
+      {/* Glow (chiaro) */}
       <Box
         style={{
           position: "absolute",
           inset: 0,
-          background:
-            "radial-gradient(900px 600px at 18% 30%, rgba(209,171,99,0.16), transparent 60%), radial-gradient(700px 480px at 75% 65%, rgba(209,171,99,0.08), transparent 60%)",
+          background: [
+            "radial-gradient(900px 600px at 18% 30%, rgba(209,171,99,0.22), transparent 60%)",
+            "radial-gradient(700px 480px at 75% 65%, rgba(209,171,99,0.12), transparent 60%)",
+            "linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(246,247,251,1) 55%, rgba(246,247,251,1) 100%)",
+          ].join(","),
           pointerEvents: "none",
         }}
       />
@@ -84,55 +96,54 @@ export default function LoginPage() {
             mih="100vh"
             style={{
               position: "relative",
-              borderRight: "1px solid rgba(255,255,255,0.08)",
+              borderRight: `1px solid ${borderSoft}`,
               overflow: "hidden",
             }}
           >
-            {/* BACKDROP: 100% CSS */}
+            {/* BACKDROP: 100% CSS (chiaro) */}
             <Box
               style={{
                 position: "absolute",
                 inset: 0,
                 background: [
-                  "radial-gradient(900px 650px at 18% 30%, rgba(209,171,99,0.18), transparent 62%)",
-                  "radial-gradient(700px 520px at 70% 65%, rgba(209,171,99,0.10), transparent 60%)",
-                  "linear-gradient(135deg, rgba(209,171,99,0.10) 0%, rgba(0,0,0,0) 55%)",
-                  "linear-gradient(180deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.65) 100%)",
+                  "radial-gradient(900px 650px at 18% 30%, rgba(209,171,99,0.26), transparent 62%)",
+                  "radial-gradient(700px 520px at 70% 65%, rgba(209,171,99,0.14), transparent 60%)",
+                  "linear-gradient(135deg, rgba(209,171,99,0.10) 0%, rgba(255,255,255,0) 55%)",
+                  "linear-gradient(180deg, rgba(255,255,255,0.75) 0%, rgba(246,247,251,1) 100%)",
                 ].join(","),
               }}
             />
 
-            {/* Decorative mesh */}
+            {/* Decorative mesh (più soft) */}
             <Box
               style={{
                 position: "absolute",
                 inset: -80,
                 background: [
-                  "repeating-linear-gradient(135deg, rgba(255,255,255,0.06) 0 1px, transparent 1px 18px)",
-                  "repeating-linear-gradient(45deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 26px)",
-                  "radial-gradient(500px 240px at 35% 85%, rgba(209,171,99,0.12), transparent 65%)",
+                  "repeating-linear-gradient(135deg, rgba(15,23,42,0.06) 0 1px, transparent 1px 18px)",
+                  "repeating-linear-gradient(45deg, rgba(15,23,42,0.04) 0 1px, transparent 1px 26px)",
+                  "radial-gradient(500px 240px at 35% 85%, rgba(209,171,99,0.14), transparent 65%)",
                 ].join(","),
-                opacity: 0.35,
+                opacity: 0.25,
                 transform: "rotate(-6deg)",
-                mixBlendMode: "overlay",
+                mixBlendMode: "multiply",
               }}
             />
 
-            {/* Vignette */}
+            {/* Vignette (chiara) */}
             <Box
               style={{
                 position: "absolute",
                 inset: 0,
                 background:
-                  "linear-gradient(90deg, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.55) 55%, rgba(0,0,0,0.35) 100%)",
+                  "linear-gradient(90deg, rgba(246,247,251,0.88) 0%, rgba(246,247,251,0.72) 55%, rgba(246,247,251,0.55) 100%)",
               }}
             />
             <Box
               style={{
                 position: "absolute",
                 inset: 0,
-                boxShadow:
-                  "inset 0 0 0 1px rgba(255,255,255,0.05), inset 0 0 140px rgba(0,0,0,0.85)",
+                boxShadow: `inset 0 0 0 1px rgba(15,23,42,0.06), inset 0 0 140px rgba(15,23,42,0.06)`,
                 pointerEvents: "none",
               }}
             />
@@ -147,9 +158,9 @@ export default function LoginPage() {
                 height: 180,
                 borderRadius: 999,
                 background:
-                  "radial-gradient(circle at 30% 30%, rgba(209,171,99,0.30), rgba(209,171,99,0.06) 55%, transparent 70%)",
+                  "radial-gradient(circle at 30% 30%, rgba(209,171,99,0.26), rgba(209,171,99,0.08) 55%, transparent 70%)",
                 filter: "blur(2px)",
-                opacity: 0.65,
+                opacity: 0.7,
               }}
             />
             <Box
@@ -161,13 +172,13 @@ export default function LoginPage() {
                 height: 240,
                 borderRadius: 999,
                 background:
-                  "radial-gradient(circle at 30% 30%, rgba(209,171,99,0.22), rgba(209,171,99,0.05) 55%, transparent 72%)",
+                  "radial-gradient(circle at 30% 30%, rgba(209,171,99,0.18), rgba(209,171,99,0.06) 55%, transparent 72%)",
                 filter: "blur(3px)",
-                opacity: 0.55,
+                opacity: 0.65,
               }}
             />
 
-            {/* Logo watermark (sfocato dietro) */}
+            {/* Logo watermark (chiaro: più “ink” e meno blur) */}
             <Box
               style={{
                 position: "absolute",
@@ -184,11 +195,8 @@ export default function LoginPage() {
                 src={logoPV}
                 alt="Photo & Vision"
                 style={{
-                  // QUI lo rimpicciolisci: abbassi width / maxWidth
-                  width: "18%",
+                  width: "22%",
                   maxWidth: 360,
-                  opacity: 0.12,
-                  filter: "blur(3px)",
                   transform: "translateY(12px) scale(1.02)",
                   userSelect: "none",
                 }}
@@ -212,11 +220,11 @@ export default function LoginPage() {
                     Accesso sicuro
                   </Text>
 
-                  <Title order={1} style={{ color: "#fff", letterSpacing: -0.9, lineHeight: 1.05 }}>
+                  <Title order={1} style={{ color: textPrimary, letterSpacing: -0.9, lineHeight: 1.05 }}>
                     Gestisci i tuoi ordini di stampa in modo semplice e veloce.
                   </Title>
 
-                  <Text style={{ color: "rgba(255,255,255,0.74)", lineHeight: 1.75 }}>
+                  <Text style={{ color: textMuted, lineHeight: 1.75 }}>
                     Accedi per inviare un ordine, controllare i dettagli e visualizzare lo storico.
                     L’esperienza è ottimizzata per desktop e mobile.
                   </Text>
@@ -228,10 +236,10 @@ export default function LoginPage() {
                         width: 140,
                         borderRadius: 999,
                         background: "rgba(209,171,99,0.55)",
-                        boxShadow: "0 0 32px rgba(209,171,99,0.22)",
+                        boxShadow: "0 0 30px rgba(209,171,99,0.22)",
                       }}
                     />
-                    <Text size="sm" style={{ color: "rgba(255,255,255,0.65)" }}>
+                    <Text size="sm" style={{ color: textMuted }}>
                       Supporto rapido via WhatsApp
                     </Text>
                   </Group>
@@ -245,18 +253,18 @@ export default function LoginPage() {
                   w="100%"
                   mx="auto"
                   style={{
-                    background: "rgba(10,12,16,0.55)",
-                    border: "1px solid rgba(255,255,255,0.10)",
+                    background: "rgba(255,255,255,0.70)",
+                    border: `1px solid ${borderSoft}`,
                     backdropFilter: "blur(10px)",
-                    boxShadow: "0 18px 50px rgba(0,0,0,0.45)",
+                    boxShadow: "0 18px 50px rgba(15,23,42,0.10)",
                     maxWidth: 760,
                   }}
                 >
                   <Group justify="space-between" align="center" mb="sm">
-                    <Text style={{ color: "#fff", fontWeight: 800, letterSpacing: -0.2 }}>
+                    <Text style={{ color: textPrimary, fontWeight: 800, letterSpacing: -0.2 }}>
                       Cosa puoi fare dopo il login
                     </Text>
-                    <Text size="sm" style={{ color: "rgba(255,255,255,0.60)" }}>
+                    <Text size="sm" style={{ color: textMuted }}>
                       in pochi click
                     </Text>
                   </Group>
@@ -264,7 +272,7 @@ export default function LoginPage() {
                   <List
                     spacing="sm"
                     styles={{
-                      itemLabel: { color: "rgba(255,255,255,0.74)", lineHeight: 1.6 },
+                      itemLabel: { color: textMuted, lineHeight: 1.6 },
                     }}
                     icon={
                       <ThemeIcon
@@ -298,27 +306,25 @@ export default function LoginPage() {
                 radius="xl"
                 p="xl"
                 style={{
-                  background: "rgba(10,12,16,0.78)",
-                  border: "1px solid rgba(255,255,255,0.10)",
-                  boxShadow: "0 20px 60px rgba(0,0,0,0.55)",
+                  background: cardBg,
+                  border: `1px solid ${borderSoft}`,
+                  boxShadow: "0 22px 60px rgba(15,23,42,0.14)",
                   backdropFilter: "blur(10px)",
                 }}
               >
-                {/* FORM: qui sta la differenza -> onSubmit collegato */}
                 <form onSubmit={handleSubmit(onSubmit)}>
                   <Stack gap="md">
                     <Stack gap={4}>
-                      <Title order={2} style={{ color: "#fff", letterSpacing: -0.4 }}>
+                      <Title order={2} style={{ color: textPrimary, letterSpacing: -0.4 }}>
                         Login
                       </Title>
-                      <Text style={{ color: "rgba(255,255,255,0.70)" }}>
+                      <Text style={{ color: textMuted }}>
                         Inserisci le credenziali per continuare
                       </Text>
                     </Stack>
 
-                    <Divider style={{ borderColor: "rgba(255,255,255,0.08)" }} />
+                    <Divider style={{ borderColor: borderSoft }} />
 
-                    {/* errore auth */}
                     {authError && (
                       <Alert
                         icon={<IconAlertCircle size={16} />}
@@ -326,7 +332,7 @@ export default function LoginPage() {
                         variant="light"
                         styles={{
                           root: { background: "rgba(255, 0, 0, 0.08)", borderColor: "rgba(255, 0, 0, 0.18)" },
-                          message: { color: "rgba(255,255,255,0.85)" },
+                          message: { color: textPrimary },
                         }}
                       >
                         {authError}
@@ -339,11 +345,11 @@ export default function LoginPage() {
                       error={errors.username?.message}
                       {...register("username", { required: "Questo campo non può essere vuoto" })}
                       styles={{
-                        label: { color: "rgba(255,255,255,0.85)" },
+                        label: { color: "rgba(11,18,32,0.85)" },
                         input: {
-                          backgroundColor: "rgba(255,255,255,0.06)",
-                          borderColor: "rgba(255,255,255,0.10)",
-                          color: "#fff",
+                          backgroundColor: inputBg,
+                          borderColor: inputBorder,
+                          color: textPrimary,
                         },
                       }}
                     />
@@ -356,11 +362,11 @@ export default function LoginPage() {
                       onVisibilityChange={setShowPassword}
                       {...register("password", { required: "Questo campo non può essere vuoto" })}
                       styles={{
-                        label: { color: "rgba(255,255,255,0.85)" },
+                        label: { color: "rgba(11,18,32,0.85)" },
                         input: {
-                          backgroundColor: "rgba(255,255,255,0.06)",
-                          borderColor: "rgba(255,255,255,0.10)",
-                          color: "#fff",
+                          backgroundColor: inputBg,
+                          borderColor: inputBorder,
+                          color: textPrimary,
                         },
                       }}
                     />
@@ -368,7 +374,7 @@ export default function LoginPage() {
                     <Group justify="space-between" mt={-6}>
                       <Anchor
                         size="sm"
-                        style={{ color: ACCENT, textDecorationColor: "rgba(209,171,99,0.6)" }}
+                        style={{ color: ACCENT, textDecorationColor: "rgba(209,171,99,0.55)" }}
                         onClick={(e) => {
                           e.preventDefault();
                           navigate("/recoverpassword");
@@ -380,7 +386,7 @@ export default function LoginPage() {
 
                       <Anchor
                         size="sm"
-                        style={{ color: "rgba(255,255,255,0.72)" }}
+                        style={{ color: "rgba(11,18,32,0.70)" }}
                         onClick={(e) => {
                           e.preventDefault();
                           navigate("/recoveremail");
@@ -392,7 +398,6 @@ export default function LoginPage() {
                     </Group>
 
                     <Group grow mt="xs">
-                      {/* submit vero */}
                       <Button
                         type="submit"
                         radius="lg"
@@ -413,7 +418,7 @@ export default function LoginPage() {
                         variant="outline"
                         onClick={() => navigate("/register")}
                         style={{
-                          borderColor: "rgba(209,171,99,0.55)",
+                          borderColor: "rgba(209,171,99,0.60)",
                           color: ACCENT,
                         }}
                       >
@@ -426,12 +431,12 @@ export default function LoginPage() {
                       radius="lg"
                       variant="subtle"
                       onClick={() => navigate("/")}
-                      style={{ color: "rgba(255,255,255,0.75)" }}
+                      style={{ color: "rgba(11,18,32,0.72)" }}
                     >
                       Torna alla Home
                     </Button>
 
-                    <Text size="xs" style={{ color: "rgba(255,255,255,0.50)", lineHeight: 1.5 }} mt={4}>
+                    <Text size="xs" style={{ color: "rgba(11,18,32,0.55)", lineHeight: 1.5 }} mt={4}>
                       Effettuando l’accesso accetti i Termini di servizio e l’Informativa Privacy.
                     </Text>
                   </Stack>

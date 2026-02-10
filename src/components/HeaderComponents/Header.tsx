@@ -90,7 +90,6 @@ const Header: React.FC = () => {
     () => [
       { path: "/gestionaleA4", label: "A4" },
       { path: "/gestionaleA3", label: "A3" },
-      { path: "/bobine", label: "Bobine" },
       { path: "/qr-generator", label: "QR" },
       { path: "/utentiGestionale", label: "Utenti" },
       { path: "/gestione-accessi", label: "Accessi Ruoli" },
@@ -99,6 +98,7 @@ const Header: React.FC = () => {
       { path: "/banner", label: "Banner" },
       { path: "/consegna", label: "Consegna" },
       { path: "/sconti", label: "Sconti" },
+      { path: "/plastiche", label: "Plastiche" },
     ],
     []
   );
@@ -107,9 +107,6 @@ const Header: React.FC = () => {
   const linkPubblici: NavItem[] = useMemo(
     () => [
       { path: "/", label: "Home" },
-      // { path: "/servizi", label: "Servizi" },
-      // { path: "/portfolio", label: "Portfolio" },
-      // { path: "/contatti", label: "Contatti" },
     ],
     []
   );
