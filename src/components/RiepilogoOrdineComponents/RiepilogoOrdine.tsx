@@ -52,6 +52,10 @@ type RiepilogoProps = {
   rilegaturaUnica: string;
   intervalloPagine: string;
 
+  // ✅ PLASTICHE (A4)
+  plasticheLabel?: string;
+  plasticheExtraEuro?: number;
+
   numeroCopie: number;
   numeroPDF: number;
   prezzo: string;
@@ -68,6 +72,14 @@ type RiepilogoProps = {
 
   authToken?: string;
   csrfToken?: string;
+
+  /**
+   * ✅ Nuovo:
+   * - desktopStickiness=true  -> wrapper sticky su desktop
+   * - desktopStickiness=false -> segue lo scroll su desktop (richiesto)
+   */
+  desktopStickiness?: boolean;
+  stickyTopPx?: number;
 };
 
 type PayPalApproveData = { orderID: string };
@@ -82,7 +94,8 @@ function parseEuro(prezzo: string): number {
   return isNaN(val) ? 0 : val;
 }
 const round2 = (n: number) => Math.round(n * 100) / 100;
-const euro = (n: number) => n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const euro = (n: number) =>
+  n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 declare global {
   interface Window {
@@ -125,7 +138,6 @@ type PromoConfig = {
   endDate?: string;
   minPdf?: number;
 };
-
 const PROMO_COLL = "configPromo";
 const PROMO_DOC = "current";
 
@@ -190,11 +202,16 @@ function isPromoActiveToday(promo: PromoConfig, numeroPDF: number): boolean {
 }
 
 function buildSlotsFromConfig(cfg: DeliveryConfig): DeliverySlot[] {
-  const weekdays = (Array.isArray(cfg.weekdays) && cfg.weekdays.length ? cfg.weekdays : [1, 3, 5]).map((w) =>
-    Math.min(7, Math.max(1, Number(w)))
-  ) as Weekday[];
+  const weekdays = (Array.isArray(cfg.weekdays) && cfg.weekdays.length
+    ? cfg.weekdays
+    : [1, 3, 5]
+  ).map((w) => Math.min(7, Math.max(1, Number(w)))) as Weekday[];
 
-  const timeRanges = Array.isArray(cfg.timeRanges) && cfg.timeRanges.length ? cfg.timeRanges : [{ start: "12:00", end: "13:00" }];
+  const timeRanges =
+    Array.isArray(cfg.timeRanges) && cfg.timeRanges.length
+      ? cfg.timeRanges
+      : [{ start: "12:00", end: "13:00" }];
+
   const slotsAhead = Math.max(1, Number(cfg.slotsAhead) || 6);
   const minLeadDays = Math.max(1, Number(cfg.minLeadDays) || 1);
 
@@ -276,6 +293,10 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
   rilegatura,
   rilegaturaUnica,
   intervalloPagine,
+
+  plasticheLabel,
+  plasticheExtraEuro,
+
   numeroCopie,
   numeroPDF,
   prezzo,
@@ -291,10 +312,14 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
 
   authToken,
   csrfToken,
+
+  // ✅ default: su desktop NON sticky (segue scroll)
+  desktopStickiness = false,
+  stickyTopPx = 92,
 }) => {
   const [progress, setProgress] = useState(0);
 
-  // ✅ ora ha default (UX più chiara e zero "null-state")
+  // ✅ default cash
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "paypal">("cash");
 
   const [paypalReady, setPaypalReady] = useState(false);
@@ -323,12 +348,18 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
       if (!snap.exists()) return;
       const d = snap.data() as Partial<DeliveryConfig>;
       setDeliveryCfg({
-        weekdays: Array.isArray(d.weekdays) && d.weekdays.length ? (d.weekdays as number[]) : [1, 3, 5],
-        timeRanges: Array.isArray(d.timeRanges) && d.timeRanges.length ? (d.timeRanges as TimeRange[]) : [{ start: "12:00", end: "13:00" }],
+        weekdays:
+          Array.isArray(d.weekdays) && d.weekdays.length ? (d.weekdays as number[]) : [1, 3, 5],
+        timeRanges:
+          Array.isArray(d.timeRanges) && d.timeRanges.length
+            ? (d.timeRanges as TimeRange[])
+            : [{ start: "12:00", end: "13:00" }],
         slotsAhead: typeof d.slotsAhead === "number" ? d.slotsAhead : 6,
         timezone: typeof d.timezone === "string" && d.timezone ? d.timezone : "Europe/Rome",
         blacklistDates: Array.isArray(d.blacklistDates) ? (d.blacklistDates as string[]) : [],
-        blacklistRanges: Array.isArray(d.blacklistRanges) ? (d.blacklistRanges as BlacklistRange[]) : [],
+        blacklistRanges: Array.isArray(d.blacklistRanges)
+          ? (d.blacklistRanges as BlacklistRange[])
+          : [],
         minLeadDays: typeof d.minLeadDays === "number" ? d.minLeadDays : 1,
       });
     });
@@ -373,7 +404,16 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
   const deliverySlots = useMemo(() => buildSlotsFromConfig(deliveryCfg), [deliveryCfg]);
 
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
-  const selectedSlot = useMemo(() => deliverySlots.find((s) => s.id === selectedSlotId) || null, [deliverySlots, selectedSlotId]);
+  const selectedSlot = useMemo(
+    () => deliverySlots.find((s) => s.id === selectedSlotId) || null,
+    [deliverySlots, selectedSlotId]
+  );
+
+  // ✅ obbligatorio: Sì/No (slot obbligatorio solo se Sì)
+  const [isStudent, setIsStudent] = useState<boolean | null>(null);
+  const canProceedPay = useMemo(() => {
+    return isStudent !== null && (isStudent === false || (isStudent === true && !!selectedSlot));
+  }, [isStudent, selectedSlot]);
 
   useEffect(() => {
     const ref = doc(db, FEES_COLLECTION, FEES_DOC);
@@ -385,7 +425,8 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
       const d = snap.data() as Partial<Fees>;
       setFees({
         ivaRate: typeof d.ivaRate === "number" ? d.ivaRate : ivaRate,
-        transportFeeEuro: typeof d.transportFeeEuro === "number" ? d.transportFeeEuro : transportFeeEuro,
+        transportFeeEuro:
+          typeof d.transportFeeEuro === "number" ? d.transportFeeEuro : transportFeeEuro,
         paypalPercent: typeof d.paypalPercent === "number" ? d.paypalPercent : paypalPercent,
         paypalFixed: typeof d.paypalFixed === "number" ? d.paypalFixed : paypalFixed,
       });
@@ -406,7 +447,11 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
     const trasporto = round2(fees.transportFeeEuro);
     const subTotale = round2(base + iva + trasporto);
 
-    const feePP = paymentMethod === "paypal" ? round2(subTotale * fees.paypalPercent + fees.paypalFixed) : 0;
+    const feePP =
+      paymentMethod === "paypal"
+        ? round2(subTotale * fees.paypalPercent + fees.paypalFixed)
+        : 0;
+
     const totaleContanti = subTotale;
     const totalePayPal = round2(subTotale + feePP);
     const totaleDaAddebitare = paymentMethod === "paypal" ? totalePayPal : totaleContanti;
@@ -429,16 +474,21 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
 
   useEffect(() => {
     if (paymentMethod !== "paypal") return;
+
     if (window.paypal) {
       setPaypalReady(true);
       return;
     }
+
     if (!PAYPAL_CLIENT_ID) {
       console.error("PAYPAL_CLIENT_ID mancante");
       return;
     }
+
     const script = document.createElement("script");
-    script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(PAYPAL_CLIENT_ID)}&currency=EUR&intent=capture&components=buttons`;
+    script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(
+      PAYPAL_CLIENT_ID
+    )}&currency=EUR&intent=capture&components=buttons`;
     script.async = true;
     script.onload = () => setPaypalReady(true);
     script.onerror = () => console.error("Impossibile caricare PayPal SDK");
@@ -465,7 +515,9 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
 
     paypalButtonsContainerRef.current.innerHTML = "";
 
-    if (!selectedSlot) return;
+    // ✅ Abilitazione PayPal: obbligatorio Sì/No; slot obbligatorio solo se Sì
+    if (isStudent === null) return;
+    if (isStudent === true && !selectedSlot) return;
     if (!paypalReady) return;
 
     const Buttons = window.paypal?.Buttons;
@@ -509,11 +561,11 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
               },
               delivery: selectedSlot
                 ? {
-                  dateISO: selectedSlot.dateISO,
-                  dayLabel: selectedSlot.dayLabel,
-                  timeRange: selectedSlot.timeRange,
-                  weekday: selectedSlot.weekday,
-                }
+                    dateISO: selectedSlot.dateISO,
+                    dayLabel: selectedSlot.dayLabel,
+                    timeRange: selectedSlot.timeRange,
+                    weekday: selectedSlot.weekday,
+                  }
                 : undefined,
             });
           } else {
@@ -538,13 +590,18 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
         /* noop */
       }
     };
-  }, [paymentMethod, paypalReady, submitted, totals, onConfirmOrder, fetchJSON, selectedSlot]);
+  }, [paymentMethod, paypalReady, submitted, totals, onConfirmOrder, fetchJSON, selectedSlot, isStudent]);
 
   const handleConfirmOrderCash = async () => {
-    if (!selectedSlot) {
+    if (isStudent === null) {
+      alert("Seleziona “Sì” oppure “No”.");
+      return;
+    }
+    if (isStudent === true && !selectedSlot) {
       alert("Seleziona prima uno slot di consegna.");
       return;
     }
+
     await onConfirmOrder({
       method: "CASH",
       confirmed: false,
@@ -555,12 +612,14 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
         trasporto: totals.trasporto,
         feePayPal: 0,
       },
-      delivery: {
-        dateISO: selectedSlot.dateISO,
-        dayLabel: selectedSlot.dayLabel,
-        timeRange: selectedSlot.timeRange,
-        weekday: selectedSlot.weekday,
-      },
+      delivery: selectedSlot
+        ? {
+            dateISO: selectedSlot.dateISO,
+            dayLabel: selectedSlot.dayLabel,
+            timeRange: selectedSlot.timeRange,
+            weekday: selectedSlot.weekday,
+          }
+        : undefined,
     });
   };
 
@@ -579,147 +638,171 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
     if (submitted) setProgress(100);
   }, [submitted]);
 
-  const deliveryTitleSuffix =
-    deliveryCfg.timeRanges?.length === 1 ? ` (${deliveryCfg.timeRanges[0].start}–${deliveryCfg.timeRanges[0].end})` : "";
+  const plasticheLabelClean = (plasticheLabel ?? "").trim();
+  const showPlastiche = tipo === "A4" && plasticheLabelClean.length > 0;
+
+  // ✅ wrapper: sticky SOLO se desktopStickiness=true
+  const wrapperStyle = useMemo<React.CSSProperties>(() => {
+    if (!desktopStickiness) return { position: "static" };
+
+    return {
+      position: "sticky",
+      top: stickyTopPx,
+      alignSelf: "flex-start",
+    };
+  }, [desktopStickiness, stickyTopPx]);
 
   return (
-    <Card withBorder radius="lg" p="md">
-      <Stack gap="md">
-        <Group justify="space-between" align="center">
-          <Title order={3} size="h4">
-            📋 Riepilogo Ordine {tipo}
-          </Title>
-          {totals.promoAttiva && (
-            <Badge variant="light" color="yellow">
-              -{totals.scontoPercent.toFixed(0)}%
-            </Badge>
-          )}
-        </Group>
-
-        {totals.promoAttiva && (
-          <Alert icon={<IconInfoCircle size={18} />} color="yellow" variant="light">
-            {promoCfg.description ? promoCfg.description : `🎄 ${promoCfg.name ?? "Promo"}: -${totals.scontoPercent.toFixed(0)}% sulle stampe PDF`}
-          </Alert>
-        )}
-
-        <Card withBorder radius="md" p="md">
-          <Stack gap="xs">
-            <Text fw={800}>Dettagli ordine</Text>
-            <Divider />
-            <KeyValueRow label="Numero PDF" value={numeroPDF} />
-            <KeyValueRow label="Inchiostro" value={inchiostro} />
-            <KeyValueRow label="Layout" value={layout} />
-            <KeyValueRow label="Gestione pagina" value={pagina} />
-            <KeyValueRow label="Rilegatura" value={rilegatura} />
-            <KeyValueRow label="Rilegatura unica" value={rilegaturaUnica} />
-            <KeyValueRow label="Intervallo pagine" value={intervalloPagine} />
-            <KeyValueRow label="Numero copie" value={numeroCopie} />
-          </Stack>
-        </Card>
-
-        <ConsegnaSlotPicker
-          title={`Consegna${deliveryTitleSuffix}`}
-          slots={deliverySlots}
-          selectedId={selectedSlotId}
-          onChange={setSelectedSlotId}
-          hint="Seleziona uno slot per procedere al pagamento."
-        />
-
-        <Card withBorder radius="md" p="md">
-          <Stack gap="xs">
-            <Group justify="space-between">
-              <Text fw={800}>Totale</Text>
-              <Badge variant="light" color={paymentMethod === "paypal" ? "blue" : "gray"}>
-                {paymentMethod === "paypal" ? "PayPal" : "Contanti"}
+    <Box style={wrapperStyle}>
+      <Card withBorder radius="lg" p="md">
+        <Stack gap="md">
+          <Group justify="space-between" align="center">
+            <Title order={3} size="h4">
+              📋 Riepilogo Ordine {tipo}
+            </Title>
+            {totals.promoAttiva && (
+              <Badge variant="light" color="yellow">
+                -{totals.scontoPercent.toFixed(0)}%
               </Badge>
-            </Group>
-            <Divider />
-
-            {totals.promoAttiva && totals.scontoPromo > 0 && (
-              <Group justify="space-between" align="baseline">
-                <Text size="sm" c="green">
-                  {promoCfg.name || "Promo"} (-{totals.scontoPercent.toFixed(0)}%)
-                </Text>
-                <Text size="sm" c="green" fw={700}>
-                  - {euro(totals.scontoPromo)} €
-                </Text>
-              </Group>
             )}
+          </Group>
 
-            <KeyValueRow label="Imponibile" value={`${euro(totals.base)} €`} />
-            <KeyValueRow label={`IVA (${(fees.ivaRate * 100).toFixed(0)}%)`} value={`${euro(totals.iva)} €`} />
-            <KeyValueRow label="Trasporto" value={`${euro(totals.trasporto)} €`} />
+          {totals.promoAttiva && (
+            <Alert icon={<IconInfoCircle size={18} />} color="yellow" variant="light">
+              {promoCfg.description
+                ? promoCfg.description
+                : `🎄 ${promoCfg.name ?? "Promo"}: -${totals.scontoPercent.toFixed(0)}% sulle stampe PDF`}
+            </Alert>
+          )}
 
-            {paymentMethod === "paypal" && (
-              <KeyValueRow
-                label={`Fee PayPal (${(fees.paypalPercent * 100).toFixed(2)}% + ${euro(fees.paypalFixed)} €)`}
-                value={`${euro(totals.feePP)} €`}
-              />
-            )}
-
-            <Divider />
-            <Group justify="space-between" align="baseline">
-              <Text fw={900}>Totale finale</Text>
-              <Text fw={900} size="lg">
-                {euro(totals.totaleDaAddebitare)} €
-              </Text>
-            </Group>
-          </Stack>
-        </Card>
-
-        {/* ✅ picker stile FormatoPicker */}
-        <MetodoPagamentoPicker value={paymentMethod} onChange={setPaymentMethod} />
-
-        {paymentMethod === "paypal" && (
           <Card withBorder radius="md" p="md">
             <Stack gap="xs">
-              <Text size="sm" c="dimmed">
-                Completa il pagamento di <strong>{euro(totals.totaleDaAddebitare)} €</strong> con PayPal. Al termine l’ordine partirà automaticamente.
-              </Text>
+              <Text fw={800}>Dettagli ordine</Text>
+              <Divider />
+              <KeyValueRow label="Numero PDF" value={numeroPDF} />
+              <KeyValueRow label="Inchiostro" value={inchiostro} />
+              <KeyValueRow label="Layout" value={layout} />
+              <KeyValueRow label="Gestione pagina" value={pagina} />
+              <KeyValueRow label="Rilegatura" value={rilegatura} />
+              <KeyValueRow label="Rilegatura unica" value={rilegaturaUnica} />
 
-              {!selectedSlot ? (
-                <Alert color="yellow" variant="light" icon={<IconInfoCircle size={18} />}>
-                  Seleziona prima uno slot di consegna per abilitare il pagamento PayPal.
-                </Alert>
-              ) : (
-                <Box>
-                  {!paypalReady && (
-                    <Group gap="sm">
-                      <Loader size="sm" />
-                      <Text size="sm" c="dimmed">
-                        Caricamento PayPal…
-                      </Text>
-                    </Group>
-                  )}
-                  <Box ref={paypalButtonsContainerRef} mt="sm" />
-                </Box>
+              {showPlastiche && (
+                <KeyValueRow label="Plastica copertina" value={plasticheLabelClean} />
               )}
+
+              <KeyValueRow label="Intervallo pagine" value={intervalloPagine} />
+              <KeyValueRow label="Numero copie" value={numeroCopie} />
+
+              {showPlastiche &&
+                typeof plasticheExtraEuro === "number" &&
+                plasticheExtraEuro > 0 && (
+                  <KeyValueRow label="Extra plastica" value={`${euro(plasticheExtraEuro)} €`} />
+                )}
             </Stack>
           </Card>
-        )}
 
-        {!loading && !submitted && paymentMethod === "cash" && (
-          <Button fullWidth size="md" onClick={handleConfirmOrderCash} disabled={disabled || loading || submitted || !selectedSlot}>
-            ✅ Conferma Ordine
-          </Button>
-        )}
+          <ConsegnaSlotPicker
+            slots={deliverySlots}
+            selectedId={selectedSlotId}
+            onChange={setSelectedSlotId}
+            onStudentChange={setIsStudent}
+            hint="Seleziona uno slot per procedere al pagamento."
+          />
 
-        {loading && (
-          <Stack gap="xs">
-            <Text size="sm" c="dimmed">
-              Invio in corso: attendere il completamento della barra.
-            </Text>
-            <Progress value={progress} />
-          </Stack>
-        )}
+          <Card withBorder radius="md" p="md">
+            <Stack gap="xs">
+              {totals.promoAttiva && totals.scontoPromo > 0 && (
+                <Group justify="space-between" align="baseline">
+                  <Text size="sm" c="green">
+                    {promoCfg.name || "Promo"} (-{totals.scontoPercent.toFixed(0)}%)
+                  </Text>
+                  <Text size="sm" c="green" fw={700}>
+                    - {euro(totals.scontoPromo)} €
+                  </Text>
+                </Group>
+              )}
 
-        {submitted && (
-          <Alert color="yellow" variant="light" icon={<IconCheck size={18} />}>
-            🎉 Ordine inviato con successo!
-          </Alert>
-        )}
-      </Stack>
-    </Card>
+              {paymentMethod === "paypal" && (
+                <KeyValueRow
+                  label={`Fee PayPal (${(fees.paypalPercent * 100).toFixed(2)}% + ${euro(
+                    fees.paypalFixed
+                  )} €)`}
+                  value={`${euro(totals.feePP)} €`}
+                />
+              )}
+
+              <Group justify="space-between" align="baseline">
+                <Text fw={900}>Totale</Text>
+                <Text fw={900} size="lg">
+                  {euro(totals.totaleDaAddebitare)} €
+                </Text>
+              </Group>
+            </Stack>
+          </Card>
+
+          <MetodoPagamentoPicker value={paymentMethod} onChange={setPaymentMethod} />
+
+          {paymentMethod === "paypal" && (
+            <Card withBorder radius="md" p="md">
+              <Stack gap="xs">
+                <Text size="sm" c="dimmed">
+                  Completa il pagamento di <strong>{euro(totals.totaleDaAddebitare)} €</strong>{" "}
+                  con PayPal. Al termine l’ordine partirà automaticamente.
+                </Text>
+
+                {isStudent === null ? (
+                  <Alert color="yellow" variant="light" icon={<IconInfoCircle size={18} />}>
+                    Seleziona “Sì” oppure “No” per abilitare il pagamento.
+                  </Alert>
+                ) : isStudent === true && !selectedSlot ? (
+                  <Alert color="yellow" variant="light" icon={<IconInfoCircle size={18} />}>
+                    Seleziona prima uno slot di consegna per abilitare il pagamento PayPal.
+                  </Alert>
+                ) : (
+                  <Box>
+                    {!paypalReady && (
+                      <Group gap="sm">
+                        <Loader size="sm" />
+                        <Text size="sm" c="dimmed">
+                          Caricamento PayPal…
+                        </Text>
+                      </Group>
+                    )}
+                    <Box ref={paypalButtonsContainerRef} mt="sm" />
+                  </Box>
+                )}
+              </Stack>
+            </Card>
+          )}
+
+          {!loading && !submitted && paymentMethod === "cash" && (
+            <Button
+              fullWidth
+              size="md"
+              onClick={handleConfirmOrderCash}
+              disabled={disabled || loading || submitted || !canProceedPay}
+            >
+              ✅ Conferma Ordine
+            </Button>
+          )}
+
+          {loading && (
+            <Stack gap="xs">
+              <Text size="sm" c="dimmed">
+                Invio in corso: attendere il completamento della barra.
+              </Text>
+              <Progress value={progress} />
+            </Stack>
+          )}
+
+          {submitted && (
+            <Alert color="yellow" variant="light" icon={<IconCheck size={18} />}>
+              🎉 Ordine inviato con successo!
+            </Alert>
+          )}
+        </Stack>
+      </Card>
+    </Box>
   );
 };
 

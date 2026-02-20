@@ -19,51 +19,13 @@ body {
   position: relative;
   min-height: 100dvh;
   overflow: hidden;
-}
 
-/* SFONDO BASE (statico) */
-.pageBg::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-
-  background:
-    radial-gradient(900px 600px at 20% 10%, var(--diamond-light), transparent 60%),
-    radial-gradient(700px 500px at 85% 40%, rgba(255,255,255,0.35), transparent 65%),
-    radial-gradient(1000px 700px at 50% 90%, rgba(255,255,255,0.25), transparent 70%),
-    linear-gradient(180deg, var(--color-bg-base) 0%, #e6d600 100%);
-
-  /* leggero smoothing */
-  filter: saturate(1.05);
-}
-
-/* LAYER ANIMATO (bagliori “vivi”) */
-.pageBg::after {
-  content: "";
-  position: absolute;
-  inset: -20%;
-  z-index: 0;
-  pointer-events: none;
-
-  /* macchie di luce morbide + un filo di “sheen” */
-  background:
-    radial-gradient(800px 520px at 25% 25%, rgba(255,255,255,0.22), transparent 62%),
-    radial-gradient(900px 650px at 70% 35%, rgba(255,255,255,0.14), transparent 66%),
-    radial-gradient(950px 700px at 45% 80%, rgba(255,255,255,0.10), transparent 70%),
-    linear-gradient(120deg, rgba(255,255,255,0.06), transparent 40%, rgba(255,255,255,0.05));
-
-  /* blur per “diamante / luce” */
-  filter: blur(18px);
-  opacity: 0.85;
-
-  /* performance: anima transform (composited) */
-  transform: translate3d(0,0,0) scale(1.02);
-  will-change: transform, opacity;
-
-  animation: pv-bg-drift 16s ease-in-out infinite alternate;
-  mix-blend-mode: screen; /* se ti piace l’effetto “luce” */
+  /* NUOVO SFONDO FOTO */
+  background-image: url("./assets/images/sfondo.jpeg"); /* cambia path */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed; /* effetto leggero parallax desktop */
 }
 
 /* contenuto sopra allo sfondo */
@@ -78,25 +40,16 @@ body {
   background-color: #ffffff !important;
 }
 
-/* Animazione morbida */
-@keyframes pv-bg-drift {
-  0% {
-    transform: translate3d(-2%, -1%, 0) scale(1.03) rotate(-0.4deg);
-    opacity: 0.78;
-  }
-  50% {
-    transform: translate3d(1.5%, -2%, 0) scale(1.06) rotate(0.2deg);
-    opacity: 0.92;
-  }
-  100% {
-    transform: translate3d(2.5%, 1.5%, 0) scale(1.04) rotate(0.5deg);
-    opacity: 0.82;
-  }
+/* opzionale: overlay scuro per leggibilità */
+.pageBg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35); /* regola intensità */
+  z-index: 0;
 }
 
-/* Rispetta chi preferisce meno animazioni */
-@media (prefers-reduced-motion: reduce) {
-  .pageBg::after {
-    animation: none;
-  }
+.pageContent {
+  position: relative;
+  z-index: 1;
 }

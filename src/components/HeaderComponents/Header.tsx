@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-
 import {
   Box,
   Group,
@@ -33,9 +32,10 @@ import { auth, db } from "../../backend/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
-type NavItem = { path: string; label: string; icon?: React.ReactNode };
+type NavItem = { path: string; label: string };
 
-const HEADER_H = 72;
+const HEADER_H = 76;
+const ACCENT = "#d1ab63";
 
 const Header: React.FC = () => {
   const [user, setUser] = useState<any>(null);
@@ -48,7 +48,6 @@ const Header: React.FC = () => {
   const isMobile = useMediaQuery("(max-width: 768px)");
   const [opened, { close, toggle }] = useDisclosure(false);
 
-  // ===== Auth + accessi dalle collezioni =====
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
@@ -59,28 +58,25 @@ const Header: React.FC = () => {
         return;
       }
 
-      const userRef = doc(db, "users", currentUser.uid);
-      const userSnap = await getDoc(userRef);
-
+      const userSnap = await getDoc(doc(db, "users", currentUser.uid));
       if (!userSnap.exists()) {
         setDisplayName("");
         setAccessiblePages([]);
         return;
       }
 
-      const data = userSnap.data();
+      const data: any = userSnap.data();
       setDisplayName(data.displayName || "");
 
       const ruolo = data.ruolo || "PublicUser";
       const accessSnap = await getDoc(doc(db, "ruoliPagineAccesso", ruolo));
-      const accessData = accessSnap.data();
+      const accessData: any = accessSnap.data();
       setAccessiblePages(accessData?.accessoPagine || []);
     });
 
     return () => unsubscribe();
   }, []);
 
-  // chiudi drawer cambio route
   useEffect(() => {
     close();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -103,14 +99,6 @@ const Header: React.FC = () => {
     []
   );
 
-  // pagine pubbliche (mettici quelle reali del sito PV)
-  const linkPubblici: NavItem[] = useMemo(
-    () => [
-      { path: "/", label: "Home" },
-    ],
-    []
-  );
-
   const allowedGestionale = useMemo(
     () =>
       linkAccessibili
@@ -120,7 +108,6 @@ const Header: React.FC = () => {
   );
 
   const hasGestionaleAccess = allowedGestionale.length > 0;
-
   const isActive = (path: string) => location.pathname === path;
 
   const go = (to: string) => {
@@ -135,84 +122,124 @@ const Header: React.FC = () => {
     navigate("/");
   };
 
-  const NavButton = ({ item }: { item: NavItem }) => (
-    <UnstyledButton
-      onClick={() => go(item.path)}
-      style={{
-        width: "100%",
-        padding: "10px 12px",
-        borderRadius: 12,
-        border: isActive(item.path)
-          ? "1px solid var(--mantine-color-default-border)"
-          : "1px solid transparent",
-        background: isActive(item.path) ? "var(--mantine-color-default)" : "transparent",
-      }}
-    >
-      <Group justify="space-between" wrap="nowrap">
-        <Text fw={800}>{item.label}</Text>
-        <IconChevronRight size={16} />
-      </Group>
-    </UnstyledButton>
-  );
+  const DesktopPill = ({ item }: { item: NavItem }) => {
+    const active = isActive(item.path);
+    return (
+      <Button
+        variant={active ? "filled" : "subtle"}
+        color={active ? "yellow" : "gray"}
+        radius="xl"
+        onClick={() => go(item.path)}
+        styles={{
+          root: {
+            height: 38,
+            paddingInline: 14,
+            background: active ? "rgba(209,171,99,.18)" : "transparent",
+            border: active ? `1px solid rgba(209,171,99,.35)` : "1px solid transparent",
+          },
+          label: { fontWeight: 900, letterSpacing: 0.2 },
+        }}
+      >
+        {item.label}
+      </Button>
+    );
+  };
 
-  const DesktopLink = ({ item }: { item: NavItem }) => (
-    <Button
-      variant={isActive(item.path) ? "filled" : "subtle"}
-      color={isActive(item.path) ? "yellow" : "gray"}
-      onClick={() => go(item.path)}
-      radius="xl"
-      styles={{ label: { fontWeight: 800 } }}
-    >
-      {item.label}
-    </Button>
-  );
+  const DrawerItem = ({ item }: { item: NavItem }) => {
+    const active = isActive(item.path);
+    return (
+      <UnstyledButton
+        onClick={() => go(item.path)}
+        style={{
+          width: "100%",
+          padding: "12px 12px",
+          borderRadius: 14,
+          border: active ? `1px solid rgba(209,171,99,.35)` : "1px solid rgba(0,0,0,.06)",
+          background: active ? "rgba(209,171,99,.10)" : "#fff",
+          boxShadow: active ? "0 10px 24px rgba(0,0,0,.08)" : "none",
+        }}
+      >
+        <Group justify="space-between" wrap="nowrap">
+          <Text fw={900} style={{ color: "#0b0f16" }}>
+            {item.label}
+          </Text>
+          <IconChevronRight size={16} color={active ? ACCENT : "rgba(0,0,0,.5)"} />
+        </Group>
+      </UnstyledButton>
+    );
+  };
 
-  // ====== HEADER UI ======
   const NormalHeader = () => (
-    <Box
-      style={{
-        height: HEADER_H,
-        display: "grid",
-        gridTemplateColumns: "1fr auto 1fr",
-        alignItems: "center",
-      }}
-    >
-      <Box />
+    <Group h={HEADER_H} justify="space-between" wrap="nowrap">
+      {/* LEFT (spacer) */}
+      <Box w={120} visibleFrom="sm" />
 
-      <Box style={{ justifySelf: "center" }}>
+      {/* CENTER LOGO */}
+      <Box style={{ flex: 1, display: "flex", justifyContent: "center" }}>
         <Link to="/" aria-label="Photo & Vision — Home" style={{ display: "inline-flex" }}>
-          <Image src={logo} alt="PV" h={isMobile ? 40 : 44} fit="contain" />
+          <Image src={logo} alt="PV" h={isMobile ? 38 : 44} fit="contain" />
         </Link>
       </Box>
 
-      <Group gap={8} wrap="nowrap" style={{ justifySelf: "end" }}>
+      {/* RIGHT */}
+      <Group gap={10} wrap="nowrap" style={{ justifyContent: "flex-end" }}>
         {!user ? (
           <>
             {!isMobile && (
-              <Button variant="subtle" color="gray" radius="xl" onClick={() => navigate("/register")}>
+              <Button
+                variant="subtle"
+                color="gray"
+                radius="xl"
+                onClick={() => navigate("/register")}
+                styles={{ label: { fontWeight: 900 } }}
+              >
                 Registrati
               </Button>
             )}
-            <Button variant="filled" color="yellow" radius="xl" onClick={() => navigate("/login")}>
-              Login
-            </Button>
-          </>
-        ) : (
-          <Tooltip label={displayName || "Account"} withArrow>
             <Button
               variant="filled"
               color="yellow"
               radius="xl"
-              onClick={onLogout}
-              leftSection={<IconLogout size={16} />}
-              styles={{ label: { fontWeight: 800 } }}
+              onClick={() => navigate("/login")}
+              styles={{
+                root: { background: "rgba(209,171,99,.18)", border: "1px solid rgba(209,171,99,.35)" },
+                label: { fontWeight: 900 },
+              }}
             >
-              {isMobile ? "" : "Logout"}
+              Login
             </Button>
-          </Tooltip>
+          </>
+        ) : (
+          <Menu position="bottom-end" withinPortal shadow="md">
+            <Menu.Target>
+              <Tooltip label={displayName || "Account"} withArrow>
+                <Button
+                  variant="light"
+                  color="yellow"
+                  radius="xl"
+                  leftSection={<IconUser size={16} />}
+                  styles={{
+                    root: { background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.10)" },
+                    label: { fontWeight: 900 },
+                  }}
+                >
+                  {displayName}
+                </Button>
+              </Tooltip>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item leftSection={<IconSettings size={16} />} onClick={() => go("/account")}>
+                Il mio account
+              </Menu.Item>
+              <Menu.Divider />
+              <Menu.Item color="red" leftSection={<IconLogout size={16} />} onClick={onLogout}>
+                Logout
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
         )}
       </Group>
-    </Box>
+    </Group>
   );
 
   const GestionaleHeader = () => (
@@ -221,12 +248,16 @@ const Header: React.FC = () => {
       <Group gap={10} wrap="nowrap">
         {isMobile ? (
           <ActionIcon
-            variant="subtle"
-            color="gray"
-            size="lg"
+            variant="light"
             radius="xl"
+            size="lg"
             onClick={toggle}
             aria-label="Apri menu gestionale"
+            style={{
+              background: "rgba(255,255,255,.06)",
+              border: "1px solid rgba(255,255,255,.10)",
+              color: "#fff",
+            }}
           >
             <IconMenu2 size={20} />
           </ActionIcon>
@@ -237,26 +268,38 @@ const Header: React.FC = () => {
         )}
 
         {!isMobile && (
-          <Group gap={8} visibleFrom="sm">
-            {linkPubblici
-              .filter((l) => l.path !== "/")
-              .map((it) => (
-                <DesktopLink key={it.path} item={it} />
-              ))}
-
-            <Divider orientation="vertical" />
-            <Badge variant="light" color="yellow">
+          <Group gap={10} wrap="nowrap">
+            <Badge
+              variant="light"
+              color="yellow"
+              styles={{
+                root: {
+                  background: "rgba(209,171,99,.14)",
+                  border: "1px solid rgba(209,171,99,.28)",
+                  color: "#fff",
+                  fontWeight: 900,
+                },
+              }}
+            >
               Gestionale
             </Badge>
 
             {allowedGestionale.slice(0, 5).map((it) => (
-              <DesktopLink key={it.path} item={it} />
+              <DesktopPill key={it.path} item={it} />
             ))}
 
             {allowedGestionale.length > 5 && (
               <Menu position="bottom-start" withinPortal shadow="md">
                 <Menu.Target>
-                  <Button variant="subtle" color="gray" radius="xl">
+                  <Button
+                    variant="subtle"
+                    color="gray"
+                    radius="xl"
+                    styles={{
+                      root: { height: 38 },
+                      label: { fontWeight: 900 },
+                    }}
+                  >
                     Altro
                   </Button>
                 </Menu.Target>
@@ -287,12 +330,19 @@ const Header: React.FC = () => {
             <Menu.Target>
               <Button
                 variant="light"
-                color="yellow"
                 radius="xl"
                 leftSection={<IconUser size={16} />}
-                styles={{ label: { fontWeight: 800 } }}
+                styles={{
+                  root: {
+                    background: "rgba(255,255,255,.06)",
+                    border: "1px solid rgba(255,255,255,.10)",
+                    color: "#fff",
+                    height: 38,
+                  },
+                  label: { fontWeight: 900 },
+                }}
               >
-                {isMobile ? "Account" : displayName || "Account"}
+                {displayName}
               </Button>
             </Menu.Target>
             <Menu.Dropdown>
@@ -306,18 +356,26 @@ const Header: React.FC = () => {
             </Menu.Dropdown>
           </Menu>
         ) : (
-          <Group gap={8} wrap="nowrap" ml="auto">
+          <Group gap={8} wrap="nowrap">
             {!isMobile && (
               <Button variant="subtle" color="gray" radius="xl" onClick={() => go("/register")}>
                 Registrati
               </Button>
             )}
-            <Button variant="filled" color="yellow" radius="xl" onClick={() => go("/login")}>
+            <Button
+              variant="filled"
+              color="yellow"
+              radius="xl"
+              onClick={() => go("/login")}
+              styles={{
+                root: { background: "rgba(209,171,99,.18)", border: "1px solid rgba(209,171,99,.35)" },
+                label: { fontWeight: 900 },
+              }}
+            >
               Login
             </Button>
           </Group>
         )}
-
       </Group>
     </Group>
   );
@@ -330,12 +388,27 @@ const Header: React.FC = () => {
           top: 0,
           zIndex: 200,
           height: HEADER_H,
-          background: "rgba(0,0,0,.92)",
+          background:
+            "linear-gradient(180deg, rgba(6,10,16,.92) 0%, rgba(6,10,16,.78) 100%)",
           borderBottom: "1px solid rgba(255,255,255,.08)",
-          backdropFilter: "blur(8px)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          transform: "translateZ(0)",
         }}
       >
-        <Container size="xl" h={HEADER_H}>
+        {/* glow sottile */}
+        <Box
+          style={{
+            position: "absolute",
+            inset: 0,
+            pointerEvents: "none",
+            background:
+              "radial-gradient(900px 160px at 50% 0%, rgba(209,171,99,.18), transparent 60%)",
+            opacity: 0.9,
+          }}
+        />
+
+        <Container size="xl" h={HEADER_H} style={{ position: "relative" }}>
           {hasGestionaleAccess ? <GestionaleHeader /> : <NormalHeader />}
         </Container>
       </Box>
@@ -350,20 +423,36 @@ const Header: React.FC = () => {
           withCloseButton={false}
           padding="md"
           radius="lg"
+          styles={{
+            content: { background: "#f7f7f7" },
+            header: { background: "#f7f7f7" },
+          }}
         >
           <Group justify="space-between" mb="sm">
-            <Text fw={900}>Area Gestionale</Text>
-            <ActionIcon variant="subtle" onClick={close} radius="xl" aria-label="Chiudi">
+            <Stack gap={2}>
+              <Text fw={900}>Area Gestionale</Text>
+              <Text size="xs" c="dimmed">
+                Navigazione rapida
+              </Text>
+            </Stack>
+
+            <ActionIcon
+              variant="light"
+              onClick={close}
+              radius="xl"
+              aria-label="Chiudi"
+              style={{ background: "rgba(0,0,0,.06)" }}
+            >
               <IconX size={18} />
             </ActionIcon>
           </Group>
 
           <Divider my="md" />
 
-          <ScrollArea h="calc(100dvh - 140px)" type="auto">
-            <Stack gap={8}>
+          <ScrollArea h="calc(100dvh - 150px)" type="auto">
+            <Stack gap={10}>
               {allowedGestionale.map((it) => (
-                <NavButton key={it.path} item={it} />
+                <DrawerItem key={it.path} item={it} />
               ))}
             </Stack>
           </ScrollArea>

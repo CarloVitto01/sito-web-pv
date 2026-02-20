@@ -15,6 +15,7 @@ const Intro: React.FC<IntroProps> = ({ title, subtitle }) => {
       transition={{ duration: 0.7, ease: "easeOut" }}
       viewport={{ once: true }}
       style={{ padding: "56px 0" }}
+
     >
       <Container size="md" style={{ textAlign: "center" }}>
         <Title
@@ -22,9 +23,9 @@ const Intro: React.FC<IntroProps> = ({ title, subtitle }) => {
           tt="uppercase"
           fw={900}
           style={{
-            color: "var(--color-gold)",
+            color: "white",
             letterSpacing: "0.04em",
-            textShadow: "0 0 10px rgba(199,171,43,0.35)",
+            textShadow: "0 0 10px rgb(238, 198, 18)",
             marginBottom: 12,
           }}
         >

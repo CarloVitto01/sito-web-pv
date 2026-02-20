@@ -27,9 +27,10 @@ import { RangePagesData } from "../../types/RangePagesData";
 import FormatoPicker from "../CardComponents/FormatoPicker";
 import CardGridPicker from "../CardComponents/CardGridPicker";
 import RilegaturaUnicaPicker from "../CardComponents/RilegaturaUnicaPicker";
+import PlasticaColorePicker, { type PlasticaColor } from "../CardComponents/PlasticaColorePicker";
+
 import { useNavigate } from "react-router-dom";
 import { IconLock } from "@tabler/icons-react";
-
 
 // Formatter €
 const fmtEuro = (n?: number | string) =>
@@ -70,6 +71,17 @@ const sanitizeForPath = (s: string) =>
     .replace(/\)/g, "]")
     .replace(/\|/g, "-");
 
+// ---- Plastiche (da gestionale) ----
+type PlasticaDocItem = {
+  id: string;
+  name: string;
+  hex: string;
+  priceEuro: number;
+  enabled: boolean;
+  order: number;
+};
+
+const isValidHex = (hex: string) => /^#([0-9a-f]{6}|[0-9a-f]{3})$/i.test((hex || "").trim());
 
 const PdfPrintPage = () => {
   const isNarrow = useMediaQuery("(max-width: 900px)");
@@ -139,6 +151,17 @@ const PdfPrintPage = () => {
     colore: 0.13,
     plastificazione: 0.3,
   });
+
+  // --- Plastiche A4 (da gestionale) ---
+  const [plasticaOptions, setPlasticaOptions] = useState<PlasticaColor[]>([]);
+  const [plasticaPriceMap, setPlasticaPriceMap] = useState<Record<string, number>>({});
+  const [plasticheLoaded, setPlasticheLoaded] = useState(false);
+
+  // selezione singola: 1 PDF oppure rilegatura unica
+  const [plasticaSelectedSingle, setPlasticaSelectedSingle] = useState<PlasticaColor | null>(null);
+
+  // selezione per file: (2+ PDF e rilegaturaUnica = NO)
+  const [plasticaSelectedByFile, setPlasticaSelectedByFile] = useState<Record<number, PlasticaColor | null>>({});
 
   const coloreCards = useMemo(
     () => [
@@ -256,6 +279,116 @@ const PdfPrintPage = () => {
     };
   }, []);
 
+  // ---- carico plastiche da Firestore (A4) ----
+  useEffect(() => {
+    const refPl = doc(db, "configPlastiche", "colors");
+
+    const unsub = onSnapshot(
+      refPl,
+      (snap) => {
+        const items: PlasticaDocItem[] = snap.exists() && Array.isArray((snap.data() as any)?.items) ? (snap.data() as any).items : [];
+
+        const cleaned = items
+          .filter((c) => c && typeof c.id === "string")
+          .map((c, idx) => {
+            const id = String(c.id);
+            const name = typeof c.name === "string" ? c.name : id;
+            const hex = typeof c.hex === "string" && isValidHex(c.hex) ? c.hex : "#cbd5e1";
+            const priceEuro = typeof c.priceEuro === "number" ? c.priceEuro : 0;
+            const enabled = typeof c.enabled === "boolean" ? c.enabled : true;
+            const order = typeof c.order === "number" ? c.order : idx + 1;
+
+            return {
+              id,
+              name,
+              hex,
+              priceEuro,
+              enabled,
+              order,
+              description: priceEuro > 0 ? `Extra ${fmtEuro(priceEuro)} €` : undefined,
+              disabled: !enabled,
+            };
+          })
+          .sort((a, b) => a.order - b.order);
+
+        const priceMap: Record<string, number> = {};
+        cleaned.forEach((x) => (priceMap[x.id] = Number(x.priceEuro || 0)));
+        setPlasticaPriceMap(priceMap);
+
+        const pickerOptions: PlasticaColor[] = cleaned.map((x) => ({
+          id: x.id,
+          name: x.name,
+          hex: x.hex,
+          description: x.description,
+          disabled: x.disabled,
+        }));
+        setPlasticaOptions(pickerOptions);
+
+        // se selezioni attuali non esistono più o sono disabled -> reset
+        setPlasticaSelectedSingle((prev) => {
+          if (!prev) return null;
+          const found = cleaned.find((x) => x.id === prev.id);
+          if (!found || found.disabled) return null;
+          return { id: found.id, name: found.name, hex: found.hex, description: found.description, disabled: found.disabled };
+        });
+
+        setPlasticaSelectedByFile((prev) => {
+          const next: Record<number, PlasticaColor | null> = { ...prev };
+          Object.keys(next).forEach((k) => {
+            const idx = Number(k);
+            const c = next[idx];
+            if (!c) return;
+            const found = cleaned.find((x) => x.id === c.id);
+            if (!found || found.disabled) next[idx] = null;
+          });
+          return next;
+        });
+
+        setPlasticheLoaded(true);
+      },
+      (err) => {
+        console.error(err);
+        setPlasticaOptions([]);
+        setPlasticaPriceMap({});
+        setPlasticaSelectedSingle(null);
+        setPlasticaSelectedByFile({});
+        setPlasticheLoaded(true);
+      }
+    );
+
+    return () => unsub();
+  }, []);
+
+  // ---- normalizzo selezione plastiche in base a numeroPDF / rilegaturaUnica / fileData ----
+  useEffect(() => {
+    if (numeroPDF === 0) {
+      setPlasticaSelectedSingle(null);
+      setPlasticaSelectedByFile({});
+      return;
+    }
+
+    // 1 PDF oppure rilegatura unica => 1 sola plastica totale
+    if (numeroPDF === 1 || rilegaturaUnica === rilegaturaUnicaEnum.SI) {
+      setPlasticaSelectedByFile({});
+      return;
+    }
+
+    // 2+ PDF e NON unica => una plastica per file
+    setPlasticaSelectedByFile((prev) => {
+      const next: Record<number, PlasticaColor | null> = { ...prev };
+
+      for (let i = 0; i < fileData.length; i++) {
+        if (!(i in next)) next[i] = null;
+      }
+
+      Object.keys(next).forEach((k) => {
+        const idx = Number(k);
+        if (!Number.isFinite(idx) || idx < 0 || idx >= fileData.length) delete next[idx];
+      });
+
+      return next;
+    });
+  }, [numeroPDF, rilegaturaUnica, fileData.length]);
   // ---- blocco scroll su modali ----
   useEffect(() => {
     if (formSubmitted || formSubmitting || formError) document.body.style.overflow = "hidden";
@@ -343,6 +476,9 @@ const PdfPrintPage = () => {
         setDaA("Tutte");
         setIntervalloPagine(numeroPaginePDF || 1);
         setIntervalloPagineIsValid(true);
+        // reset plastiche
+        setPlasticaSelectedSingle(null);
+        setPlasticaSelectedByFile({});
       } else if (value === "A3") {
         setFormato(formatoEnum.A3);
         setInchiostro(inchiostroEnum.COLORE);
@@ -459,6 +595,66 @@ const PdfPrintPage = () => {
     return Math.max(0, fogli);
   };
 
+  // ---- helper: extra plastica totale (per 1 copia) ----
+  const computeExtraPlasticaPerCopia = useCallback(() => {
+    if (formato !== formatoEnum.A4) return 0;
+
+    // 1 pdf o rilegatura unica => 1 sola plastica
+    if (numeroPDF === 1 || rilegaturaUnica === rilegaturaUnicaEnum.SI) {
+      if (!plasticaSelectedSingle) return 0;
+      return plasticaPriceMap[plasticaSelectedSingle.id] ?? 0;
+    }
+
+    // 2+ pdf e non unica => 1 plastica per file
+    let sum = 0;
+    for (let i = 0; i < fileData.length; i++) {
+      const c = plasticaSelectedByFile[i];
+      if (!c) continue;
+      sum += plasticaPriceMap[c.id] ?? 0;
+    }
+    return sum;
+  }, [formato, numeroPDF, rilegaturaUnica, plasticaSelectedSingle, plasticaSelectedByFile, plasticaPriceMap, fileData.length]);
+
+  const plasticheExtraEuro = useMemo(() => {
+    if (formato !== formatoEnum.A4) return undefined;
+    const extraPerCopia = computeExtraPlasticaPerCopia();
+    const tot = extraPerCopia * Math.max(0, numeroCopie);
+    return tot > 0 ? tot : undefined;
+  }, [formato, computeExtraPlasticaPerCopia, numeroCopie]);
+
+  const plasticheLabel = useMemo(() => {
+    if (formato !== formatoEnum.A4) return undefined;
+
+    if (numeroPDF === 1 || rilegaturaUnica === rilegaturaUnicaEnum.SI) {
+      const c = plasticaSelectedSingle;
+      if (!c) return undefined;
+      const extra = plasticaPriceMap[c.id] ?? 0;
+      return `Copertina: ${c.name}${extra > 0 ? ` (+${fmtEuro(extra)} €)` : ""}`;
+    }
+
+    if (numeroPDF >= 2 && rilegaturaUnica === rilegaturaUnicaEnum.NO) {
+      const parts: string[] = [];
+      for (let i = 0; i < fileData.length; i++) {
+        const c = plasticaSelectedByFile[i];
+        if (!c) continue;
+        const extra = plasticaPriceMap[c.id] ?? 0;
+        parts.push(`File ${i + 1}: ${c.name}${extra > 0 ? ` (+${fmtEuro(extra)} €)` : ""}`);
+      }
+      return parts.length ? parts.join(" • ") : undefined;
+    }
+
+    return undefined;
+  }, [
+    formato,
+    numeroPDF,
+    rilegaturaUnica,
+    plasticaSelectedSingle,
+    plasticaSelectedByFile,
+    plasticaPriceMap,
+    fileData.length,
+  ]);
+
+
   useEffect(() => {
     const calcoloPreventivoA4 = () => {
       let totale = 0;
@@ -466,12 +662,9 @@ const PdfPrintPage = () => {
 
       const prezzoInchiostro = inchiostro === inchiostroEnum.BIANCOENERO ? costiA4.biancoNero : costiA4.colore;
 
-      // ✅ fogli reali (interi) coerenti con computeNFogliPerCopiaA4
       const fogliPerCopia = computeNFogliPerCopiaA4(pagineSel, pagina, layoutA4);
 
-      // ✅ costo inchiostro per *foglio*
-      const costoInchiostroPerFoglio =
-        pagina === paginaEnum.FRONTE_RETRO ? 2 * prezzoInchiostro : prezzoInchiostro;
+      const costoInchiostroPerFoglio = pagina === paginaEnum.FRONTE_RETRO ? 2 * prezzoInchiostro : prezzoInchiostro;
 
       totale += fogliPerCopia * (costiA4.foglio + costoInchiostroPerFoglio);
       totale *= numeroCopie;
@@ -481,25 +674,23 @@ const PdfPrintPage = () => {
 
       switch (rilegatura) {
         case rilegaturaEnum.ANELLI:
-          numeroPDF === 1 || rilegaturaUnica === rilegaturaUnicaEnum.SI
-            ? addRilegatura(costiA4.anelli)
-            : addRilegaturaMultipla(costiA4.anelli);
+          numeroPDF === 1 || rilegaturaUnica === rilegaturaUnicaEnum.SI ? addRilegatura(costiA4.anelli) : addRilegaturaMultipla(costiA4.anelli);
           break;
         case rilegaturaEnum.FASCETTA:
-          numeroPDF === 1 || rilegaturaUnica === rilegaturaUnicaEnum.SI
-            ? addRilegatura(costiA4.fascetta)
-            : addRilegaturaMultipla(costiA4.fascetta);
+          numeroPDF === 1 || rilegaturaUnica === rilegaturaUnicaEnum.SI ? addRilegatura(costiA4.fascetta) : addRilegaturaMultipla(costiA4.fascetta);
           break;
         case rilegaturaEnum.CIAPPATURA:
-          numeroPDF === 1 || rilegaturaUnica === rilegaturaUnicaEnum.SI
-            ? addRilegatura(costiA4.ciappatura)
-            : addRilegaturaMultipla(costiA4.ciappatura);
+          numeroPDF === 1 || rilegaturaUnica === rilegaturaUnicaEnum.SI ? addRilegatura(costiA4.ciappatura) : addRilegaturaMultipla(costiA4.ciappatura);
           break;
         case rilegaturaEnum.SPIRALE:
-          numeroPDF === 1 || rilegaturaUnica === rilegaturaUnicaEnum.SI
-            ? addRilegatura(costiA4.spirale)
-            : addRilegaturaMultipla(costiA4.spirale);
+          numeroPDF === 1 || rilegaturaUnica === rilegaturaUnicaEnum.SI ? addRilegatura(costiA4.spirale) : addRilegaturaMultipla(costiA4.spirale);
           break;
+      }
+
+      // ✅ EXTRA plastica: una per copia (single) oppure somma per file per copia, poi * copie
+      const extraPlasticaPerCopia = computeExtraPlasticaPerCopia();
+      if (extraPlasticaPerCopia > 0) {
+        totale += extraPlasticaPerCopia * numeroCopie;
       }
 
       if (numeroCopie === 0) totale = 0;
@@ -545,6 +736,7 @@ const PdfPrintPage = () => {
     grammatura,
     plastificazione,
     costiA3,
+    computeExtraPlasticaPerCopia,
   ]);
 
   const submitFormHandler = useCallback(
@@ -571,7 +763,6 @@ const PdfPrintPage = () => {
 
       const id = v4();
 
-      // ✅ upload PARALLELO (molto più veloce con 2+ PDF)
       const uid = auth.currentUser.uid;
       const userLabel = sanitizeForPath(`${userMini.surname}${userMini.name}`) || uid;
 
@@ -627,10 +818,15 @@ const PdfPrintPage = () => {
           prezzo: preventivo,
           timestamp: serverTimestamp(),
           uid,
-          deliveryDayLabel: delivery?.dayLabel ?? undefined,
-          deliveryTimeRange: delivery?.timeRange ?? undefined,
-          deliveryDateISO: delivery?.dateISO ?? undefined,
-          deliveryWeekday: delivery?.weekday ?? undefined,
+
+          ...(delivery
+            ? {
+              deliveryDayLabel: delivery.dayLabel,
+              deliveryTimeRange: delivery.timeRange,
+              deliveryDateISO: delivery.dateISO,
+              deliveryWeekday: delivery.weekday,
+            }
+            : {}),
         };
 
         const isA4 = formato === formatoEnum.A4;
@@ -647,6 +843,30 @@ const PdfPrintPage = () => {
           nFogliPerCopia = computeNFogliPerCopiaA3(numeroPaginePDF, pagina);
           nFogli = nFogliPerCopia * Math.max(1, numeroCopie);
         }
+
+        // ---- plastiche: preparo payload A4 coerente con regola "1 plastica per file" ----
+        const extraPlasticaPerCopia = computeExtraPlasticaPerCopia();
+        const extraPlasticaTotale = extraPlasticaPerCopia * Math.max(0, numeroCopie);
+
+        const plasticaSinglePayload =
+          isA4 && (numeroPDF === 1 || rilegaturaUnica === rilegaturaUnicaEnum.SI) && plasticaSelectedSingle
+            ? {
+              id: plasticaSelectedSingle.id,
+              name: plasticaSelectedSingle.name,
+              hex: plasticaSelectedSingle.hex,
+              extraEuro: plasticaPriceMap[plasticaSelectedSingle.id] ?? 0,
+            }
+            : null;
+
+        const plastichePerFilePayload =
+          isA4 && numeroPDF >= 2 && rilegaturaUnica === rilegaturaUnicaEnum.NO
+            ? fileData.map((_, idx) => {
+              const c = plasticaSelectedByFile[idx];
+              return c
+                ? { fileIndex: idx, id: c.id, name: c.name, hex: c.hex, extraEuro: plasticaPriceMap[c.id] ?? 0 }
+                : { fileIndex: idx, id: null, name: null, hex: null, extraEuro: 0 };
+            })
+            : null;
 
         const dataToUpload = isA4
           ? {
@@ -678,6 +898,12 @@ const PdfPrintPage = () => {
             nFogliPerCopia,
             fascicoli,
             inchiostro: inchiostro === inchiostroEnum.COLORE ? "colore" : "biancoenero",
+
+            // ✅ plastiche
+            plastica: plasticaSinglePayload,
+            plastichePerFile: plastichePerFilePayload,
+            plasticaExtraPerCopia: extraPlasticaPerCopia,
+            plasticaExtraTotale: extraPlasticaTotale,
           }
           : {
             ...baseToUpload,
@@ -700,7 +926,6 @@ const PdfPrintPage = () => {
 
         await setDoc(PDFref, dataToUpload);
 
-        // opzionale: update users
         if (auth.currentUser) {
           await updateDoc(doc(db, "users", uid), {
             displayName: baseToUpload.nome,
@@ -730,13 +955,35 @@ const PdfPrintPage = () => {
         const deliveryBlock = delivery ? `\n🚚 *Consegna*: ${delivery.dayLabel} • ${delivery.timeRange}\n` : "";
         const titolo = isA4 ? "*NUOVO ORDINE A4*" : "*NUOVO ORDINE A3*";
 
+        let plasticaBlock = "";
+        if (isA4) {
+          if (numeroPDF === 1 || rilegaturaUnica === rilegaturaUnicaEnum.SI) {
+            const p = (dataToUpload as any).plastica;
+            plasticaBlock = `🧱 *Plastica*: ${p?.name ?? "-"}${p?.extraEuro ? ` (+${fmtEuro(p.extraEuro)} €)` : ""}`;
+          } else {
+            const arr = (dataToUpload as any).plastichePerFile as any[] | null;
+            if (arr?.length) {
+              plasticaBlock =
+                "🧱 *Plastiche per file:*\n" +
+                arr
+                  .map((x) => `- File ${Number(x.fileIndex) + 1}: ${x.name ?? "-"}${x.extraEuro ? ` (+${fmtEuro(x.extraEuro)} €)` : ""}`)
+                  .join("\n");
+            } else {
+              plasticaBlock = "🧱 *Plastiche per file:* -";
+            }
+          }
+
+          const extraTot = (dataToUpload as any).plasticaExtraTotale ?? 0;
+          if (extraTot > 0) plasticaBlock += `\n💶 *Extra plastica totale*: ${fmtEuro(extraTot)} €`;
+        }
+
         const dettagliSpecifici = isA4
           ? `🎨 *Colore*: ${dataToUpload.colore}
 📄 *Pagina*: ${dataToUpload.pagina}
 📐 *Layout*: ${dataToUpload.layout}
 📒 *Rilegatura*: ${dataToUpload.rilegatura}
 📒 *Rilegatura unica*: ${dataToUpload.rilegaturaUnica}
-*Pagine*: ${dataToUpload.pagine}
+${plasticaBlock ? `${plasticaBlock}\n` : ""}*Pagine*: ${dataToUpload.pagine}
 🔢 *Copie*: ${dataToUpload.copie}`
           : `⚖ *Grammatura*: ${dataToUpload.grammatura}
 🎨 *Colore*: ${dataToUpload.colore}
@@ -803,6 +1050,10 @@ ${deliveryBlock}
       layoutA3,
       grammatura,
       plastificazione,
+      plasticaSelectedSingle,
+      plasticaSelectedByFile,
+      plasticaPriceMap,
+      computeExtraPlasticaPerCopia,
     ]
   );
 
@@ -818,215 +1069,241 @@ ${deliveryBlock}
   const canConfirmA4 = formato === formatoEnum.A4 ? !!intervalloPagineIsValid : true;
 
   return (
+    <Box style={{ position: "relative", zIndex: 1 }}>
+      <Header />
+      <Banner />
 
-      <Box style={{ position: "relative", zIndex: 1 }}>
-        <Header />
-        <Banner />
-
-        <Modal
-          opened={loginModalOpen}
-          onClose={() => setLoginModalOpen(false)}
-          centered
-          radius="lg"
-          title={
-            <Group gap={10}>
-              <IconLock size={18} />
-              <Text fw={700}>Accesso richiesto</Text>
-            </Group>
-          }
-        >
-          <Text c="dimmed" style={{ lineHeight: 1.6 }}>
-            Per inviare l’ordine devi effettuare il login.
-          </Text>
-
-          <Group justify="flex-end" mt="lg">
-            <Button variant="default" onClick={() => setLoginModalOpen(false)}>
-              Annulla
-            </Button>
-            <Button
-              onClick={() => {
-                setLoginModalOpen(false);
-                navigate("/login");
-              }}
-            >
-              Vai al login
-            </Button>
+      <Modal
+        opened={loginModalOpen}
+        onClose={() => setLoginModalOpen(false)}
+        centered
+        radius="lg"
+        title={
+          <Group gap={10}>
+            <IconLock size={18} />
+            <Text fw={700}>Accesso richiesto</Text>
           </Group>
-        </Modal>
+        }
+      >
+        <Text c="dimmed" style={{ lineHeight: 1.6 }}>
+          Per inviare l’ordine devi effettuare il login.
+        </Text>
 
-        <Intro title={introTitle} />
+        <Group justify="flex-end" mt="lg">
+          <Button variant="default" onClick={() => setLoginModalOpen(false)}>
+            Annulla
+          </Button>
+          <Button
+            onClick={() => {
+              setLoginModalOpen(false);
+              navigate("/login");
+            }}
+          >
+            Vai al login
+          </Button>
+        </Group>
+      </Modal>
 
-        <Container fluid px="xl" py="md">
-          <Grid gutter="xl" align="start">
-            <Grid.Col span={{ base: 12, md: 3 }}>
-              <Stack gap="md">
-                <MultiInput onSendData={setPDFHandler} />
-                <SingleDelimiter />
-              </Stack>
-            </Grid.Col>
+      <Intro title={introTitle} />
 
-            <Grid.Col span={{ base: 12, md: 5 }}>
-              <Stack gap="md">
-                <FormatoPicker value={formato === formatoEnum.A4 ? "A4" : "A3"} onChange={(v) => newValue(v)} />
+      <Container fluid px="xl" py="md">
+        <Grid gutter="xl" align="stretch">
+          <Grid.Col span={{ base: 12, md: 3 }}>
+            <Stack gap="md">
+              <MultiInput onSendData={setPDFHandler} />
+              <SingleDelimiter />
+            </Stack>
+          </Grid.Col>
 
-                <CardGridPicker
-                  title="Colore:"
-                  value={inchiostro === inchiostroEnum.BIANCOENERO ? "Bianco e nero" : "Colore"}
-                  onChange={newValue}
-                  options={coloreCards}
-                />
+          <Grid.Col span={{ base: 12, md: 5 }}>
+            <Stack gap="md">
+              <FormatoPicker value={formato === formatoEnum.A4 ? "A4" : "A3"} onChange={(v) => newValue(v)} />
 
-                <CardGridPicker
-                  title="Gestione pagina:"
-                  value={pagina === paginaEnum.FRONTE_RETRO ? "Fronte-retro" : "Fronte"}
-                  onChange={newValue}
-                  options={paginaCards}
-                />
+              <CardGridPicker
+                title="Colore:"
+                value={inchiostro === inchiostroEnum.BIANCOENERO ? "Bianco e nero" : "Colore"}
+                onChange={newValue}
+                options={coloreCards}
+              />
 
-                {formato === formatoEnum.A4 && (
-                  <>
-                    <CardGridPicker
-                      title="Layout:"
-                      value={
-                        layoutA4 === layoutA4Enum.VERTICALE
-                          ? "Verticale (A4)"
-                          : layoutA4 === layoutA4Enum.ORIZZONTALE
-                            ? "Orizzontale (A4)"
-                            : layoutA4 === layoutA4Enum.DUEPAGORIZZ
-                              ? "2 in 1 orizzontale"
-                              : "2 in 1 verticale"
-                      }
-                      onChange={newValue}
-                      options={layoutA4Cards}
-                      cols={{ base: 2, md: 2, xl: 2 }}
-                    />
+              <CardGridPicker
+                title="Gestione pagina:"
+                value={pagina === paginaEnum.FRONTE_RETRO ? "Fronte-retro" : "Fronte"}
+                onChange={newValue}
+                options={paginaCards}
+              />
 
-                    <RilegaturaUnicaPicker
-                      value={rilegaturaUnica === rilegaturaUnicaEnum.SI ? "SI" : "NO"}
-                      disabled={numeroPDF === 1}
-                      disabledHint="Disponibile soltanto per 2 o più PDF"
-                      onChange={(v) => newValue(v === "SI" ? "Si (rilegatura unica)" : "No (rilegatura unica)")}
-                    />
-
-                    <CardGridPicker
-                      title="Rilegatura:"
-                      value={
-                        rilegatura === rilegaturaEnum.ANELLI
-                          ? "Anelli"
-                          : rilegatura === rilegaturaEnum.SPIRALE
-                            ? "Spirale"
-                            : rilegatura === rilegaturaEnum.FASCETTA
-                              ? "Fascetta"
-                              : rilegatura === rilegaturaEnum.CIAPPATURA
-                                ? "Ciappatura"
-                                : "Nessuna"
-                      }
-                      onChange={newValue}
-                      options={rilegaturaCards}
-                      cols={{ base: 2, md: 3, xl: 3 }}
-                    />
-
-                    <IntervalloPagine
-                      onSendData={setRangePagesHandler}
-                      maxValue={numeroPaginePDF}
-                      disable={numeroPDF >= 2}
-                      errorMessage="Disponibile soltanto per un singolo PDF"
-                    />
-                  </>
-                )}
-
-                {formato === formatoEnum.A3 && (
-                  <>
-                    <CardGridPicker
-                      title="Grammatura:"
-                      value={grammatura === grammaturaEnum.CARTONCINO ? "Cartoncino" : "Normale"}
-                      onChange={newValue}
-                      options={grammaturaCards}
-                      cols={{ base: 2, md: 2, xl: 2 }}
-                    />
-
-                    <CardGridPicker
-                      title="Plastificazione:"
-                      value={plastificazione === plastificazioneEnum.SI ? "Si (plastificazione)" : "No (plastificazione)"}
-                      onChange={newValue}
-                      options={plastificazioneCards}
-                      cols={{ base: 2, md: 2, xl: 2 }}
-                    />
-
-                    <CardGridPicker
-                      title="Layout:"
-                      value={layoutA3 === layoutA3Enum.AUTO ? "Auto" : layoutA3 === layoutA3Enum.ORIZZONTALE ? "Orizzontale (A3)" : "Verticale (A3)"}
-                      onChange={newValue}
-                      options={layoutA3Cards}
-                      cols={{ base: 2, md: 3, xl: 3 }}
-                    />
-                  </>
-                )}
-
-                <NumeroCopie onSendData={setCopiesHandler} />
-              </Stack>
-            </Grid.Col>
-
-            <Grid.Col span={{ base: 12, md: 4 }}>
-              <Box
-                style={
-                  isNarrow
-                    ? undefined
-                    : {
-                      position: "sticky",
-                      top: 96,
-                      alignSelf: "flex-start",
+              {formato === formatoEnum.A4 && (
+                <>
+                  <CardGridPicker
+                    title="Layout:"
+                    value={
+                      layoutA4 === layoutA4Enum.VERTICALE
+                        ? "Verticale (A4)"
+                        : layoutA4 === layoutA4Enum.ORIZZONTALE
+                          ? "Orizzontale (A4)"
+                          : layoutA4 === layoutA4Enum.DUEPAGORIZZ
+                            ? "2 in 1 orizzontale"
+                            : "2 in 1 verticale"
                     }
-                }
-              >
-                {formato === formatoEnum.A4 ? (
-                  <RiepilogoOrdine
-                    numeroPDF={numeroPDF}
-                    inchiostro={inchiostro === 0 ? "Bianco e nero" : "Colore"}
-                    pagina={pagina === 0 ? "Fronte-retro" : "Fronte"}
-                    layout={
-                      layoutA4 === 0
-                        ? "Verticale"
-                        : layoutA4 === 1
-                          ? "Orizzontale"
-                          : layoutA4 === 2
-                            ? "2 pagine in 1 orizzontale"
-                            : "2 pagine in 1 verticale"
-                    }
-                    rilegatura={rilegatura === 0 ? "Anelli" : rilegatura === 1 ? "Fascetta" : rilegatura === 2 ? "Ciappatura" : rilegatura === 3 ? "Nessuna" : "Spirale"}
-                    rilegaturaUnica={rilegaturaUnica === 0 ? "Si" : "No"}
-                    intervalloPagine={daA}
-                    numeroCopie={numeroCopie}
-                    prezzo={preventivo}
-                    onConfirmOrder={submitFormHandler}
-                    disabled={fileData.length === 0 || !canConfirmA4 || formSubmitting}
-                    loading={formSubmitting}
-                    submitted={formSubmitted}
+                    onChange={newValue}
+                    options={layoutA4Cards}
+                    cols={{ base: 2, md: 2, xl: 2 }}
                   />
-                ) : (
-                  <RiepilogoOrdineA3
-                    numeroPDF={numeroPDF}
-                    numeroPagine={numeroPaginePDF}
-                    numeroCopie={numeroCopie}
-                    grammatura={grammatura === 1 ? "Cartoncino" : "Normale"}
-                    inchiostro={inchiostro === 1 ? "Colore" : "Bianco e nero"}
-                    pagina={pagina === 1 ? "Fronte" : "Fronte-retro"}
-                    layout={layoutA3 === 0 ? "Orizzontale" : layoutA3 === 1 ? "Verticale" : "Auto"}
-                    plastificazione={plastificazione === 0 ? "Si" : "No"}
-                    prezzo={preventivo}
-                    onConfirmOrder={submitFormHandler}
-                    disabled={fileData.length === 0 || formSubmitting}
-                    loading={formSubmitting}
-                    submitted={formSubmitted}
-                  />
-                )}
-              </Box>
-            </Grid.Col>
-          </Grid>
-        </Container>
 
-        <Footer />
-      </Box>
+                  <RilegaturaUnicaPicker
+                    value={rilegaturaUnica === rilegaturaUnicaEnum.SI ? "SI" : "NO"}
+                    disabled={numeroPDF === 1}
+                    disabledHint="Disponibile soltanto per 2 o più PDF"
+                    onChange={(v) => newValue(v === "SI" ? "Si (rilegatura unica)" : "No (rilegatura unica)")}
+                  />
+
+                  <CardGridPicker
+                    title="Rilegatura:"
+                    value={
+                      rilegatura === rilegaturaEnum.ANELLI
+                        ? "Anelli"
+                        : rilegatura === rilegaturaEnum.SPIRALE
+                          ? "Spirale"
+                          : rilegatura === rilegaturaEnum.FASCETTA
+                            ? "Fascetta"
+                            : rilegatura === rilegaturaEnum.CIAPPATURA
+                              ? "Ciappatura"
+                              : "Nessuna"
+                    }
+                    onChange={newValue}
+                    options={rilegaturaCards}
+                    cols={{ base: 2, md: 3, xl: 3 }}
+                  />
+
+                  {/* ✅ Plastiche (A4 only) */}
+                  {plasticheLoaded && (
+                    <Box>
+                      {(numeroPDF === 1 || rilegaturaUnica === rilegaturaUnicaEnum.SI) ? (
+                        <PlasticaColorePicker
+                          label="Colore Copertina"
+                          colors={plasticaOptions}
+                          value={plasticaSelectedSingle?.id ?? null}
+                          onChange={(c) => setPlasticaSelectedSingle(c)}
+
+                          columns={{ base: 2, sm: 3, md: 4, lg: 4 }}
+                          withPreviewCard
+                        />
+                      ) : (
+                        <Stack gap="sm">
+                          {fileData.map((f, idx) => (
+                            <PlasticaColorePicker
+                              key={idx}
+                              label={`Plastica copertina • File ${idx + 1} (${f.pages} pagine)`}
+                              colors={plasticaOptions}
+                              value={plasticaSelectedByFile[idx]?.id ?? null}
+                              onChange={(c) => setPlasticaSelectedByFile((prev) => ({ ...prev, [idx]: c }))}
+
+                              columns={{ base: 2, sm: 3, md: 4, lg: 4 }}
+                              withPreviewCard
+                            />
+                          ))}
+                        </Stack>
+                      )}
+                    </Box>
+                  )}
+
+                  <IntervalloPagine
+                    onSendData={setRangePagesHandler}
+                    maxValue={numeroPaginePDF}
+                    disable={numeroPDF >= 2}
+                    errorMessage="Disponibile soltanto per un singolo PDF"
+                  />
+                </>
+              )}
+
+              {formato === formatoEnum.A3 && (
+                <>
+                  <CardGridPicker
+                    title="Grammatura:"
+                    value={grammatura === grammaturaEnum.CARTONCINO ? "Cartoncino" : "Normale"}
+                    onChange={newValue}
+                    options={grammaturaCards}
+                    cols={{ base: 2, md: 2, xl: 2 }}
+                  />
+
+                  <CardGridPicker
+                    title="Plastificazione:"
+                    value={plastificazione === plastificazioneEnum.SI ? "Si (plastificazione)" : "No (plastificazione)"}
+                    onChange={newValue}
+                    options={plastificazioneCards}
+                    cols={{ base: 2, md: 2, xl: 2 }}
+                  />
+
+                  <CardGridPicker
+                    title="Layout:"
+                    value={
+                      layoutA3 === layoutA3Enum.AUTO ? "Auto" : layoutA3 === layoutA3Enum.ORIZZONTALE ? "Orizzontale (A3)" : "Verticale (A3)"
+                    }
+                    onChange={newValue}
+                    options={layoutA3Cards}
+                    cols={{ base: 2, md: 3, xl: 3 }}
+                  />
+                </>
+              )}
+
+              <NumeroCopie onSendData={setCopiesHandler} />
+            </Stack>
+          </Grid.Col>
+
+          <Grid.Col span={{ base: 12, md: 4 }}>
+            <Box style={{ position: "static" }}>
+
+              {formato === formatoEnum.A4 ? (
+                <RiepilogoOrdine
+                  numeroPDF={numeroPDF}
+                  inchiostro={inchiostro === 0 ? "Bianco e nero" : "Colore"}
+                  pagina={pagina === 0 ? "Fronte-retro" : "Fronte"}
+                  layout={
+                    layoutA4 === 0
+                      ? "Verticale"
+                      : layoutA4 === 1
+                        ? "Orizzontale"
+                        : layoutA4 === 2
+                          ? "2 pagine in 1 orizzontale"
+                          : "2 pagine in 1 verticale"
+                  }
+                  rilegatura={rilegatura === 0 ? "Anelli" : rilegatura === 1 ? "Fascetta" : rilegatura === 2 ? "Ciappatura" : rilegatura === 3 ? "Nessuna" : "Spirale"}
+                  rilegaturaUnica={rilegaturaUnica === 0 ? "Si" : "No"}
+                  intervalloPagine={daA}
+                  numeroCopie={numeroCopie}
+                  plasticheLabel={plasticheLabel}
+                  plasticheExtraEuro={plasticheExtraEuro}
+                  prezzo={preventivo}
+                  onConfirmOrder={submitFormHandler}
+                  disabled={fileData.length === 0 || !canConfirmA4 || formSubmitting}
+                  loading={formSubmitting}
+                  submitted={formSubmitted}
+                />
+              ) : (
+                <RiepilogoOrdineA3
+                  numeroPDF={numeroPDF}
+                  numeroPagine={numeroPaginePDF}
+                  numeroCopie={numeroCopie}
+                  grammatura={grammatura === 1 ? "Cartoncino" : "Normale"}
+                  inchiostro={inchiostro === 1 ? "Colore" : "Bianco e nero"}
+                  pagina={pagina === 1 ? "Fronte" : "Fronte-retro"}
+                  layout={layoutA3 === 0 ? "Orizzontale" : layoutA3 === 1 ? "Verticale" : "Auto"}
+                  plastificazione={plastificazione === 0 ? "Si" : "No"}
+                  prezzo={preventivo}
+                  onConfirmOrder={submitFormHandler}
+                  disabled={fileData.length === 0 || formSubmitting}
+                  loading={formSubmitting}
+                  submitted={formSubmitted}
+                />
+              )}
+            </Box>
+          </Grid.Col>
+        </Grid>
+      </Container>
+
+      <Footer />
+    </Box>
   );
 };
 

@@ -1,9 +1,8 @@
 // ✅ src/components/RiepilogoOrdineComponents/RiepilogoOrdineA3.tsx
 // Aggiornato per usare:
-// - ConsegnaSlotPicker ✅
+// - ConsegnaSlotPicker ✅ (con scelta Studente Sì/No obbligatoria; slot obbligatorio solo se Sì)
 // - MetodoPagamentoPicker ✅
 // Senza rimuovere nulla: il vecchio UI resta ma viene "nascosto" (render condizionale)
-// + fix Badge quando paymentMethod è null
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { db } from "../../backend/firebase";
@@ -368,7 +367,8 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
       const d = snap.data() as Partial<DeliveryConfig>;
       setDeliveryCfg({
         weekdays: Array.isArray(d.weekdays) && d.weekdays.length ? (d.weekdays as number[]) : [1, 3, 5],
-        timeRanges: Array.isArray(d.timeRanges) && d.timeRanges.length ? (d.timeRanges as TimeRange[]) : [{ start: "12:00", end: "13:00" }],
+        timeRanges:
+          Array.isArray(d.timeRanges) && d.timeRanges.length ? (d.timeRanges as TimeRange[]) : [{ start: "12:00", end: "13:00" }],
         slotsAhead: typeof d.slotsAhead === "number" ? d.slotsAhead : 6,
         timezone: typeof d.timezone === "string" && d.timezone ? d.timezone : "Europe/Rome",
         blacklistDates: Array.isArray(d.blacklistDates) ? (d.blacklistDates as string[]) : [],
@@ -422,6 +422,12 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
 
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const selectedSlot = useMemo(() => deliverySlots.find((s) => s.id === selectedSlotId) || null, [deliverySlots, selectedSlotId]);
+
+  // ✅ obbligatorio: Sì/No (slot obbligatorio solo se Sì)
+  const [isStudent, setIsStudent] = useState<boolean | null>(null);
+  const canProceedPay = useMemo(() => {
+    return isStudent !== null && (isStudent === false || (isStudent === true && !!selectedSlot));
+  }, [isStudent, selectedSlot]);
 
   useEffect(() => {
     const ref = doc(db, FEES_COLLECTION, FEES_DOC);
@@ -520,7 +526,10 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
     if (paymentMethod !== "paypal" || !paypalButtonsContainerRef.current || submitted) return;
 
     paypalButtonsContainerRef.current.innerHTML = "";
-    if (!selectedSlot) return;
+
+    // ✅ Abilitazione PayPal: obbligatorio Sì/No; slot obbligatorio solo se Sì
+    if (isStudent === null) return;
+    if (isStudent === true && !selectedSlot) return;
     if (!paypalReady) return;
 
     const Buttons = window.paypal?.Buttons;
@@ -607,13 +616,21 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
     onConfirmOrder,
     fetchJSON,
     selectedSlot,
+    isStudent,
   ]);
 
   const handleConfirmOrderCash = async () => {
-    if (!selectedSlot) {
+    // ✅ obbligatorio Sì/No
+    if (isStudent === null) {
+      alert("Seleziona “Sì” oppure “No”.");
+      return;
+    }
+    // ✅ slot obbligatorio solo se Sì
+    if (isStudent === true && !selectedSlot) {
       alert("Seleziona prima uno slot di consegna.");
       return;
     }
+
     await onConfirmOrder({
       method: "CASH",
       confirmed: false,
@@ -624,12 +641,14 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
         trasporto: totals.trasporto,
         feePayPal: 0,
       },
-      delivery: {
-        dateISO: selectedSlot.dateISO,
-        dayLabel: selectedSlot.dayLabel,
-        timeRange: selectedSlot.timeRange,
-        weekday: selectedSlot.weekday,
-      },
+      delivery: selectedSlot
+        ? {
+            dateISO: selectedSlot.dateISO,
+            dayLabel: selectedSlot.dayLabel,
+            timeRange: selectedSlot.timeRange,
+            weekday: selectedSlot.weekday,
+          }
+        : undefined,
     });
   };
 
@@ -686,12 +705,12 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
           </Stack>
         </Card>
 
-        {/* ✅ NUOVO: Picker consegna (non rimuove nulla, aggiunge) */}
+        {/* ✅ NUOVO: Picker consegna */}
         <ConsegnaSlotPicker
-          title={`Consegna${deliveryTitleSuffix}`}
           slots={deliverySlots as DeliverySlot[]}
           selectedId={selectedSlotId}
           onChange={setSelectedSlotId}
+          onStudentChange={setIsStudent}
           hint="Seleziona uno slot per procedere al pagamento."
         />
 
@@ -816,7 +835,11 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
                 Completa il pagamento di <strong>{euro(totals.totaleDaAddebitare)} €</strong> con PayPal. Al termine l’ordine partirà automaticamente.
               </Text>
 
-              {!selectedSlot ? (
+              {isStudent === null ? (
+                <Alert color="yellow" variant="light" icon={<IconInfoCircle size={18} />}>
+                  Seleziona “Sì” oppure “No” per abilitare il pagamento.
+                </Alert>
+              ) : isStudent === true && !selectedSlot ? (
                 <Alert color="yellow" variant="light" icon={<IconInfoCircle size={18} />}>
                   Seleziona prima uno slot di consegna per abilitare il pagamento PayPal.
                 </Alert>
@@ -838,7 +861,7 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
         )}
 
         {!loading && !submitted && paymentMethod === "cash" && (
-          <Button fullWidth size="md" onClick={handleConfirmOrderCash} disabled={disabled || loading || submitted || !selectedSlot}>
+          <Button fullWidth size="md" onClick={handleConfirmOrderCash} disabled={disabled || loading || submitted || !canProceedPay}>
             ✅ Conferma Ordine
           </Button>
         )}
