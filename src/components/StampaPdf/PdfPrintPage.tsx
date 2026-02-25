@@ -6,7 +6,6 @@ import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { v4 } from "uuid";
 
 import { Box, Container, Grid, Stack, Modal, Text, Group, Button } from "@mantine/core";
-import { useMediaQuery } from "@mantine/hooks";
 
 import Footer from "../FooterComponents/Footer";
 import Header from "../HeaderComponents/Header";
@@ -84,7 +83,6 @@ type PlasticaDocItem = {
 const isValidHex = (hex: string) => /^#([0-9a-f]{6}|[0-9a-f]{3})$/i.test((hex || "").trim());
 
 const PdfPrintPage = () => {
-  const isNarrow = useMediaQuery("(max-width: 900px)");
 
   const navigate = useNavigate();
   const [loginModalOpen, setLoginModalOpen] = useState(false);
@@ -162,6 +160,21 @@ const PdfPrintPage = () => {
 
   // selezione per file: (2+ PDF e rilegaturaUnica = NO)
   const [plasticaSelectedByFile, setPlasticaSelectedByFile] = useState<Record<number, PlasticaColor | null>>({});
+
+  // ✅ Regola: se rilegatura è CIAPPATURA o NESSUNA, non permettere plastiche colorate
+  const plasticaDisabled = useMemo(() => {
+    return (
+      formato === formatoEnum.A4 &&
+      (rilegatura === rilegaturaEnum.CIAPPATURA || rilegatura === rilegaturaEnum.NESSUNA)
+    );
+  }, [formato, rilegatura]);
+
+  // ✅ quando diventa disabilitato, resetto selezioni plastiche
+  useEffect(() => {
+    if (!plasticaDisabled) return;
+    setPlasticaSelectedSingle(null);
+    setPlasticaSelectedByFile({});
+  }, [plasticaDisabled]);
 
   const coloreCards = useMemo(
     () => [
@@ -599,6 +612,9 @@ const PdfPrintPage = () => {
   const computeExtraPlasticaPerCopia = useCallback(() => {
     if (formato !== formatoEnum.A4) return 0;
 
+    // ✅ regola: con CIAPPATURA o NESSUNA non è prevista plastica colorata
+    if (rilegatura === rilegaturaEnum.CIAPPATURA || rilegatura === rilegaturaEnum.NESSUNA) return 0;
+
     // 1 pdf o rilegatura unica => 1 sola plastica
     if (numeroPDF === 1 || rilegaturaUnica === rilegaturaUnicaEnum.SI) {
       if (!plasticaSelectedSingle) return 0;
@@ -613,17 +629,29 @@ const PdfPrintPage = () => {
       sum += plasticaPriceMap[c.id] ?? 0;
     }
     return sum;
-  }, [formato, numeroPDF, rilegaturaUnica, plasticaSelectedSingle, plasticaSelectedByFile, plasticaPriceMap, fileData.length]);
+  }, [
+    formato,
+    rilegatura, // ✅ aggiunta
+    numeroPDF,
+    rilegaturaUnica,
+    plasticaSelectedSingle,
+    plasticaSelectedByFile,
+    plasticaPriceMap,
+    fileData.length,
+  ]);
 
   const plasticheExtraEuro = useMemo(() => {
     if (formato !== formatoEnum.A4) return undefined;
+    if (rilegatura === rilegaturaEnum.CIAPPATURA || rilegatura === rilegaturaEnum.NESSUNA) return undefined;
+
     const extraPerCopia = computeExtraPlasticaPerCopia();
     const tot = extraPerCopia * Math.max(0, numeroCopie);
     return tot > 0 ? tot : undefined;
-  }, [formato, computeExtraPlasticaPerCopia, numeroCopie]);
+  }, [formato, rilegatura, computeExtraPlasticaPerCopia, numeroCopie]);
 
   const plasticheLabel = useMemo(() => {
     if (formato !== formatoEnum.A4) return undefined;
+    if (rilegatura === rilegaturaEnum.CIAPPATURA || rilegatura === rilegaturaEnum.NESSUNA) return undefined;
 
     if (numeroPDF === 1 || rilegaturaUnica === rilegaturaUnicaEnum.SI) {
       const c = plasticaSelectedSingle;
@@ -646,6 +674,7 @@ const PdfPrintPage = () => {
     return undefined;
   }, [
     formato,
+    rilegatura, // ✅ aggiunta
     numeroPDF,
     rilegaturaUnica,
     plasticaSelectedSingle,
@@ -653,7 +682,6 @@ const PdfPrintPage = () => {
     plasticaPriceMap,
     fileData.length,
   ]);
-
 
   useEffect(() => {
     const calcoloPreventivoA4 = () => {
@@ -688,6 +716,7 @@ const PdfPrintPage = () => {
       }
 
       // ✅ EXTRA plastica: una per copia (single) oppure somma per file per copia, poi * copie
+      // (computeExtraPlasticaPerCopia già ritorna 0 per CIAPPATURA/NESSUNA)
       const extraPlasticaPerCopia = computeExtraPlasticaPerCopia();
       if (extraPlasticaPerCopia > 0) {
         totale += extraPlasticaPerCopia * numeroCopie;
@@ -844,12 +873,16 @@ const PdfPrintPage = () => {
           nFogli = nFogliPerCopia * Math.max(1, numeroCopie);
         }
 
+        // ✅ plastica permessa solo se NON CIAPPATURA e NON NESSUNA
+        const plasticaAllowed =
+          isA4 && !(rilegatura === rilegaturaEnum.CIAPPATURA || rilegatura === rilegaturaEnum.NESSUNA);
+
         // ---- plastiche: preparo payload A4 coerente con regola "1 plastica per file" ----
-        const extraPlasticaPerCopia = computeExtraPlasticaPerCopia();
+        const extraPlasticaPerCopia = plasticaAllowed ? computeExtraPlasticaPerCopia() : 0;
         const extraPlasticaTotale = extraPlasticaPerCopia * Math.max(0, numeroCopie);
 
         const plasticaSinglePayload =
-          isA4 && (numeroPDF === 1 || rilegaturaUnica === rilegaturaUnicaEnum.SI) && plasticaSelectedSingle
+          plasticaAllowed && (numeroPDF === 1 || rilegaturaUnica === rilegaturaUnicaEnum.SI) && plasticaSelectedSingle
             ? {
               id: plasticaSelectedSingle.id,
               name: plasticaSelectedSingle.name,
@@ -859,7 +892,7 @@ const PdfPrintPage = () => {
             : null;
 
         const plastichePerFilePayload =
-          isA4 && numeroPDF >= 2 && rilegaturaUnica === rilegaturaUnicaEnum.NO
+          plasticaAllowed && numeroPDF >= 2 && rilegaturaUnica === rilegaturaUnicaEnum.NO
             ? fileData.map((_, idx) => {
               const c = plasticaSelectedByFile[idx];
               return c
@@ -957,7 +990,9 @@ const PdfPrintPage = () => {
 
         let plasticaBlock = "";
         if (isA4) {
-          if (numeroPDF === 1 || rilegaturaUnica === rilegaturaUnicaEnum.SI) {
+          if (!plasticaAllowed) {
+            plasticaBlock = `🧱 *Plastica*: -`;
+          } else if (numeroPDF === 1 || rilegaturaUnica === rilegaturaUnicaEnum.SI) {
             const p = (dataToUpload as any).plastica;
             plasticaBlock = `🧱 *Plastica*: ${p?.name ?? "-"}${p?.extraEuro ? ` (+${fmtEuro(p.extraEuro)} €)` : ""}`;
           } else {
@@ -1179,13 +1214,17 @@ ${deliveryBlock}
                   {/* ✅ Plastiche (A4 only) */}
                   {plasticheLoaded && (
                     <Box>
-                      {(numeroPDF === 1 || rilegaturaUnica === rilegaturaUnicaEnum.SI) ? (
+                      {plasticaDisabled ? (
+                        <Text size="sm" c="dimmed">
+                          La plastica colorata non è disponibile con rilegatura:{" "}
+                          {rilegatura === rilegaturaEnum.CIAPPATURA ? "Ciappatura" : "Nessuna"}.
+                        </Text>
+                      ) : (numeroPDF === 1 || rilegaturaUnica === rilegaturaUnicaEnum.SI) ? (
                         <PlasticaColorePicker
                           label="Colore Copertina"
                           colors={plasticaOptions}
                           value={plasticaSelectedSingle?.id ?? null}
                           onChange={(c) => setPlasticaSelectedSingle(c)}
-
                           columns={{ base: 2, sm: 3, md: 4, lg: 4 }}
                           withPreviewCard
                         />
@@ -1198,7 +1237,6 @@ ${deliveryBlock}
                               colors={plasticaOptions}
                               value={plasticaSelectedByFile[idx]?.id ?? null}
                               onChange={(c) => setPlasticaSelectedByFile((prev) => ({ ...prev, [idx]: c }))}
-
                               columns={{ base: 2, sm: 3, md: 4, lg: 4 }}
                               withPreviewCard
                             />
@@ -1253,7 +1291,6 @@ ${deliveryBlock}
 
           <Grid.Col span={{ base: 12, md: 4 }}>
             <Box style={{ position: "static" }}>
-
               {formato === formatoEnum.A4 ? (
                 <RiepilogoOrdine
                   numeroPDF={numeroPDF}

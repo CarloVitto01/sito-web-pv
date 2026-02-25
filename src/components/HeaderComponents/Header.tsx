@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Box,
@@ -18,14 +18,7 @@ import {
   Tooltip,
 } from "@mantine/core";
 import { useDisclosure, useMediaQuery } from "@mantine/hooks";
-import {
-  IconMenu2,
-  IconX,
-  IconChevronRight,
-  IconUser,
-  IconLogout,
-  IconSettings,
-} from "@tabler/icons-react";
+import { IconMenu2, IconX, IconChevronRight, IconUser, IconLogout, IconSettings } from "@tabler/icons-react";
 
 import logo from "../../assets/images/Firma_Bianca_oro_PV.png";
 import { auth, db } from "../../backend/firebase";
@@ -35,12 +28,30 @@ import { doc, getDoc } from "firebase/firestore";
 type NavItem = { path: string; label: string };
 
 const HEADER_H = 76;
-const ACCENT = "#d1ab63";
+
+// ✅ cache permessi/ruolo per evitare “flash/scatti” (caricamento più pulito)
+const ACCESS_CACHE_KEY = "pv_gestionale_access_v1";
+const ACCESS_TTL_MS = 5 * 60 * 1000; // 5 minuti
+
+type AccessCache = {
+  uid: string;
+  displayName: string;
+  pages: string[];
+  ts: number;
+};
+
+/** ✅ Loader header “professionale”: shimmer bar + 2 dot (sinistra/destra), niente cerchi enormi */
 
 const Header: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const [displayName, setDisplayName] = useState("");
   const [accessiblePages, setAccessiblePages] = useState<string[]>([]);
+
+  // ✅ stato loading accessi (per header/drawer “morbidi”)
+  const [accessLoading, setAccessLoading] = useState(true);
+
+  // ✅ evita race conditions se cambiano utente/refresh
+  const reqIdRef = useRef(0);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -50,28 +61,78 @@ const Header: React.FC = () => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
+      const reqId = ++reqIdRef.current;
 
+      setUser(currentUser);
+      setAccessLoading(true);
+
+      // ✅ reset base
       if (!currentUser) {
         setDisplayName("");
         setAccessiblePages([]);
+        setAccessLoading(false);
+        try {
+          sessionStorage.removeItem(ACCESS_CACHE_KEY);
+        } catch { }
         return;
       }
 
-      const userSnap = await getDoc(doc(db, "users", currentUser.uid));
-      if (!userSnap.exists()) {
-        setDisplayName("");
-        setAccessiblePages([]);
-        return;
+      // ✅ prova cache (istantaneo, niente scatti)
+      let usedCache = false;
+      try {
+        const raw = sessionStorage.getItem(ACCESS_CACHE_KEY);
+        if (raw) {
+          const cached = JSON.parse(raw) as AccessCache;
+          const fresh = Date.now() - (cached.ts || 0) < ACCESS_TTL_MS;
+          if (cached.uid === currentUser.uid && fresh) {
+            usedCache = true;
+            setDisplayName(cached.displayName || "");
+            setAccessiblePages(Array.isArray(cached.pages) ? cached.pages : []);
+            setAccessLoading(false);
+          }
+        }
+      } catch { }
+
+      try {
+        const userSnap = await getDoc(doc(db, "users", currentUser.uid));
+        if (reqIdRef.current !== reqId) return;
+
+        if (!userSnap.exists()) {
+          setDisplayName("");
+          setAccessiblePages([]);
+          setAccessLoading(false);
+          return;
+        }
+
+        const data: any = userSnap.data();
+        setDisplayName(data.displayName || "");
+
+        const ruolo = data.ruolo || "PublicUser";
+        const accessSnap = await getDoc(doc(db, "ruoliPagineAccesso", ruolo));
+        if (reqIdRef.current !== reqId) return;
+
+        const accessData: any = accessSnap.exists() ? accessSnap.data() : null;
+        const pages = accessData?.accessoPagine || [];
+        setAccessiblePages(pages);
+
+        // ✅ aggiorna cache
+        try {
+          const payload: AccessCache = {
+            uid: currentUser.uid,
+            displayName: data.displayName || "",
+            pages: Array.isArray(pages) ? pages : [],
+            ts: Date.now(),
+          };
+          sessionStorage.setItem(ACCESS_CACHE_KEY, JSON.stringify(payload));
+        } catch { }
+      } finally {
+        if (reqIdRef.current !== reqId) return;
+        const delay = usedCache ? 0 : 80;
+        setTimeout(() => {
+          if (reqIdRef.current !== reqId) return;
+          setAccessLoading(false);
+        }, delay);
       }
-
-      const data: any = userSnap.data();
-      setDisplayName(data.displayName || "");
-
-      const ruolo = data.ruolo || "PublicUser";
-      const accessSnap = await getDoc(doc(db, "ruoliPagineAccesso", ruolo));
-      const accessData: any = accessSnap.data();
-      setAccessiblePages(accessData?.accessoPagine || []);
     });
 
     return () => unsubscribe();
@@ -107,227 +168,125 @@ const Header: React.FC = () => {
     [accessiblePages, linkAccessibili]
   );
 
-  const hasGestionaleAccess = allowedGestionale.length > 0;
-  const isActive = (path: string) => location.pathname === path;
+  // ✅ evita “saltelli” mentre carica
+  const hasGestionaleAccess = !accessLoading && allowedGestionale.length > 0;
 
+  // ✅ navigazione “non bloccante”
   const go = (to: string) => {
     close();
-    navigate(to);
+    startTransition(() => {
+      navigate(to);
+    });
   };
 
   const onLogout = async () => {
     await signOut(auth);
     setUser(null);
     setDisplayName("");
+    setAccessiblePages([]);
+    try {
+      sessionStorage.removeItem(ACCESS_CACHE_KEY);
+    } catch { }
     navigate("/");
   };
 
-  const DesktopPill = ({ item }: { item: NavItem }) => {
-    const active = isActive(item.path);
-    return (
-      <Button
-        variant={active ? "filled" : "subtle"}
-        color={active ? "yellow" : "gray"}
-        radius="xl"
-        onClick={() => go(item.path)}
-        styles={{
-          root: {
-            height: 38,
-            paddingInline: 14,
-            background: active ? "rgba(209,171,99,.18)" : "transparent",
-            border: active ? `1px solid rgba(209,171,99,.35)` : "1px solid transparent",
-          },
-          label: { fontWeight: 900, letterSpacing: 0.2 },
-        }}
-      >
-        {item.label}
-      </Button>
-    );
-  };
-
-  const DrawerItem = ({ item }: { item: NavItem }) => {
-    const active = isActive(item.path);
-    return (
-      <UnstyledButton
-        onClick={() => go(item.path)}
-        style={{
-          width: "100%",
-          padding: "12px 12px",
-          borderRadius: 14,
-          border: active ? `1px solid rgba(209,171,99,.35)` : "1px solid rgba(0,0,0,.06)",
-          background: active ? "rgba(209,171,99,.10)" : "#fff",
-          boxShadow: active ? "0 10px 24px rgba(0,0,0,.08)" : "none",
-        }}
-      >
-        <Group justify="space-between" wrap="nowrap">
-          <Text fw={900} style={{ color: "#0b0f16" }}>
-            {item.label}
-          </Text>
-          <IconChevronRight size={16} color={active ? ACCENT : "rgba(0,0,0,.5)"} />
-        </Group>
-      </UnstyledButton>
-    );
-  };
-
-  const NormalHeader = () => (
-    <Group h={HEADER_H} justify="space-between" wrap="nowrap">
-      {/* LEFT (spacer) */}
-      <Box w={120} visibleFrom="sm" />
-
-      {/* CENTER LOGO */}
-      <Box style={{ flex: 1, display: "flex", justifyContent: "center" }}>
-        <Link to="/" aria-label="Photo & Vision — Home" style={{ display: "inline-flex" }}>
-          <Image src={logo} alt="PV" h={isMobile ? 38 : 44} fit="contain" />
-        </Link>
-      </Box>
-
-      {/* RIGHT */}
-      <Group gap={10} wrap="nowrap" style={{ justifyContent: "flex-end" }}>
-        {!user ? (
-          <>
-            {!isMobile && (
-              <Button
-                variant="subtle"
-                color="gray"
-                radius="xl"
-                onClick={() => navigate("/register")}
-                styles={{ label: { fontWeight: 900 } }}
-              >
-                Registrati
-              </Button>
-            )}
-            <Button
-              variant="filled"
-              color="yellow"
-              radius="xl"
-              onClick={() => navigate("/login")}
-              styles={{
-                root: { background: "rgba(209,171,99,.18)", border: "1px solid rgba(209,171,99,.35)" },
-                label: { fontWeight: 900 },
-              }}
-            >
-              Login
-            </Button>
-          </>
-        ) : (
-          <Menu position="bottom-end" withinPortal shadow="md">
-            <Menu.Target>
-              <Tooltip label={displayName || "Account"} withArrow>
-                <Button
-                  variant="light"
-                  color="yellow"
-                  radius="xl"
-                  leftSection={<IconUser size={16} />}
-                  styles={{
-                    root: { background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.10)" },
-                    label: { fontWeight: 900 },
-                  }}
-                >
-                  {displayName}
-                </Button>
-              </Tooltip>
-            </Menu.Target>
-            <Menu.Dropdown>
-              <Menu.Item leftSection={<IconSettings size={16} />} onClick={() => go("/account")}>
-                Il mio account
-              </Menu.Item>
-              <Menu.Divider />
-              <Menu.Item color="red" leftSection={<IconLogout size={16} />} onClick={onLogout}>
-                Logout
-              </Menu.Item>
-            </Menu.Dropdown>
-          </Menu>
-        )}
+  const DrawerItem = ({ item }: { item: NavItem }) => (
+    <UnstyledButton
+      onClick={() => go(item.path)}
+      style={{
+        width: "100%",
+        padding: "12px 12px",
+        borderRadius: 14,
+        border: "1px solid rgba(0,0,0,.06)",
+        background: "#fff",
+      }}
+    >
+      <Group justify="space-between" wrap="nowrap">
+        <Text fw={900} style={{ color: "#0b0f16" }}>
+          {item.label}
+        </Text>
+        <IconChevronRight size={16} color="rgba(0,0,0,.5)" />
       </Group>
-    </Group>
+    </UnstyledButton>
   );
 
-  const GestionaleHeader = () => (
-    <Group h={HEADER_H} justify="space-between" wrap="nowrap">
-      {/* LEFT */}
-      <Group gap={10} wrap="nowrap">
-        {isMobile ? (
-          <ActionIcon
-            variant="light"
-            radius="xl"
-            size="lg"
-            onClick={toggle}
-            aria-label="Apri menu gestionale"
-            style={{
-              background: "rgba(255,255,255,.06)",
-              border: "1px solid rgba(255,255,255,.10)",
-              color: "#fff",
-            }}
-          >
-            <IconMenu2 size={20} />
-          </ActionIcon>
-        ) : (
-          <Link to="/" aria-label="Photo & Vision — Home" style={{ display: "inline-flex" }}>
-            <Image src={logo} alt="PV" h={44} fit="contain" />
-          </Link>
-        )}
+  // ✅ layout header: burger sx / logo perfettamente centrato / account dx
+  const HeaderShell = ({
+    left,
+    center,
+    right,
+  }: {
+    left: React.ReactNode;
+    center: React.ReactNode;
+    right: React.ReactNode;
+  }) => (
+    <Box style={{ position: "relative", height: HEADER_H }}>
+      <Box
+        style={{
+          position: "absolute",
+          left: 0,
+          top: "50%",
+          transform: "translateY(-50%)",
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+        }}
+      >
+        {left}
+      </Box>
 
-        {!isMobile && (
-          <Group gap={10} wrap="nowrap">
-            <Badge
-              variant="light"
-              color="yellow"
-              styles={{
-                root: {
-                  background: "rgba(209,171,99,.14)",
-                  border: "1px solid rgba(209,171,99,.28)",
+      <Box
+        style={{
+          position: "absolute",
+          left: "50%",
+          top: "50%",
+          transform: "translate(-50%, -50%)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          pointerEvents: "auto",
+        }}
+      >
+        {center}
+      </Box>
+
+      <Box
+        style={{
+          position: "absolute",
+          right: 0,
+          top: "50%",
+          transform: "translateY(-50%)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "flex-end",
+          gap: 10,
+        }}
+      >
+        {right}
+      </Box>
+    </Box>
+  );
+
+  const AccountMenu = () =>
+    user ? (
+      <Menu position="bottom-end" withinPortal shadow="md">
+        <Menu.Target>
+          <Tooltip label={displayName || "Account"} withArrow>
+            {isMobile ? (
+              <ActionIcon
+                variant="light"
+                radius="xl"
+                size="lg"
+                aria-label="Account"
+                style={{
+                  background: "rgba(255,255,255,.06)",
+                  border: "1px solid rgba(255,255,255,.10)",
                   color: "#fff",
-                  fontWeight: 900,
-                },
-              }}
-            >
-              Gestionale
-            </Badge>
-
-            {allowedGestionale.slice(0, 5).map((it) => (
-              <DesktopPill key={it.path} item={it} />
-            ))}
-
-            {allowedGestionale.length > 5 && (
-              <Menu position="bottom-start" withinPortal shadow="md">
-                <Menu.Target>
-                  <Button
-                    variant="subtle"
-                    color="gray"
-                    radius="xl"
-                    styles={{
-                      root: { height: 38 },
-                      label: { fontWeight: 900 },
-                    }}
-                  >
-                    Altro
-                  </Button>
-                </Menu.Target>
-                <Menu.Dropdown>
-                  {allowedGestionale.slice(5).map((it) => (
-                    <Menu.Item key={it.path} onClick={() => go(it.path)}>
-                      {it.label}
-                    </Menu.Item>
-                  ))}
-                </Menu.Dropdown>
-              </Menu>
-            )}
-          </Group>
-        )}
-      </Group>
-
-      {/* CENTER (mobile logo) */}
-      {isMobile && (
-        <Link to="/" aria-label="Photo & Vision — Home" style={{ display: "inline-flex" }}>
-          <Image src={logo} alt="PV" h={40} fit="contain" />
-        </Link>
-      )}
-
-      {/* RIGHT */}
-      <Group gap={10} wrap="nowrap">
-        {user ? (
-          <Menu position="bottom-end" withinPortal shadow="md">
-            <Menu.Target>
+                }}
+              >
+                <IconUser size={18} />
+              </ActionIcon>
+            ) : (
               <Button
                 variant="light"
                 radius="xl"
@@ -344,40 +303,101 @@ const Header: React.FC = () => {
               >
                 {displayName}
               </Button>
-            </Menu.Target>
-            <Menu.Dropdown>
-              <Menu.Item leftSection={<IconSettings size={16} />} onClick={() => go("/account")}>
-                Il mio account
-              </Menu.Item>
-              <Menu.Divider />
-              <Menu.Item color="red" leftSection={<IconLogout size={16} />} onClick={onLogout}>
-                Logout
-              </Menu.Item>
-            </Menu.Dropdown>
-          </Menu>
-        ) : (
-          <Group gap={8} wrap="nowrap">
-            {!isMobile && (
-              <Button variant="subtle" color="gray" radius="xl" onClick={() => go("/register")}>
-                Registrati
-              </Button>
             )}
-            <Button
-              variant="filled"
+          </Tooltip>
+        </Menu.Target>
+
+        <Menu.Dropdown>
+          <Menu.Item leftSection={<IconSettings size={16} />} onClick={() => go("/account")}>
+            Il mio account
+          </Menu.Item>
+          <Menu.Divider />
+          <Menu.Item color="red" leftSection={<IconLogout size={16} />} onClick={onLogout}>
+            Logout
+          </Menu.Item>
+        </Menu.Dropdown>
+      </Menu>
+    ) : (
+      <Group gap={8} wrap="nowrap">
+        {!isMobile && (
+          <Button variant="subtle" color="gray" radius="xl" onClick={() => go("/register")}>
+            Registrati
+          </Button>
+        )}
+        <Button
+          variant="filled"
+          color="yellow"
+          radius="xl"
+          onClick={() => go("/login")}
+          styles={{
+            root: { background: "rgba(209,171,99,.18)", border: "1px solid rgba(209,171,99,.35)" },
+            label: { fontWeight: 900 },
+          }}
+        >
+          Login
+        </Button>
+      </Group>
+    );
+
+  const BurgerBtn = (
+    <ActionIcon
+      variant="light"
+      radius="xl"
+      size="lg"
+      onClick={toggle}
+      aria-label="Apri menu gestionale"
+      style={{
+        background: "rgba(255,255,255,.06)",
+        border: "1px solid rgba(255,255,255,.10)",
+        color: "#fff",
+      }}
+    >
+      <IconMenu2 size={20} />
+    </ActionIcon>
+  );
+
+  const NormalHeader = () => (
+    <HeaderShell
+      left={<Box style={{ width: 1 }} />}
+      center={
+        <Link to="/" aria-label="Photo & Vision — Home" style={{ display: "inline-flex" }}>
+          <Image src={logo} alt="PV" h={isMobile ? 34 : 44} fit="contain" />
+        </Link>
+      }
+      right={<AccountMenu />}
+    />
+  );
+
+  const GestionaleHeader = () => (
+    <HeaderShell
+      left={
+        <Group gap={10} wrap="nowrap">
+          {BurgerBtn}
+          {!isMobile && (
+            <Badge
+              variant="light"
               color="yellow"
-              radius="xl"
-              onClick={() => go("/login")}
               styles={{
-                root: { background: "rgba(209,171,99,.18)", border: "1px solid rgba(209,171,99,.35)" },
-                label: { fontWeight: 900 },
+                root: {
+                  background: "rgba(209,171,99,.14)",
+                  border: "1px solid rgba(209,171,99,.28)",
+                  color: "#fff",
+                  fontWeight: 900,
+                },
               }}
             >
-              Login
-            </Button>
-          </Group>
-        )}
-      </Group>
-    </Group>
+              Gestionale
+            </Badge>
+          )}
+        </Group>
+      }
+      center={
+        <Link to="/" aria-label="Photo & Vision — Home" style={{ display: "inline-flex" }}>
+          <Image src={logo} alt="PV" h={isMobile ? 34 : 44} fit="contain" />
+        </Link>
+      }
+      right={<AccountMenu />}
+    />
   );
 
   return (
@@ -388,33 +408,32 @@ const Header: React.FC = () => {
           top: 0,
           zIndex: 200,
           height: HEADER_H,
-          background:
-            "linear-gradient(180deg, rgba(6,10,16,.92) 0%, rgba(6,10,16,.78) 100%)",
+          background: "linear-gradient(180deg, rgba(6,10,16,.92) 0%, rgba(6,10,16,.78) 100%)",
           borderBottom: "1px solid rgba(255,255,255,.08)",
           backdropFilter: "blur(12px)",
           WebkitBackdropFilter: "blur(12px)",
           transform: "translateZ(0)",
         }}
       >
-        {/* glow sottile */}
         <Box
           style={{
             position: "absolute",
             inset: 0,
             pointerEvents: "none",
-            background:
-              "radial-gradient(900px 160px at 50% 0%, rgba(209,171,99,.18), transparent 60%)",
+            background: "radial-gradient(900px 160px at 50% 0%, rgba(209,171,99,.18), transparent 60%)",
             opacity: 0.9,
           }}
         />
 
-        <Container size="xl" h={HEADER_H} style={{ position: "relative" }}>
-          {hasGestionaleAccess ? <GestionaleHeader /> : <NormalHeader />}
+        <Container fluid px={0} h={HEADER_H} style={{ position: "relative", width: "100%" }}>
+          <Box px="xl" style={{ height: "100%" }}>
+            {hasGestionaleAccess ? <GestionaleHeader /> : <NormalHeader />}
+          </Box>
         </Container>
       </Box>
 
-      {/* Drawer SOLO per gestionale (mobile) */}
-      {isMobile && hasGestionaleAccess && (
+      {/* Drawer gestionale (mobile + desktop) */}
+      {hasGestionaleAccess && (
         <Drawer
           opened={opened}
           onClose={close}
@@ -451,9 +470,46 @@ const Header: React.FC = () => {
 
           <ScrollArea h="calc(100dvh - 150px)" type="auto">
             <Stack gap={10}>
-              {allowedGestionale.map((it) => (
-                <DrawerItem key={it.path} item={it} />
-              ))}
+              {accessLoading ? (
+                // ✅ evita i “palloni”: shimmer items sottili (no skeleton enormi)
+                <>
+                  <Box
+                    style={{
+                      height: 48,
+                      borderRadius: 14,
+                      border: "1px solid rgba(0,0,0,.06)",
+                      background:
+                        "linear-gradient(90deg, rgba(0,0,0,.04) 0%, rgba(0,0,0,.08) 50%, rgba(0,0,0,.04) 100%)",
+                      backgroundSize: "200% 100%",
+                      animation: "pvShimmer 1.05s ease-in-out infinite",
+                    }}
+                  />
+                  <Box
+                    style={{
+                      height: 48,
+                      borderRadius: 14,
+                      border: "1px solid rgba(0,0,0,.06)",
+                      background:
+                        "linear-gradient(90deg, rgba(0,0,0,.04) 0%, rgba(0,0,0,.08) 50%, rgba(0,0,0,.04) 100%)",
+                      backgroundSize: "200% 100%",
+                      animation: "pvShimmer 1.05s ease-in-out infinite",
+                    }}
+                  />
+                  <Box
+                    style={{
+                      height: 48,
+                      borderRadius: 14,
+                      border: "1px solid rgba(0,0,0,.06)",
+                      background:
+                        "linear-gradient(90deg, rgba(0,0,0,.04) 0%, rgba(0,0,0,.08) 50%, rgba(0,0,0,.04) 100%)",
+                      backgroundSize: "200% 100%",
+                      animation: "pvShimmer 1.05s ease-in-out infinite",
+                    }}
+                  />
+                </>
+              ) : (
+                allowedGestionale.map((it) => <DrawerItem key={it.path} item={it} />)
+              )}
             </Stack>
           </ScrollArea>
         </Drawer>

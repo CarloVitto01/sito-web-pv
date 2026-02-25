@@ -5,22 +5,27 @@ import { IconCheck } from "@tabler/icons-react";
 
 export type PlasticaColor = {
   id: string;
-  name: string;         // nome mostrato (es. "Rosso")
-  hex: string;          // colore preview
-  description?: string; // opzionale
+  name: string;
+  hex: string;
+  description?: string;
   disabled?: boolean;
 };
 
 type Props = {
   label?: string;
-  colors: PlasticaColor[];              // ✅ obbligatorio (niente default colors)
-  value?: string | null;                // controlled: id selezionato
-  defaultValue?: string | null;         // uncontrolled: id selezionato
+  colors: PlasticaColor[];
+  value?: string | null;
+  defaultValue?: string | null;
   onChange?: (color: PlasticaColor | null) => void;
   columns?: { base?: number; sm?: number; md?: number; lg?: number };
   withPreviewCard?: boolean;
   resetLabel?: string;
   emptyHint?: string;
+
+  /** ✅ nuovo: disabilita tutto il picker (non solo i singoli colori) */
+  disabled?: boolean;
+  /** ✅ nuovo: testo mostrato quando disabilitato */
+  disabledHint?: string;
 };
 
 export default function PlasticaColorePicker({
@@ -33,6 +38,9 @@ export default function PlasticaColorePicker({
   withPreviewCard = true,
   resetLabel = "Rimuovi selezione",
   emptyHint = "(Se non viene selezionato, la copertina sarà trasparente)",
+
+  disabled = false,
+  disabledHint = "Opzione non disponibile con la rilegatura selezionata.",
 }: Props) {
   const isControlled = value !== undefined;
   const [internal, setInternal] = useState<string | null>(defaultValue);
@@ -54,15 +62,35 @@ export default function PlasticaColorePicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [colors]);
 
+  // ✅ se disabilitato, azzera la selezione
+  useEffect(() => {
+    if (disabled && selectedId) {
+      setSelected(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [disabled]);
+
   const hasColors = Array.isArray(colors) && colors.length > 0;
 
   return (
-    <Card withBorder radius="md" p="md">
+    <Card
+      withBorder
+      radius="md"
+      p="md"
+      style={{
+        opacity: disabled ? 0.6 : 1,
+        pointerEvents: disabled ? "none" : "auto", // blocca interazioni
+      }}
+    >
       <Stack gap="sm">
         <Group justify="space-between" align="center">
           <Text fw={700}>{label}</Text>
 
-          {selected ? (
+          {disabled ? (
+            <Badge variant="light" color="gray" radius="sm">
+              Non disponibile
+            </Badge>
+          ) : selected ? (
             <Badge variant="light" radius="sm">
               Selezionato: {selected.name}
             </Badge>
@@ -73,6 +101,12 @@ export default function PlasticaColorePicker({
           )}
         </Group>
 
+        {disabled && (
+          <Text size="sm" c="dimmed">
+            {disabledHint}
+          </Text>
+        )}
+
         {!hasColors ? (
           <Text size="sm" c="dimmed">
             Nessun colore disponibile.
@@ -81,13 +115,13 @@ export default function PlasticaColorePicker({
           <SimpleGrid cols={columns}>
             {colors.map((c) => {
               const active = c.id === selectedId;
-              const disabled = !!c.disabled;
+              const itemDisabled = !!c.disabled;
 
               const content = (
                 <UnstyledButton
                   key={c.id}
-                  onClick={() => !disabled && setSelected(c)}
-                  style={{ opacity: disabled ? 0.45 : 1, cursor: disabled ? "not-allowed" : "pointer" }}
+                  onClick={() => !itemDisabled && setSelected(c)}
+                  style={{ opacity: itemDisabled ? 0.45 : 1, cursor: itemDisabled ? "not-allowed" : "pointer" }}
                 >
                   <Box
                     p="sm"
@@ -145,7 +179,7 @@ export default function PlasticaColorePicker({
                 </UnstyledButton>
               );
 
-              return disabled ? (
+              return itemDisabled ? (
                 <Tooltip key={c.id} label="Non disponibile" withArrow>
                   <Box>{content}</Box>
                 </Tooltip>
@@ -180,13 +214,13 @@ export default function PlasticaColorePicker({
 
               <UnstyledButton
                 onClick={() => setSelected(null)}
-                disabled={!selectedId}
+                disabled={!selectedId || disabled}
                 style={{
                   padding: "8px 10px",
                   borderRadius: 10,
                   border: "1px solid rgba(255,255,255,0.12)",
-                  opacity: selectedId ? 1 : 0.5,
-                  cursor: selectedId ? "pointer" : "not-allowed",
+                  opacity: selectedId && !disabled ? 1 : 0.5,
+                  cursor: selectedId && !disabled ? "pointer" : "not-allowed",
                   flex: "0 0 auto",
                 }}
               >

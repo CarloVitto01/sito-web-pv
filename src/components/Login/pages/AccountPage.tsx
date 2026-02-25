@@ -247,7 +247,10 @@ const AccountPage: React.FC = () => {
               {/* HEADER (stile gestionale) */}
               <Group justify="space-between" align="flex-end" wrap="wrap">
                 <div>
-                  <Title order={2}>Il mio account</Title>
+                  <Title order={2}
+                    style={{
+                      color: "white"
+                    }}>Il mio account</Title>
                   <Text size="sm" c="dimmed">
                     Gestisci i tuoi dati e rivedi gli ordini effettuati su Photo &amp; Vision.
                   </Text>
@@ -368,7 +371,7 @@ const AccountPage: React.FC = () => {
                             if (user) {
                               try {
                                 await updateDoc(doc(db, "users", user.uid), { corsoLaurea: "", annoAccademico: "" });
-                              } catch {}
+                              } catch { }
                             }
                           }
                         }}

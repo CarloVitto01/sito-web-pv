@@ -7,7 +7,6 @@ import {
   Group,
   Stack,
   Text,
-  Title,
   Anchor,
   Divider,
   ActionIcon,

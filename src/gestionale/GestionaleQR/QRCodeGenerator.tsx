@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
-import jsPDF from "jspdf";
+import { jsPDF } from "jspdf";
 
 // ⬇️ Mantine
 import {
