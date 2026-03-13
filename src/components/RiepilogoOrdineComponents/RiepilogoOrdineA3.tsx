@@ -457,10 +457,17 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
     const base = round2(baseLordo - scontoPromo);
 
     const iva = round2(base * fees.ivaRate);
-    const trasporto = round2(fees.transportFeeEuro);
+
+    // ✅ trasporto solo se consegna = Sì
+    const trasporto = isStudent === true ? round2(fees.transportFeeEuro) : 0;
+
     const subTotale = round2(base + iva + trasporto);
 
-    const feePP = paymentMethod === "paypal" ? round2(subTotale * fees.paypalPercent + fees.paypalFixed) : 0;
+    const feePP =
+      paymentMethod === "paypal"
+        ? round2(subTotale * fees.paypalPercent + fees.paypalFixed)
+        : 0;
+
     const totaleContanti = subTotale;
     const totalePayPal = round2(subTotale + feePP);
     const totaleDaAddebitare = paymentMethod === "paypal" ? totalePayPal : totaleContanti;
@@ -479,7 +486,7 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
       totalePayPal,
       totaleDaAddebitare,
     };
-  }, [prezzo, fees, paymentMethod, promoCfg, numeroPDF]);
+  }, [prezzo, fees, paymentMethod, promoCfg, numeroPDF, isStudent]);
 
   useEffect(() => {
     if (paymentMethod !== "paypal") return;
@@ -573,11 +580,11 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
               },
               delivery: selectedSlot
                 ? {
-                    dateISO: selectedSlot.dateISO,
-                    dayLabel: selectedSlot.dayLabel,
-                    timeRange: selectedSlot.timeRange,
-                    weekday: selectedSlot.weekday,
-                  }
+                  dateISO: selectedSlot.dateISO,
+                  dayLabel: selectedSlot.dayLabel,
+                  timeRange: selectedSlot.timeRange,
+                  weekday: selectedSlot.weekday,
+                }
                 : undefined,
             });
           } else {
@@ -643,11 +650,11 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
       },
       delivery: selectedSlot
         ? {
-            dateISO: selectedSlot.dateISO,
-            dayLabel: selectedSlot.dayLabel,
-            timeRange: selectedSlot.timeRange,
-            weekday: selectedSlot.weekday,
-          }
+          dateISO: selectedSlot.dateISO,
+          dayLabel: selectedSlot.dayLabel,
+          timeRange: selectedSlot.timeRange,
+          weekday: selectedSlot.weekday,
+        }
         : undefined,
     });
   };

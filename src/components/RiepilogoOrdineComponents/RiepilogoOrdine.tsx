@@ -444,7 +444,9 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
     const base = round2(baseLordo - scontoPromo);
 
     const iva = round2(base * fees.ivaRate);
-    const trasporto = round2(fees.transportFeeEuro);
+    // ✅ trasporto solo se consegna = Sì
+    const trasporto = isStudent === true ? round2(fees.transportFeeEuro) : 0;
+
     const subTotale = round2(base + iva + trasporto);
 
     const feePP =
@@ -470,8 +472,7 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
       totalePayPal,
       totaleDaAddebitare,
     };
-  }, [prezzo, fees, paymentMethod, promoCfg, numeroPDF]);
-
+  }, [prezzo, fees, paymentMethod, promoCfg, numeroPDF, isStudent]);
   useEffect(() => {
     if (paymentMethod !== "paypal") return;
 
@@ -561,11 +562,11 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
               },
               delivery: selectedSlot
                 ? {
-                    dateISO: selectedSlot.dateISO,
-                    dayLabel: selectedSlot.dayLabel,
-                    timeRange: selectedSlot.timeRange,
-                    weekday: selectedSlot.weekday,
-                  }
+                  dateISO: selectedSlot.dateISO,
+                  dayLabel: selectedSlot.dayLabel,
+                  timeRange: selectedSlot.timeRange,
+                  weekday: selectedSlot.weekday,
+                }
                 : undefined,
             });
           } else {
@@ -614,11 +615,11 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
       },
       delivery: selectedSlot
         ? {
-            dateISO: selectedSlot.dateISO,
-            dayLabel: selectedSlot.dayLabel,
-            timeRange: selectedSlot.timeRange,
-            weekday: selectedSlot.weekday,
-          }
+          dateISO: selectedSlot.dateISO,
+          dayLabel: selectedSlot.dayLabel,
+          timeRange: selectedSlot.timeRange,
+          weekday: selectedSlot.weekday,
+        }
         : undefined,
     });
   };
@@ -693,11 +694,6 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
               <KeyValueRow label="Intervallo pagine" value={intervalloPagine} />
               <KeyValueRow label="Numero copie" value={numeroCopie} />
 
-              {showPlastiche &&
-                typeof plasticheExtraEuro === "number" &&
-                plasticheExtraEuro > 0 && (
-                  <KeyValueRow label="Extra plastica" value={`${euro(plasticheExtraEuro)} €`} />
-                )}
             </Stack>
           </Card>
 
