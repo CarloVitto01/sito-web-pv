@@ -1,16 +1,16 @@
-:root {
-  /* 🎨 Colori principali */
-  --color-gold: rgb(199, 171, 43);
-  --color-background: #0f0f0f;
-  --color-text: #ffffff;
-  --color-error: red;
-  --color-dropzone: rgb(173, 162, 0);
+:root{
+  /* BASE */
+  --color-bg-base: #e2e0be;
 
-  /* 🔠 Font */
+  /* LUCI */
+  --diamond-light: rgba(255,255,255,0.55);
+  --diamond-light-soft: rgba(255,255,255,0.25);
+
+  /* ORO */
+  --gold-deep: #d6c700;
+  --gold-soft: #efe9a8;
+
+  /* TESTO */
+  --color-text-primary: #1c1c1c;
   --font-main: "Segoe UI", sans-serif;
-
-  /* 📏 Dimensioni */
-  --radius: 12px;
-  --transition-fast: 0.3s;
-  --shadow-light: 0 4px 8px rgba(0, 0, 0, 0.1);
 }

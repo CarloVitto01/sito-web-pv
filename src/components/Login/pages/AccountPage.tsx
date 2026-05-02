@@ -3,7 +3,39 @@ import React, { useEffect, useMemo, useState } from "react";
 import { auth, db } from "../../../backend/firebase";
 import { collection, doc, getDoc, getDocs, query, updateDoc, where } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
-import "./AccountPage.css";
+
+import {
+  Box,
+  Container,
+  Card,
+  Stack,
+  Title,
+  Text,
+  Group,
+  Button,
+  Divider,
+  SimpleGrid,
+  TextInput,
+  Checkbox,
+  Badge,
+  ThemeIcon,
+  Alert,
+  Loader,
+  Pagination,
+  ScrollArea,
+} from "@mantine/core";
+
+import {
+  IconHome,
+  IconKey,
+  IconDeviceFloppy,
+  IconReceipt2,
+  IconShoppingBag,
+  IconCoin,
+  IconAlertCircle,
+  IconCalendar,
+} from "@tabler/icons-react";
+
 import Header from "../../HeaderComponents/Header";
 import Footer from "../../FooterComponents/Footer";
 
@@ -37,10 +69,10 @@ type Order = {
   id: string;
   uid?: string;
   tipo?: string;
-  prezzo?: number | string;        // alcuni documenti hanno solo "prezzo"
-  totaleFinale?: number | string;  // altri hanno "totaleFinale"
-  timestamp?: string | null | FirestoreTimestampLike; // ISO string o Firestore Timestamp
-  _tsMillis?: number;              // campo ausiliario per sort (millisecondi)
+  prezzo?: number | string;
+  totaleFinale?: number | string;
+  timestamp?: string | null | FirestoreTimestampLike;
+  _tsMillis?: number;
   [key: string]: any;
 };
 
@@ -51,90 +83,106 @@ const AccountPage: React.FC = () => {
   const [userData, setUserData] = useState<any>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [isStudente, setIsStudente] = useState(false);
   const [totalSpent, setTotalSpent] = useState<number>(0);
+
   const [page, setPage] = useState<number>(1);
 
   const navigate = useNavigate();
 
   useEffect(() => {
+    let alive = true;
+
     const fetchData = async () => {
-      const user = auth.currentUser;
-      if (!user) {
-        navigate("/login");
-        return;
-      }
+      try {
+        setLoading(true);
 
-      const docRef = doc(db, "users", user.uid);
-      const archiveQuery = query(collection(db, "ArchivioOrdini"), where("uid", "==", user.uid));
-
-      const [archiveSnapshot, docSnap] = await Promise.all([getDocs(archiveQuery), getDoc(docRef)]);
-
-      // 👇 Mapping + normalizzazione timestamp + calcolo ms per sort
-      const userOrders: Order[] = archiveSnapshot.docs.map((d) => {
-        const data = d.data() as any;
-
-        let tsISO: string | null = null;
-        let ms = 0;
-
-        if (data?.timestamp?.toDate) {
-          const dt = (data.timestamp as FirestoreTimestampLike).toDate!();
-          tsISO = dt.toISOString();
-          ms = dt.getTime();
-        } else if (typeof data?.timestamp === "string") {
-          tsISO = data.timestamp;
-          ms = Date.parse(data.timestamp) || 0;
-        } else {
-          tsISO = null;
-          ms = 0;
+        const user = auth.currentUser;
+        if (!user) {
+          navigate("/login");
+          return;
         }
 
-        return {
-          id: d.id,
-          ...data,
-          timestamp: tsISO ?? data?.timestamp ?? null,
-          _tsMillis: ms,
-        } as Order;
-      });
+        const docRef = doc(db, "users", user.uid);
+        const archiveQuery = query(collection(db, "ArchivioOrdini"), where("uid", "==", user.uid));
 
-      // 🔽 Ordina dal più recente (ms desc)
-      userOrders.sort((a, b) => (b._tsMillis ?? 0) - (a._tsMillis ?? 0));
-      setOrders(userOrders);
+        const [archiveSnapshot, docSnap] = await Promise.all([getDocs(archiveQuery), getDoc(docRef)]);
 
-      // Calcolo totale speso (fallback totaleFinale → prezzo)
-      const total = userOrders.reduce((sum, o) => {
-        const v = o.totaleFinale ?? o.prezzo;
-        return sum + parsePrice(v);
-      }, 0);
-      setTotalSpent(total);
+        const userOrders: Order[] = archiveSnapshot.docs.map((d) => {
+          const data = d.data() as any;
 
-      if (docSnap.exists()) {
-        const ud = docSnap.data();
-        setUserData(ud);
-        setIsStudente(!!ud.corsoLaurea || !!ud.annoAccademico);
+          let tsISO: string | null = null;
+          let ms = 0;
+
+          if (data?.timestamp?.toDate) {
+            const dt = (data.timestamp as FirestoreTimestampLike).toDate!();
+            tsISO = dt.toISOString();
+            ms = dt.getTime();
+          } else if (typeof data?.timestamp === "string") {
+            tsISO = data.timestamp;
+            ms = Date.parse(data.timestamp) || 0;
+          } else {
+            tsISO = null;
+            ms = 0;
+          }
+
+          return {
+            id: d.id,
+            ...data,
+            timestamp: tsISO ?? data?.timestamp ?? null,
+            _tsMillis: ms,
+          } as Order;
+        });
+
+        userOrders.sort((a, b) => (b._tsMillis ?? 0) - (a._tsMillis ?? 0));
+
+        const total = userOrders.reduce((sum, o) => {
+          const v = o.totaleFinale ?? o.prezzo;
+          return sum + parsePrice(v);
+        }, 0);
+
+        if (alive) {
+          setOrders(userOrders);
+          setTotalSpent(total);
+
+          if (docSnap.exists()) {
+            const ud = docSnap.data();
+            setUserData(ud);
+            setIsStudente(!!ud.corsoLaurea || !!ud.annoAccademico);
+          } else {
+            setUserData(null);
+            setIsStudente(false);
+          }
+        }
+      } catch (e) {
+        console.error(e);
+        if (alive) setError("Errore durante il caricamento dei dati.");
+      } finally {
+        if (alive) setLoading(false);
       }
-
-      setLoading(false);
     };
 
     fetchData();
+    return () => {
+      alive = false;
+    };
   }, [navigate]);
 
-  // 🔁 Se cambia il numero di ordini e la pagina corrente “sfora”, torna all’ultima pagina valida
   const totalPages = Math.max(1, Math.ceil(orders.length / PAGE_SIZE));
+
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
-  }, [orders.length, totalPages, page]);
+  }, [page, totalPages]);
 
-  // 📄 Slice per paginazione
   const paginatedOrders = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE;
     return orders.slice(start, start + PAGE_SIZE);
   }, [orders, page]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setUserData({ ...userData, [e.target.name]: e.target.value });
+    setUserData((prev: any) => ({ ...(prev || {}), [e.target.name]: e.target.value }));
   };
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -145,192 +193,298 @@ const AccountPage: React.FC = () => {
     const user = auth.currentUser;
     if (!user) return;
 
-    const updatedData = { ...userData };
+    const updatedData = { ...(userData || {}) };
 
     if (!isStudente) {
       delete updatedData.corsoLaurea;
       delete updatedData.annoAccademico;
-
-      setUserData((prev: any) => ({ ...prev, corsoLaurea: "", annoAccademico: "" }));
+      setUserData((prev: any) => ({ ...(prev || {}), corsoLaurea: "", annoAccademico: "" }));
     }
 
     try {
       await updateDoc(doc(db, "users", user.uid), updatedData);
       setSuccess("Dati aggiornati con successo!");
     } catch (err) {
+      console.error(err);
       setError("Errore durante l'aggiornamento.");
     }
   };
 
   const handlePasswordReset = () => {
+    setError("");
+    setSuccess("");
+
     const user = auth.currentUser;
     if (!user?.email) return;
+
     import("firebase/auth").then(({ sendPasswordResetEmail }) => {
       sendPasswordResetEmail(auth, user.email!)
         .then(() => setSuccess("Email per il cambio password inviata!"))
-        .catch(() => setError("Errore durante l'invio dell'email."));
+        .catch((e) => {
+          console.error(e);
+          setError("Errore durante l'invio dell'email.");
+        });
     });
   };
 
-  if (loading) {
-    return (
-      <div className="account-loading">
-        <div className="pv-spinner" aria-label="Caricamento" />
-        <p>Caricamento in corso…</p>
-      </div>
-    );
-  }
+  const emailReadonly = auth.currentUser?.email || "";
 
   return (
     <>
       <Header />
-      <div className="account-page">
-        <div className="account-shell">
-          {/* HEADER SUMMARY */}
-          <section className="account-hero">
-            <div className="hero-left">
-              <h1>Il Mio Account</h1>
-              <p className="hero-sub">Gestisci i tuoi dati e rivedi gli ordini effettuati su <span className="pv">Photo &amp; Vision</span>.</p>
-              <div className="hero-stats">
-                <div className="stat-card" role="status" aria-label={`Ordini effettuati: ${orders.length}`}>
-                  <div className="stat-value">{orders.length}</div>
-                  <div className="stat-label">Ordini</div>
+
+      <Box component="main" py={28}>
+        <Container size="lg">
+          {loading ? (
+            <Card withBorder radius="md" p="md">
+              <Group>
+                <Loader />
+                <Text>Caricamento in corso…</Text>
+              </Group>
+            </Card>
+          ) : (
+            <Stack gap="md">
+              {/* HEADER (stile gestionale) */}
+              <Group justify="space-between" align="flex-end" wrap="wrap">
+                <div>
+                  <Title order={2}
+                    style={{
+                      color: "white"
+                    }}>Il mio account</Title>
+                  <Text size="sm" c="dimmed">
+                    Gestisci i tuoi dati e rivedi gli ordini effettuati su Photo &amp; Vision.
+                  </Text>
                 </div>
-                <div className="stat-card" role="status" aria-label={`Totale speso: €${fmtEuro(totalSpent)}`}>
-                  <div className="stat-value">€{fmtEuro(totalSpent)}</div>
-                  <div className="stat-label">Totale speso</div>
-                </div>
-              </div>
-            </div>
-            <div className="hero-right">
-              <button type="button" className="btn-ghost" onClick={() => navigate("/")}>🏠 Home</button>
-              <button type="button" className="btn-gold" onClick={handlePasswordReset}>🔑 Cambia Password</button>
-            </div>
-          </section>
+                <Group gap="sm">
+                  <Badge variant="light">Gestionale</Badge>
+                  <Button variant="light" leftSection={<IconHome size={16} />} onClick={() => navigate("/")}>
+                    Home
+                  </Button>
+                  <Button leftSection={<IconKey size={16} />} onClick={handlePasswordReset}>
+                    Cambia password
+                  </Button>
+                </Group>
+              </Group>
 
-          {(success || error) && (
-            <div className={`alert ${success ? "alert-success" : "alert-error"}`} role="alert">
-              {success || error}
-            </div>
-          )}
+              <Divider />
 
-          {/* TWO-COLUMN LAYOUT */}
-          <div className="account-grid">
-            {/* LEFT: FORM */}
-            <section className="card pv-form" aria-labelledby="dati-personali">
-              <h2 id="dati-personali">Dati personali</h2>
-              <form onSubmit={handleUpdate} className="form-grid">
-                <label>
-                  <span>Nome</span>
-                  <input name="displayName" value={userData?.displayName || ""} onChange={handleChange} required />
-                </label>
-
-                <label>
-                  <span>Cognome</span>
-                  <input name="cognome" value={userData?.cognome || ""} onChange={handleChange} required />
-                </label>
-
-                <label>
-                  <span>Email</span>
-                  <input value={auth.currentUser?.email || ""} readOnly />
-                </label>
-
-                <label>
-                  <span>Telefono</span>
-                  <input name="telefono" value={userData?.telefono || ""} onChange={handleChange} required />
-                </label>
-
-                <div className="switch-row">
-                  <label htmlFor="isStudente" className="switch-label">Studente universitario (Ecotekne)?</label>
-                  <input type="checkbox" id="isStudente" className="switch" checked={isStudente} onChange={async (e) => {
-                    const checked = e.target.checked;
-                    setIsStudente(checked);
-
-                    if (!checked) {
-                      setUserData((prev: any) => ({ ...prev, corsoLaurea: "", annoAccademico: "" }));
-                      const user = auth.currentUser;
-                      if (user) {
-                        try {
-                          await updateDoc(doc(db, "users", user.uid), { corsoLaurea: "", annoAccademico: "" });
-                        } catch { }
-                      }
-                    }
-                  }} />
-                </div>
-
-                {isStudente && (
-                  <>
-                    <label>
-                      <span>Corso di Laurea</span>
-                      <input name="corsoLaurea" value={userData?.corsoLaurea || ""} onChange={handleChange} />
-                    </label>
-
-                    <label>
-                      <span>Anno Accademico</span>
-                      <input name="annoAccademico" value={userData?.annoAccademico || ""} onChange={handleChange} />
-                    </label>
-                  </>
-                )}
-
-                <div className="form-actions">
-                  <button type="submit" className="btn-gold">💾 Aggiorna Dati</button>
-                </div>
-              </form>
-            </section>
-
-            {/* RIGHT: ORDERS */}
-            <section className="card pv-orders" aria-labelledby="storico-ordini">
-              <div className="orders-head">
-                <h2 id="storico-ordini">Storico ordini</h2>
-                <span className="orders-count" aria-label={`Totale ordini: ${orders.length}`}>{orders.length}</span>
-              </div>
-
-              {orders.length === 0 ? (
-                <div className="empty-state">
-                  <div className="empty-ill" aria-hidden>🗂️</div>
-                  <p>Nessun ordine trovato.</p>
-                </div>
-              ) : (
-                <>
-                  <ul className="orders-list">
-                    {paginatedOrders.map((order) => {
-                      const total = fmtEuro(parsePrice(order.totaleFinale ?? order.prezzo));
-                      const dateStr = typeof order.timestamp === "string"
-                        ? fmtDate(order.timestamp)
-                        : fmtDate(order.timestamp?.toDate?.());
-                      return (
-                        <li key={order.id} className="order-item">
-                          <div className="order-icon" aria-hidden>🧾</div>
-                          <div className="order-main">
-                            <div className="order-top">
-                              <span className="order-type">{order.tipo ?? "Ordine"}</span>
-                              <span className="order-total">€{total}</span>
-                            </div>
-                            <div className="order-meta">
-                              <span className="badge">{dateStr}</span>
-                              {order?.stato && <span className={`badge ${String(order.stato).toLowerCase()}`}>{String(order.stato)}</span>}
-                            </div>
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-
-                  <div className="pagination">
-                    <button className="btn-ghost" type="button" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
-                      ◀︎ Precedenti
-                    </button>
-                    <span className="page-info">Pagina {page} di {totalPages}</span>
-                    <button className="btn-ghost" type="button" disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>
-                      Successivi ▶︎
-                    </button>
-                  </div>
-                </>
+              {(success || error) && (
+                <Alert
+                  variant="light"
+                  icon={<IconAlertCircle size={18} />}
+                  color={success ? "green" : "red"}
+                >
+                  {success || error}
+                </Alert>
               )}
-            </section>
-          </div>
-        </div>
-      </div>
+
+              {/* KPI */}
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+                <Card withBorder radius="md" p="md">
+                  <Group gap="sm">
+                    <ThemeIcon variant="light" size={40} radius="md">
+                      <IconShoppingBag size={18} />
+                    </ThemeIcon>
+                    <div>
+                      <Text fw={700}>{orders.length}</Text>
+                      <Text size="sm" c="dimmed">
+                        Ordini
+                      </Text>
+                    </div>
+                  </Group>
+                </Card>
+
+                <Card withBorder radius="md" p="md">
+                  <Group gap="sm">
+                    <ThemeIcon variant="light" size={40} radius="md">
+                      <IconCoin size={18} />
+                    </ThemeIcon>
+                    <div>
+                      <Text fw={700}>€{fmtEuro(totalSpent)}</Text>
+                      <Text size="sm" c="dimmed">
+                        Totale speso
+                      </Text>
+                    </div>
+                  </Group>
+                </Card>
+              </SimpleGrid>
+
+              {/* CONTENT GRID */}
+              <SimpleGrid cols={{ base: 1, md: 2 }} spacing="xl">
+                {/* LEFT: FORM */}
+                <Card withBorder radius="md" p="md">
+                  <Group justify="space-between" align="center">
+                    <Group gap="sm">
+                      <ThemeIcon variant="light" size={40} radius="md">
+                        <IconDeviceFloppy size={18} />
+                      </ThemeIcon>
+                      <div>
+                        <Text fw={700}>Dati personali</Text>
+                        <Text size="sm" c="dimmed">
+                          Aggiorna le informazioni del profilo
+                        </Text>
+                      </div>
+                    </Group>
+                  </Group>
+
+                  <Divider my="md" />
+
+                  <form onSubmit={handleUpdate}>
+                    <Stack gap="sm">
+                      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+                        <TextInput
+                          label="Nome"
+                          name="displayName"
+                          value={userData?.displayName || ""}
+                          onChange={handleChange}
+                          required
+                        />
+                        <TextInput
+                          label="Cognome"
+                          name="cognome"
+                          value={userData?.cognome || ""}
+                          onChange={handleChange}
+                          required
+                        />
+                      </SimpleGrid>
+
+                      <TextInput label="Email" value={emailReadonly} readOnly />
+
+                      <TextInput
+                        label="Telefono"
+                        name="telefono"
+                        value={userData?.telefono || ""}
+                        onChange={handleChange}
+                        required
+                      />
+
+                      <Checkbox
+                        label="Studente universitario (Ecotekne)?"
+                        checked={isStudente}
+                        onChange={async (e) => {
+                          const checked = e.currentTarget.checked;
+                          setIsStudente(checked);
+
+                          if (!checked) {
+                            setUserData((prev: any) => ({ ...(prev || {}), corsoLaurea: "", annoAccademico: "" }));
+                            const user = auth.currentUser;
+                            if (user) {
+                              try {
+                                await updateDoc(doc(db, "users", user.uid), { corsoLaurea: "", annoAccademico: "" });
+                              } catch { }
+                            }
+                          }
+                        }}
+                      />
+
+                      {isStudente && (
+                        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+                          <TextInput
+                            label="Corso di Laurea"
+                            name="corsoLaurea"
+                            value={userData?.corsoLaurea || ""}
+                            onChange={handleChange}
+                          />
+                          <TextInput
+                            label="Anno Accademico"
+                            name="annoAccademico"
+                            value={userData?.annoAccademico || ""}
+                            onChange={handleChange}
+                          />
+                        </SimpleGrid>
+                      )}
+
+                      <Group justify="flex-end" mt="xs">
+                        <Button type="submit" leftSection={<IconDeviceFloppy size={16} />}>
+                          Aggiorna dati
+                        </Button>
+                      </Group>
+                    </Stack>
+                  </form>
+                </Card>
+
+                {/* RIGHT: ORDERS */}
+                <Card withBorder radius="md" p="md">
+                  <Group justify="space-between" align="center">
+                    <Group gap="sm">
+                      <ThemeIcon variant="light" size={40} radius="md">
+                        <IconReceipt2 size={18} />
+                      </ThemeIcon>
+                      <div>
+                        <Text fw={700}>Storico ordini</Text>
+                        <Text size="sm" c="dimmed">
+                          Ultimi ordini effettuati
+                        </Text>
+                      </div>
+                    </Group>
+
+                    <Badge variant="light">{orders.length}</Badge>
+                  </Group>
+
+                  <Divider my="md" />
+
+                  {orders.length === 0 ? (
+                    <Card withBorder radius="md" p="md">
+                      <Text c="dimmed">Nessun ordine trovato.</Text>
+                    </Card>
+                  ) : (
+                    <Stack gap="sm">
+                      <ScrollArea h={460} type="auto" scrollbarSize={8} offsetScrollbars>
+                        <Stack gap="sm" pr={6}>
+                          {paginatedOrders.map((order) => {
+                            const total = fmtEuro(parsePrice(order.totaleFinale ?? order.prezzo));
+                            const dateStr =
+                              typeof order.timestamp === "string"
+                                ? fmtDate(order.timestamp)
+                                : fmtDate(order.timestamp?.toDate?.());
+
+                            return (
+                              <Card key={order.id} withBorder radius="md" p="md">
+                                <Group justify="space-between" align="flex-start" wrap="nowrap">
+                                  <Group gap="sm" wrap="nowrap">
+                                    <ThemeIcon variant="light" size={40} radius="md">
+                                      <IconReceipt2 size={18} />
+                                    </ThemeIcon>
+
+                                    <div>
+                                      <Group gap={8} wrap="wrap">
+                                        <Text fw={700}>{order.tipo ?? "Ordine"}</Text>
+
+                                        <Badge leftSection={<IconCalendar size={12} />} variant="light">
+                                          {dateStr}
+                                        </Badge>
+
+                                        {order?.stato && (
+                                          <Badge variant="light">{String(order.stato)}</Badge>
+                                        )}
+                                      </Group>
+                                    </div>
+                                  </Group>
+
+                                  <Text fw={800} style={{ whiteSpace: "nowrap" }}>
+                                    €{total}
+                                  </Text>
+                                </Group>
+                              </Card>
+                            );
+                          })}
+                        </Stack>
+                      </ScrollArea>
+
+                      {totalPages > 1 && (
+                        <Group justify="center" mt="xs">
+                          <Pagination total={totalPages} value={page} onChange={setPage} radius="md" />
+                        </Group>
+                      )}
+                    </Stack>
+                  )}
+                </Card>
+              </SimpleGrid>
+            </Stack>
+          )}
+        </Container>
+      </Box>
+
       <Footer />
     </>
   );

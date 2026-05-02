@@ -1,190 +1,188 @@
-import React, { useState, useEffect } from "react";
-import classes from "./IntervalloPagine.module.css";
+import React from "react";
 import { RangePagesData } from "../../types/RangePagesData";
+import {
+  Alert,
+  Badge,
+  Card,
+  Group,
+  NumberInput,
+  SegmentedControl,
+  Stack,
+  Text,
+  useMantineTheme,
+} from "@mantine/core";
+import { IconAlertTriangle } from "@tabler/icons-react";
 
-interface propsContainer {
+type Props = {
   onSendData: (value: RangePagesData) => void;
   maxValue: number;
   disable: boolean;
   errorMessage: string;
-}
+};
 
-const IntervalloPagine: React.FC<propsContainer> = ({
-  onSendData,
-  maxValue,
-  disable,
-  errorMessage
-}) => {
-  const [option, setOption] = useState("option1");
-  const [from, setFrom] = useState<number>(1);
-  const [to, setTo] = useState<number>(1);
-  const [rangePages, setRangePages] = useState<RangePagesData>({
-    from: 1,
-    to: 1,
-    all: true,
-    isValid: true,
-  });
-  const [fromIsValid, setFromIsValid] = useState<boolean>(true);
-  const [toIsValid, setToIsValid] = useState<boolean>(true);
+type Mode = "ALL" | "CUSTOM";
 
-  useEffect(() => {
-    const validateValueHandler = (value: number) => {
-      if (maxValue >= 1) {
-        return value > 0 && value <= maxValue;
-      }
-      if (maxValue === 0) {
-        return value === 1;
-      }
-      return true;
-    };
-    setFromIsValid(validateValueHandler(from));
-    setToIsValid(validateValueHandler(to));
-  }, [from, to, maxValue]);
+const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
 
-  useEffect(() => {
-    onSendData({ ...rangePages, isValid: fromIsValid && toIsValid });
-  }, [rangePages, onSendData, fromIsValid, toIsValid]);
+const IntervalloPagine: React.FC<Props> = ({ onSendData, maxValue, disable, errorMessage }) => {
+  const theme = useMantineTheme();
 
-  useEffect(() => {
-    if (option === "option1") {
-      setRangePages((prevState) => ({
-        ...prevState,
-        all: true,
-      }));
+  const max = React.useMemo(() => (maxValue && maxValue >= 1 ? maxValue : 1), [maxValue]);
+
+  const [mode, setMode] = React.useState<Mode>("ALL");
+  const [from, setFrom] = React.useState<number>(1);
+  const [to, setTo] = React.useState<number>(max);
+
+  // riallinea quando cambia max (es. carico un PDF diverso)
+  React.useEffect(() => {
+    if (mode === "ALL") {
       setFrom(1);
-      setTo(1);
-    } else {
-      setRangePages((prevState) => ({
-        ...prevState,
-        all: false,
-      }));
+      setTo(max);
+      onSendData({ from: 1, to: max, all: true, isValid: true });
+      return;
     }
-  }, [option]);
 
-  const handleOptionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setOption(event.target.value);
-  };
+    // CUSTOM: clamp
+    setFrom((prev) => clamp(prev || 1, 1, max));
+    setTo((prev) => clamp(prev || 1, 1, max));
+  }, [max]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleFromChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newFrom = parseInt(event.target.value);
-    setFrom((prevFrom) => {
-      if (newFrom > to) {
-        setTo(newFrom);
-        setRangePages((prevState) => ({
-          ...prevState,
-          from: newFrom,
-          to: newFrom,
-          all: false,
-        }));
-      }
-      return newFrom;
-    });
-    setRangePages((prevState) => ({
-      ...prevState,
-      from: newFrom,
+  // quando cambia mode
+  React.useEffect(() => {
+    if (mode === "ALL") {
+      setFrom(1);
+      setTo(max);
+      onSendData({ from: 1, to: max, all: true, isValid: true });
+      return;
+    }
+
+    // CUSTOM: inizializza sensato se venivo da ALL
+    setFrom((prev) => clamp(prev || 1, 1, max));
+    setTo((prev) => clamp(prev || 1, 1, max));
+  }, [mode]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // invio dati in modalità CUSTOM (validazione + normalizzazione)
+  React.useEffect(() => {
+    if (mode !== "CUSTOM") return;
+
+    const f0 = Number.isFinite(from) ? from : 1;
+    const t0 = Number.isFinite(to) ? to : 1;
+
+    const f = clamp(f0, 1, max);
+    const t = clamp(t0, 1, max);
+
+    const normalizedFrom = Math.min(f, t);
+    const normalizedTo = Math.max(f, t);
+
+    const isValid =
+      normalizedFrom >= 1 && normalizedTo >= 1 && normalizedFrom <= normalizedTo && normalizedTo <= max;
+
+    onSendData({
+      from: normalizedFrom,
+      to: normalizedTo,
       all: false,
-    }));
-  };
-
-  const handleToChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newTo = parseInt(event.target.value);
-    setTo((prevTo) => {
-      if (newTo < from) {
-        setFrom(newTo);
-        setRangePages((prevState) => ({
-          ...prevState,
-          from: newTo,
-          to: newTo,
-          all: false,
-        }));
-      }
-      return newTo;
+      isValid,
     });
-    setRangePages((prevState) => ({
-      ...prevState,
-      to: newTo,
-      all: false,
-    }));
-  };
+  }, [mode, from, to, max, onSendData]);
+
+  const surfaceBg = theme.white;
+  const borderBase = theme.colors.gray[3];
 
   return (
-    <div className={classes["page-range"]}>
-      <p className={classes["title"]}>Intervallo Pagine:</p>
+    <Card
+      withBorder
+      radius="lg"
+      p="md"
+      style={{
+        background: surfaceBg,
+        borderColor: borderBase,
+        boxShadow: theme.shadows.sm,
+        opacity: disable ? 0.6 : 1,
+      }}
+    >
+      <Group justify="space-between" align="baseline" mb="sm">
+        <Text fw={900} style={{ letterSpacing: 0.2 }}>
+          Intervallo pagine
+        </Text>
 
-      {disable && (
-        <p className={classes["error-message"]}>{errorMessage}</p>
-      )}
+        <Badge variant="light" color="gray">
+          max {max}
+        </Badge>
+      </Group>
 
-      <div className={disable ? classes["disabled"] : ""}>
-        <div className={classes["options-wrapper"]}>
-          <div className={classes["options-group"]}>
-            <div className={classes["options"]}>
-              <input
-                type="radio"
-                value="option1"
-                id="option1"
-                checked={option === "option1"}
-                onChange={handleOptionChange}
-                disabled={disable}
-              />
-              <label htmlFor="option1">
-                <div className={classes["container-text"]}>
-                  <span className={classes["checkmark"]}></span>
-                  <p className={classes["text"]}>Tutte</p>
-                </div>
-              </label>
-            </div>
+      {disable ? (
+        <Alert icon={<IconAlertTriangle size={16} />} color="gray" variant="light">
+          {errorMessage}
+        </Alert>
+      ) : null}
 
-            <div className={classes["options"]}>
-              <input
-                type="radio"
-                value="option2"
-                id="option2"
-                checked={option === "option2"}
-                onChange={handleOptionChange}
-                disabled={disable}
-              />
-              <label htmlFor="option2">
-                <div className={classes["container-text"]}>
-                  <span className={classes["checkmark"]}></span>
-                  <p className={classes["text"]}>Personalizzato</p>
-                </div>
-              </label>
-            </div>
-          </div>
+      <Stack gap="sm" mt={disable ? "sm" : 0} style={{ pointerEvents: disable ? "none" : "auto" }}>
+        <SegmentedControl
+          fullWidth
+          radius="md"
+          value={mode}
+          onChange={(v) => setMode(v as Mode)}
+          data={[
+            { value: "ALL", label: "Tutte" },
+            { value: "CUSTOM", label: "Personalizzato" },
+          ]}
+          styles={{
+            root: {
+              background: theme.colors.gray[0],
+              border: `1px solid ${theme.colors.gray[3]}`,
+            },
+            indicator: {
+              background: theme.white,
+              border: `1px solid ${theme.colors.yellow[6]}`,
+              boxShadow: theme.shadows.xs,
+            },
+            label: { paddingTop: 10, paddingBottom: 10, fontWeight: 800 },
+          }}
+        />
 
-          {option === "option2" && (
-            <div className={classes["floating-inputs"]}>
-              <div className={`${classes["inputRowDivS"]} ${!fromIsValid ? classes.invalid : ""}`}>
-                <p className={classes["text-page"]}>Da:</p>
-                <input
-                  type="number"
-                  value={from}
-                  min={1}
-                  max={maxValue >= 1 ? maxValue : 1}
-                  onChange={handleFromChange}
-                  disabled={disable}
-                />
-              </div>
-              {!fromIsValid && <p className={classes["invalid-input"]}>Valore non valido!</p>}
+        {mode === "CUSTOM" ? (
+          <Group grow gap="sm">
+            <NumberInput
+              label="Da"
+              value={from}
+              onChange={(v) => {
+                const next = typeof v === "number" ? v : 1;
+                const clamped = clamp(next, 1, max);
+                setFrom(clamped);
+                // se supero "to", sposto anche to
+                setTo((prevTo) => {
+                  const pt = clamp(typeof prevTo === "number" ? prevTo : 1, 1, max);
+                  return clamped > pt ? clamped : pt;
+                });
+              }}
+              min={1}
+              max={max}
+              allowDecimal={false}
+              clampBehavior="strict"
+            />
 
-              <div className={`${classes["inputRowDivS"]} ${!toIsValid ? classes.invalid : ""}`}>
-                <p className={classes["text-page"]}>A:</p>
-                <input
-                  type="number"
-                  value={to}
-                  min={1}
-                  max={maxValue >= 1 ? maxValue : 1}
-                  onChange={handleToChange}
-                  disabled={disable}
-                />
-              </div>
-              {!toIsValid && <p className={classes["invalid-input"]}>Valore non valido!</p>}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+            <NumberInput
+              label="A"
+              value={to}
+              onChange={(v) => {
+                const next = typeof v === "number" ? v : 1;
+                const clamped = clamp(next, 1, max);
+                setTo(clamped);
+                // se scendo sotto "from", sposto anche from
+                setFrom((prevFrom) => {
+                  const pf = clamp(typeof prevFrom === "number" ? prevFrom : 1, 1, max);
+                  return clamped < pf ? clamped : pf;
+                });
+              }}
+              min={1}
+              max={max}
+              allowDecimal={false}
+              clampBehavior="strict"
+            />
+          </Group>
+        ) : null}
+      </Stack>
+    </Card>
   );
 };
 

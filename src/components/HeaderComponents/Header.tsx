@@ -1,150 +1,161 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { FiMenu } from "react-icons/fi";
-import logo from "../../assets/images/Firma_Bianca_oro_PV.png";
-import classes from "./Header.module.css";
+import {
+  Box,
+  Group,
+  Image,
+  Button,
+  Drawer,
+  Stack,
+  Text,
+  Divider,
+  ScrollArea,
+  UnstyledButton,
+  Container,
+  ActionIcon,
+  Menu,
+  Badge,
+  Tooltip,
+} from "@mantine/core";
+import { useDisclosure, useMediaQuery } from "@mantine/hooks";
+import { IconMenu2, IconX, IconChevronRight, IconUser, IconLogout, IconSettings } from "@tabler/icons-react";
+
+import logo from "../../assets/images/logo orizzontale.png";
 import { auth, db } from "../../backend/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
-type NavItem = { path: string; label: string; icon?: string };
+type NavItem = { path: string; label: string };
+
+const HEADER_H = 76;
+
+// ✅ cache permessi/ruolo per evitare “flash/scatti” (caricamento più pulito)
+const ACCESS_CACHE_KEY = "pv_gestionale_access_v1";
+const ACCESS_TTL_MS = 5 * 60 * 1000; // 5 minuti
+
+type AccessCache = {
+  uid: string;
+  displayName: string;
+  pages: string[];
+  ts: number;
+};
+
+/** ✅ Loader header “professionale”: shimmer bar + 2 dot (sinistra/destra), niente cerchi enormi */
 
 const Header: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const [displayName, setDisplayName] = useState("");
   const [accessiblePages, setAccessiblePages] = useState<string[]>([]);
-  const [sideMenuOpen, setSideMenuOpen] = useState(false);
+
+  // ✅ stato loading accessi (per header/drawer “morbidi”)
+  const [accessLoading, setAccessLoading] = useState(true);
+
+  // ✅ evita race conditions se cambiano utente/refresh
+  const reqIdRef = useRef(0);
 
   const location = useLocation();
   const navigate = useNavigate();
 
-  const panelRef = useRef<HTMLDivElement>(null);
-  const firstFocusRef = useRef<HTMLButtonElement>(null);
-  const previouslyFocused = useRef<HTMLElement | null>(null);
+  const isMobile = useMediaQuery("(max-width: 768px)");
+  const [opened, { close, toggle }] = useDisclosure(false);
 
-  const toggleSideMenu = () => setSideMenuOpen((prev) => !prev);
-  const closeSideMenu = () => setSideMenuOpen(false);
-
-  // ===== Auth + accessi dalle collezioni =====
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      const reqId = ++reqIdRef.current;
+
       setUser(currentUser);
+      setAccessLoading(true);
 
-      if (currentUser) {
-        const userRef = doc(db, "users", currentUser.uid);
-        const userSnap = await getDoc(userRef);
-
-        if (userSnap.exists()) {
-          const data = userSnap.data();
-          setDisplayName(data.displayName || "");
-
-          const ruolo = data.ruolo || "PublicUser";
-          const accessSnap = await getDoc(doc(db, "ruoliPagineAccesso", ruolo));
-          const accessData = accessSnap.data();
-          setAccessiblePages(accessData?.accessoPagine || []);
-        }
-      } else {
+      // ✅ reset base
+      if (!currentUser) {
         setDisplayName("");
         setAccessiblePages([]);
+        setAccessLoading(false);
+        try {
+          sessionStorage.removeItem(ACCESS_CACHE_KEY);
+        } catch { }
+        return;
+      }
+
+      // ✅ prova cache (istantaneo, niente scatti)
+      let usedCache = false;
+      try {
+        const raw = sessionStorage.getItem(ACCESS_CACHE_KEY);
+        if (raw) {
+          const cached = JSON.parse(raw) as AccessCache;
+          const fresh = Date.now() - (cached.ts || 0) < ACCESS_TTL_MS;
+          if (cached.uid === currentUser.uid && fresh) {
+            usedCache = true;
+            setDisplayName(cached.displayName || "");
+            setAccessiblePages(Array.isArray(cached.pages) ? cached.pages : []);
+            setAccessLoading(false);
+          }
+        }
+      } catch { }
+
+      try {
+        const userSnap = await getDoc(doc(db, "users", currentUser.uid));
+        if (reqIdRef.current !== reqId) return;
+
+        if (!userSnap.exists()) {
+          setDisplayName("");
+          setAccessiblePages([]);
+          setAccessLoading(false);
+          return;
+        }
+
+        const data: any = userSnap.data();
+        setDisplayName(data.displayName || "");
+
+        const ruolo = data.ruolo || "PublicUser";
+        const accessSnap = await getDoc(doc(db, "ruoliPagineAccesso", ruolo));
+        if (reqIdRef.current !== reqId) return;
+
+        const accessData: any = accessSnap.exists() ? accessSnap.data() : null;
+        const pages = accessData?.accessoPagine || [];
+        setAccessiblePages(pages);
+
+        // ✅ aggiorna cache
+        try {
+          const payload: AccessCache = {
+            uid: currentUser.uid,
+            displayName: data.displayName || "",
+            pages: Array.isArray(pages) ? pages : [],
+            ts: Date.now(),
+          };
+          sessionStorage.setItem(ACCESS_CACHE_KEY, JSON.stringify(payload));
+        } catch { }
+      } finally {
+        if (reqIdRef.current !== reqId) return;
+        const delay = usedCache ? 0 : 80;
+        setTimeout(() => {
+          if (reqIdRef.current !== reqId) return;
+          setAccessLoading(false);
+        }, delay);
       }
     });
 
     return () => unsubscribe();
   }, []);
 
-  // ===== Chiudi menu quando cambi pagina =====
   useEffect(() => {
-    setSideMenuOpen(false);
+    close();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
-
-  // ===== Chiudi cliccando fuori dal pannello =====
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (!sideMenuOpen) return;
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-        setSideMenuOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [sideMenuOpen]);
-
-  // ===== ESC per chiudere =====
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setSideMenuOpen(false);
-    };
-    if (sideMenuOpen) document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [sideMenuOpen]);
-
-  // ===== Focus trap + scroll lock =====
-  useEffect(() => {
-    if (sideMenuOpen) {
-      previouslyFocused.current = document.activeElement as HTMLElement;
-      document.body.style.overflow = "hidden";
-      // sposta il focus sul pulsante chiudi
-      setTimeout(() => firstFocusRef.current?.focus(), 0);
-
-      const focusableSelector =
-        'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
-      const keyHandler = (e: KeyboardEvent) => {
-        if (e.key !== "Tab" || !panelRef.current) return;
-        const focusables = Array.from(
-          panelRef.current.querySelectorAll<HTMLElement>(focusableSelector)
-        ).filter((el) => el.offsetParent !== null);
-        if (focusables.length === 0) return;
-
-        const first = focusables[0];
-        const last = focusables[focusables.length - 1];
-
-        if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        } else if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        }
-      };
-
-      document.addEventListener("keydown", keyHandler);
-      return () => {
-        document.removeEventListener("keydown", keyHandler);
-        document.body.style.overflow = "";
-        previouslyFocused.current?.focus?.();
-      };
-    }
-  }, [sideMenuOpen]);
-
-  // ===== Dati di navigazione =====
-  const servizi: NavItem[] = useMemo(
-    () => [
-      { path: "/richiesta-sito-web", label: "Sviluppo Siti Web", icon: "🖥️" },
-      { path: "/printA4", label: "Stampa in A4", icon: "🖨️" },
-      { path: "/printA3", label: "Stampa in A3", icon: "🖨️" },
-      { path: "/3d", label: "Stampa in 3D", icon: "🖨️" },
-      { path: "/qrgen", label: "Generatore di QR Code", icon: "📱" },
-      { path: "/contatti-servizi-foto-video", label: "Contatti Servizi Foto/Video", icon: "📸" },
-    ],
-    []
-  );
 
   const linkAccessibili: NavItem[] = useMemo(
     () => [
       { path: "/gestionaleA4", label: "A4" },
       { path: "/gestionaleA3", label: "A3" },
-      { path: "/bobine", label: "Bobine" },
-      { path: "/foto-video-gestionale", label: "Foto & Video" },
-      { path: "/gestionale-web", label: "Web" },
       { path: "/qr-generator", label: "QR" },
       { path: "/utentiGestionale", label: "Utenti" },
       { path: "/gestione-accessi", label: "Accessi Ruoli" },
       { path: "/storicoDati", label: "Storico Dati" },
-      { path: "/link", label: "Link" },
       { path: "/tasse", label: "Tasse" },
       { path: "/banner", label: "Banner" },
       { path: "/consegna", label: "Consegna" },
       { path: "/sconti", label: "Sconti" },
+      { path: "/plastiche", label: "Plastiche" },
     ],
     []
   );
@@ -157,205 +168,353 @@ const Header: React.FC = () => {
     [accessiblePages, linkAccessibili]
   );
 
-  const isActive = (path: string) => location.pathname === path;
+  // ✅ evita “saltelli” mentre carica
+  const hasGestionaleAccess = !accessLoading && allowedGestionale.length > 0;
 
+  // ✅ navigazione “non bloccante”
   const go = (to: string) => {
-    closeSideMenu();
-    navigate(to);
+    close();
+    startTransition(() => {
+      navigate(to);
+    });
   };
 
-  return (
-    <div className={classes.header}>
-      {/* Burger */}
-      <div className={classes["burger-section"]}>
-        <button
-          className={classes["burger-icon"]}
-          onClick={toggleSideMenu}
-          aria-label="Apri menu"
-          aria-expanded={sideMenuOpen}
-          aria-controls="pv-side-menu"
+  const onLogout = async () => {
+    await signOut(auth);
+    setUser(null);
+    setDisplayName("");
+    setAccessiblePages([]);
+    try {
+      sessionStorage.removeItem(ACCESS_CACHE_KEY);
+    } catch { }
+    navigate("/");
+  };
+
+  const DrawerItem = ({ item }: { item: NavItem }) => (
+    <UnstyledButton
+      onClick={() => go(item.path)}
+      style={{
+        width: "100%",
+        padding: "12px 12px",
+        borderRadius: 14,
+        border: "1px solid rgba(0,0,0,.06)",
+        background: "#fff",
+      }}
+    >
+      <Group justify="space-between" wrap="nowrap">
+        <Text fw={900} style={{ color: "#0b0f16" }}>
+          {item.label}
+        </Text>
+        <IconChevronRight size={16} color="rgba(0,0,0,.5)" />
+      </Group>
+    </UnstyledButton>
+  );
+
+  // ✅ layout header: burger sx / logo perfettamente centrato / account dx
+  const HeaderShell = ({
+    left,
+    center,
+    right,
+  }: {
+    left: React.ReactNode;
+    center: React.ReactNode;
+    right: React.ReactNode;
+  }) => (
+    <Box style={{ position: "relative", height: HEADER_H }}>
+      <Box
+        style={{
+          position: "absolute",
+          left: 0,
+          top: "50%",
+          transform: "translateY(-50%)",
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+        }}
+      >
+        {left}
+      </Box>
+
+      <Box
+        style={{
+          position: "absolute",
+          left: "50%",
+          top: "50%",
+          transform: "translate(-50%, -50%)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          pointerEvents: "auto",
+        }}
+      >
+        {center}
+      </Box>
+
+      <Box
+        style={{
+          position: "absolute",
+          right: 0,
+          top: "50%",
+          transform: "translateY(-50%)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "flex-end",
+          gap: 10,
+        }}
+      >
+        {right}
+      </Box>
+    </Box>
+  );
+
+  const AccountMenu = () =>
+    user ? (
+      <Menu position="bottom-end" withinPortal shadow="md">
+        <Menu.Target>
+          <Tooltip label={displayName || "Account"} withArrow>
+            {isMobile ? (
+              <ActionIcon
+                variant="light"
+                radius="xl"
+                size="lg"
+                aria-label="Account"
+                style={{
+                  background: "rgba(255,255,255,.06)",
+                  border: "1px solid rgba(255,255,255,.10)",
+                  color: "#fff",
+                }}
+              >
+                <IconUser size={18} />
+              </ActionIcon>
+            ) : (
+              <Button
+                variant="light"
+                radius="xl"
+                leftSection={<IconUser size={16} />}
+                styles={{
+                  root: {
+                    background: "rgba(255,255,255,.06)",
+                    border: "1px solid rgba(255,255,255,.10)",
+                    color: "#fff",
+                    height: 38,
+                  },
+                  label: { fontWeight: 900 },
+                }}
+              >
+                {displayName}
+              </Button>
+            )}
+          </Tooltip>
+        </Menu.Target>
+
+        <Menu.Dropdown>
+          <Menu.Item leftSection={<IconSettings size={16} />} onClick={() => go("/account")}>
+            Il mio account
+          </Menu.Item>
+          <Menu.Divider />
+          <Menu.Item color="red" leftSection={<IconLogout size={16} />} onClick={onLogout}>
+            Logout
+          </Menu.Item>
+        </Menu.Dropdown>
+      </Menu>
+    ) : (
+      <Group gap={8} wrap="nowrap">
+        {!isMobile && (
+          <Button variant="subtle" color="gray" radius="xl" onClick={() => go("/register")}>
+            Registrati
+          </Button>
+        )}
+        <Button
+          variant="filled"
+          color="yellow"
+          radius="xl"
+          onClick={() => go("/login")}
+          styles={{
+            root: { background: "rgba(209,171,99,.18)", border: "1px solid rgba(209,171,99,.35)" },
+            label: { fontWeight: 900 },
+          }}
         >
-          <FiMenu />
-          <span className={classes["sr-only"]}>Apri menu</span>
-        </button>
-      </div>
+          Login
+        </Button>
+      </Group>
+    );
 
-      {/* sinistra vuota per bilanciare il layout */}
-      <div className={classes["left-spacer"]} />
+  const BurgerBtn = (
+    <ActionIcon
+      variant="light"
+      radius="xl"
+      size="lg"
+      onClick={toggle}
+      aria-label="Apri menu gestionale"
+      style={{
+        background: "rgba(255,255,255,.06)",
+        border: "1px solid rgba(255,255,255,.10)",
+        color: "#fff",
+      }}
+    >
+      <IconMenu2 size={20} />
+    </ActionIcon>
+  );
 
-      {/* Logo */}
-      <div className={classes["logo-section"]}>
-        <Link to="/" aria-label="Photo & Vision — Home">
-          <img src={logo} alt="PV" className={classes.Logo} />
+  const NormalHeader = () => (
+    <HeaderShell
+      left={<Box style={{ width: 1 }} />}
+      center={
+        <Link to="/" aria-label="Photo & Vision — Home" style={{ display: "inline-flex" }}>
+          <Image src={logo} alt="PV" h={isMobile ? 40 : 52} fit="contain" />
         </Link>
-      </div>
+      }
+      right={<AccountMenu />}
+    />
+  );
 
-
-      {/* Login/Logout header-right */}
-      <div className={classes["placeholder-section"]}>
-        {user ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <button
-              className={classes["menu-button-gold"]}
-              onClick={() => {
-                signOut(auth).then(() => {
-                  setUser(null);
-                  setDisplayName("");
-                  navigate("/");
-                });
+  const GestionaleHeader = () => (
+    <HeaderShell
+      left={
+        <Group gap={10} wrap="nowrap">
+          {BurgerBtn}
+          {!isMobile && (
+            <Badge
+              variant="light"
+              color="yellow"
+              styles={{
+                root: {
+                  background: "rgba(209,171,99,.14)",
+                  border: "1px solid rgba(209,171,99,.28)",
+                  color: "#fff",
+                  fontWeight: 900,
+                },
               }}
             >
-              Logout
-            </button>
-          </div>
-        ) : (
-          <button
-            className={classes["menu-button-gold"]}
-            onClick={() => navigate("/login")}
-          >
-            Login
-          </button>
-        )}
-      </div>
+              Gestionale
+            </Badge>
+          )}
+        </Group>
+      }
+      center={
+        <Link to="/" aria-label="Photo & Vision — Home" style={{ display: "inline-flex" }}>
+          <Image src={logo} alt="PV" h={isMobile ? 40 : 52} fit="contain" />
+        </Link>
+      }
+      right={<AccountMenu />}
+    />
+  );
 
-      {/* Overlay */}
-      {sideMenuOpen && (
-        <div
-          className={classes.backdrop}
-          onClick={closeSideMenu}
-          aria-hidden="true"
+  return (
+    <>
+      <Box
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 200,
+          height: HEADER_H,
+          background: "linear-gradient(180deg, rgba(6,10,16,.92) 0%, rgba(6,10,16,.78) 100%)",
+          borderBottom: "1px solid rgba(255,255,255,.08)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          transform: "translateZ(0)",
+        }}
+      >
+        <Box
+          style={{
+            position: "absolute",
+            inset: 0,
+            pointerEvents: "none",
+            background: "radial-gradient(900px 160px at 50% 0%, rgba(209,171,99,.18), transparent 60%)",
+            opacity: 0.9,
+          }}
         />
-      )}
 
-      {/* Side panel */}
-      {sideMenuOpen && (
-        <aside
-          ref={panelRef}
-          id="pv-side-menu"
-          className={classes["side-menu"]}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Menu laterale di navigazione"
+        <Container fluid px={0} h={HEADER_H} style={{ position: "relative", width: "100%" }}>
+          <Box px="xl" style={{ height: "100%" }}>
+            {hasGestionaleAccess ? <GestionaleHeader /> : <NormalHeader />}
+          </Box>
+        </Container>
+      </Box>
+
+      {/* Drawer gestionale (mobile + desktop) */}
+      {hasGestionaleAccess && (
+        <Drawer
+          opened={opened}
+          onClose={close}
+          position="left"
+          size={360}
+          withCloseButton={false}
+          padding="md"
+          radius="lg"
+          styles={{
+            content: { background: "#f7f7f7" },
+            header: { background: "#f7f7f7" },
+          }}
         >
-          {/* Header del pannello */}
-          <div className={classes["side-menu-header"]}>
-            <button
-              ref={firstFocusRef}
-              onClick={closeSideMenu}
-              className={classes["close-button"]}
-              aria-label="Chiudi menu"
-              title="Chiudi"
+          <Group justify="space-between" mb="sm">
+            <Stack gap={2}>
+              <Text fw={900}>Area Gestionale</Text>
+              <Text size="xs" c="dimmed">
+                Navigazione rapida
+              </Text>
+            </Stack>
+
+            <ActionIcon
+              variant="light"
+              onClick={close}
+              radius="xl"
+              aria-label="Chiudi"
+              style={{ background: "rgba(0,0,0,.06)" }}
             >
-              ✕
-            </button>
+              <IconX size={18} />
+            </ActionIcon>
+          </Group>
 
-            {user ? (
-              <>
-                <div className={classes["welcome-user"]}>
-                  👋 Benvenuto/a, <strong>{displayName}</strong>
-                </div>
+          <Divider my="md" />
 
-                {/* Bottoni affiancati, subito sotto il benvenuto */}
-                <div className={classes.accountRow}>
-                  <button
-                    onClick={() => go("/account")}
-                    className={classes["account-button"]}
-                  >
-                    👤 Il mio Account
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      signOut(auth).then(() => {
-                        setUser(null);
-                        setDisplayName("");
-                        window.location.href = "/";
-                      });
+          <ScrollArea h="calc(100dvh - 150px)" type="auto">
+            <Stack gap={10}>
+              {accessLoading ? (
+                // ✅ evita i “palloni”: shimmer items sottili (no skeleton enormi)
+                <>
+                  <Box
+                    style={{
+                      height: 48,
+                      borderRadius: 14,
+                      border: "1px solid rgba(0,0,0,.06)",
+                      background:
+                        "linear-gradient(90deg, rgba(0,0,0,.04) 0%, rgba(0,0,0,.08) 50%, rgba(0,0,0,.04) 100%)",
+                      backgroundSize: "200% 100%",
+                      animation: "pvShimmer 1.05s ease-in-out infinite",
                     }}
-                    className={classes["logout-button"]}
-                  >
-                    Esci
-                  </button>
-                </div>
-              </>
-            ) : (
-              // Utente non loggato: Accedi + Registrati affiancati
-              <div className={classes.authRow}>
-                <button
-                  onClick={() => go("/login")}
-                  className={classes["login-button"]}
-                >
-                  Accedi
-                </button>
-                <button
-                  onClick={() => go("/register")}
-                  className={classes["register-button"]}
-                >
-                  Registrati
-                </button>
-              </div>
-            )}
-
-            {location.pathname !== "/" && (
-              <button
-                className={classes["home-link"]}
-                onClick={() => go("/")}
-              >
-                ⬅️ Torna alla Home
-              </button>
-            )}
-          </div>
-
-          {/* Contenuto scrollabile */}
-          <div className={classes["side-menu-content"]}>
-            {/* Servizi */}
-            <div className={classes.section}>
-              <div className={classes["section-title"]}>Servizi</div>
-              <ul className={classes.list}>
-                {servizi.map(({ path, label, icon }) => (
-                  <li key={path} className={classes.item}>
-                    <button
-                      onClick={() => go(path)}
-                      className={`${classes.linkBtn} ${isActive(path) ? classes.active : ""}`}
-                      aria-current={isActive(path) ? "page" : undefined}
-                    >
-                      <span className={classes.icon}>{icon}</span>
-                      <span className={classes.label}>{label}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Area Gestionale (render solo se ci sono voci) */}
-            {allowedGestionale.length > 0 && (
-              <div className={classes.section}>
-                <div className={classes["section-title"]}>Area Gestionale</div>
-                <ul className={classes.list}>
-                  {allowedGestionale.map(({ path, label }) => (
-                    <li key={path} className={classes.item}>
-                      <button
-                        onClick={() => go(path)}
-                        className={`${classes.linkBtn} ${classes.linkBtnWrap} ${isActive(path) ? classes.active : ""}`}
-                        aria-current={isActive(path) ? "page" : undefined}
-                        title={label}
-                      >
-                        {/* niente colonna icona qui, massimizziamo lo spazio testo */}
-                        <span className={`${classes.label} ${classes.labelFull}`}>{label}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-          </div>
-
-          {/* Footer fisso con Account/Logout o Login/Registrati */}
-
-        </aside>
+                  />
+                  <Box
+                    style={{
+                      height: 48,
+                      borderRadius: 14,
+                      border: "1px solid rgba(0,0,0,.06)",
+                      background:
+                        "linear-gradient(90deg, rgba(0,0,0,.04) 0%, rgba(0,0,0,.08) 50%, rgba(0,0,0,.04) 100%)",
+                      backgroundSize: "200% 100%",
+                      animation: "pvShimmer 1.05s ease-in-out infinite",
+                    }}
+                  />
+                  <Box
+                    style={{
+                      height: 48,
+                      borderRadius: 14,
+                      border: "1px solid rgba(0,0,0,.06)",
+                      background:
+                        "linear-gradient(90deg, rgba(0,0,0,.04) 0%, rgba(0,0,0,.08) 50%, rgba(0,0,0,.04) 100%)",
+                      backgroundSize: "200% 100%",
+                      animation: "pvShimmer 1.05s ease-in-out infinite",
+                    }}
+                  />
+                </>
+              ) : (
+                allowedGestionale.map((it) => <DrawerItem key={it.path} item={it} />)
+              )}
+            </Stack>
+          </ScrollArea>
+        </Drawer>
       )}
-    </div>
+    </>
   );
 };
 

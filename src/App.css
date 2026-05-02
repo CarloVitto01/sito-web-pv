@@ -1,22 +1,55 @@
-@import './styles/variables.css';
-
-body {
-  background-color: var(--color-background); /* usa variabile o fallback black */
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: cover;
-  background-attachment: fixed;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  justify-content: center;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
+html, body, #root {
+  min-height: 100%;
 }
 
-@media screen and (max-width: 500px) {
-  body {
-    background-attachment: scroll;
-  }
+body {
+  margin: 0;
+  background: var(--color-bg-base);
+  font-family: var(--font-main);
+  color: var(--color-text-primary);
+}
+
+/* root sempre trasparente */
+#root, .App {
+  background: transparent !important;
+}
+
+/* wrapper principale */
+.pageBg {
+  position: relative;
+  min-height: 100dvh;
+  overflow: hidden;
+
+  /* NUOVO SFONDO FOTO */
+  background-image: url("./assets/images/sfondo.jpeg"); /* cambia path */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed; /* effetto leggero parallax desktop */
+}
+
+/* contenuto sopra allo sfondo */
+.pageContent {
+  position: relative;
+  z-index: 1;
+}
+
+/* Mantine: superfici pulite */
+.mantine-Card-root,
+.mantine-Paper-root {
+  background-color: #ffffff !important;
+}
+
+/* opzionale: overlay scuro per leggibilità */
+.pageBg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35); /* regola intensità */
+  z-index: 0;
+}
+
+.pageContent {
+  position: relative;
+  z-index: 1;
 }

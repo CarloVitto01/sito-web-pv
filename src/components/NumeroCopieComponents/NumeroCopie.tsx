@@ -1,39 +1,76 @@
-import classes from "./NumeroCopie.module.css";
-import React, { useState, useEffect } from "react";
+// src/pages/NumeroCopieComponents/NumeroCopie.tsx
+import React from "react";
+import {
+  Card,
+  Group,
+  NumberInput,
+  Stack,
+  Text,
+  useMantineTheme,
+} from "@mantine/core";
 
-interface propsContainer {
+interface PropsContainer {
   onSendData: (value: number) => void;
 }
-const NumeroCopie: React.FC<propsContainer> = ({ onSendData }) => {
-  const [copies, setCopies] = useState<number>(1);
 
-  useEffect(() => {
-    onSendData(copies);
-  }, [onSendData, copies]);
+const NumeroCopie: React.FC<PropsContainer> = ({ onSendData }) => {
+  const theme = useMantineTheme();
+  const [copies, setCopies] = React.useState<number>(1);
 
-  const copiesHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const value = event.target.value;
-    const num = parseInt(value);
-    if (!isNaN(num)) {
-      setCopies(num);
-    } else {
-      setCopies(0);
-    }
+  const handleChange = (v: number | string) => {
+    const next = typeof v === "number" && v >= 1 ? v : 1;
+    setCopies(next);
+    onSendData(next);
   };
 
   return (
-    <div className={classes["copy-number"]}>
-      <div className={classes["container"]}>
-        <p className={classes["title"]}>Numero Copie:</p>
-        <input
-          type="number"
-          className={classes["number"]}
-          onChange={copiesHandler}
+    <Card
+      withBorder
+      radius="lg"
+      p="md"
+      style={{
+        background: theme.white,
+        borderColor: theme.colors.gray[3],
+        boxShadow: theme.shadows.sm,
+      }}
+    >
+      <Group justify="space-between" align="baseline" mb="sm">
+        <Text
+          fw={900}
+          tt="uppercase"
+          style={{
+            letterSpacing: 0.3,
+            fontSize: 13,
+            color: theme.colors.dark[7],
+          }}
+        >
+          Numero copie
+        </Text>
+
+        <Text size="xs" fw={700} c="dimmed">
+          minimo 1
+        </Text>
+      </Group>
+
+      <Stack gap="xs">
+        <NumberInput
+          value={copies}
+          onChange={handleChange}
           min={1}
-          defaultValue={1}
+          step={1}
+          allowDecimal={false}
+          clampBehavior="strict"
+          size="md"
+          styles={{
+            input: {
+              fontWeight: 800,
+              textAlign: "center",
+              fontSize: 16,
+            },
+          }}
         />
-      </div>
-    </div>
+      </Stack>
+    </Card>
   );
 };
 
