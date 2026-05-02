@@ -20,7 +20,7 @@ import {
 import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import { IconMenu2, IconX, IconChevronRight, IconUser, IconLogout, IconSettings } from "@tabler/icons-react";
 
-import logo from "../../assets/images/Firma_Bianca_oro_PV.png";
+import logo from "../../assets/images/logo orizzontale.png";
 import { auth, db } from "../../backend/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
@@ -361,7 +361,7 @@ const Header: React.FC = () => {
       left={<Box style={{ width: 1 }} />}
       center={
         <Link to="/" aria-label="Photo & Vision — Home" style={{ display: "inline-flex" }}>
-          <Image src={logo} alt="PV" h={isMobile ? 34 : 44} fit="contain" />
+          <Image src={logo} alt="PV" h={isMobile ? 40 : 52} fit="contain" />
         </Link>
       }
       right={<AccountMenu />}
@@ -393,7 +393,7 @@ const Header: React.FC = () => {
       }
       center={
         <Link to="/" aria-label="Photo & Vision — Home" style={{ display: "inline-flex" }}>
-          <Image src={logo} alt="PV" h={isMobile ? 34 : 44} fit="contain" />
+          <Image src={logo} alt="PV" h={isMobile ? 40 : 52} fit="contain" />
         </Link>
       }
       right={<AccountMenu />}
