@@ -20,12 +20,39 @@ import {
   List,
   Alert,
   Checkbox,
+  Select,
 } from "@mantine/core";
 import { IconCheck, IconAlertCircle } from "@tabler/icons-react";
 
 import logoPV from "../../../assets/images/logo_b.png";
 
 const ACCENT = "#d1ab63";
+
+const CORSI_LAUREA_OPTIONS = [
+  { value: "Medicina", label: "Medicina" },
+  { value: "Odontoiatria", label: "Odontoiatria" },
+  { value: "Infermieristica", label: "Infermieristica" },
+  { value: "Fisioterapia", label: "Fisioterapia" },
+  { value: "Biotecnologie", label: "Biotecnologie" },
+  { value: "Farmacia", label: "Farmacia" },
+  { value: "CTF", label: "CTF" },
+  { value: "Giurisprudenza", label: "Giurisprudenza" },
+  { value: "Economia", label: "Economia" },
+  { value: "Ingegneria", label: "Ingegneria" },
+  { value: "Lettere", label: "Lettere" },
+  { value: "Scienze della formazione", label: "Scienze della formazione" },
+  { value: "Scienze motorie", label: "Scienze motorie" },
+  { value: "Altro", label: "Altro" },
+];
+
+const ANNI_CORSO_OPTIONS = [
+  { value: "1", label: "1° anno" },
+  { value: "2", label: "2° anno" },
+  { value: "3", label: "3° anno" },
+  { value: "4", label: "4° anno" },
+  { value: "5", label: "5° anno" },
+  { value: "6", label: "6° anno" },
+];
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -46,7 +73,7 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const onlyLetters = (value: string) => /^[a-zA-Z\s]+$/.test(value);
+  const onlyLetters = (value: string) => /^[a-zA-ZÀ-ÿ\s]+$/.test(value);
   const validEmail = (value: string) => /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/.test(value);
   const onlyNumbers = (value: string) => /^[0-9]+$/.test(value);
 
@@ -60,18 +87,22 @@ export default function RegisterPage() {
     if (password.length < 6) return setError("La password deve contenere almeno 6 caratteri.");
     if (password !== confirmPassword) return setError("Le password non coincidono.");
     if (!onlyNumbers(telefono) || telefono.length !== 10) return setError("Il numero di telefono deve contenere 10 cifre.");
-    if (corsoLaurea && !onlyLetters(corsoLaurea)) return setError("Il corso di laurea deve contenere solo lettere.");
-    if (annoAccademico && (!onlyNumbers(annoAccademico) || annoAccademico.length !== 4))
-      return setError("L'anno accademico deve essere un numero di 4 cifre.");
+
+    if (isStudente) {
+      if (!corsoLaurea) return setError("Seleziona il corso di laurea.");
+      if (!annoAccademico) return setError("Seleziona l'anno di corso.");
+    }
 
     setSubmitting(true);
+
     try {
       await registerUser(email, password, displayName, {
         cognome: surname,
         telefono,
-        corsoLaurea: isStudente ? (corsoLaurea || undefined) : undefined,
-        annoAccademico: isStudente ? (annoAccademico || undefined) : undefined,
+        corsoLaurea: isStudente ? corsoLaurea : undefined,
+        annoAccademico: isStudente ? annoAccademico : undefined,
       });
+
       navigate("/");
     } catch (err: any) {
       if (err?.code === "auth/email-already-in-use") {
@@ -244,7 +275,7 @@ export default function RegisterPage() {
                   </Title>
 
                   <Text style={{ color: textMuted, lineHeight: 1.75 }}>
-                    Inserisci i tuoi dati per creare l’account. Se sei uno studente, potrai aggiungere anche corso e anno accademico.
+                    Inserisci i tuoi dati per creare l’account. Se sei uno studente, potrai aggiungere anche corso e anno di corso.
                   </Text>
 
                   <Group mt="md" gap="sm" justify="center">
@@ -425,7 +456,15 @@ export default function RegisterPage() {
 
                     <Checkbox
                       checked={isStudente}
-                      onChange={(e) => setIsStudente(e.currentTarget.checked)}
+                      onChange={(e) => {
+                        const checked = e.currentTarget.checked;
+                        setIsStudente(checked);
+
+                        if (!checked) {
+                          setCorsoLaurea("");
+                          setAnnoAccademico("");
+                        }
+                      }}
                       label="Sei uno studente universitario (Ecotekne)?"
                       styles={{
                         label: { color: "rgba(11,18,32,0.78)" },
@@ -435,21 +474,29 @@ export default function RegisterPage() {
 
                     {isStudente && (
                       <Group grow>
-                        <TextInput
+                        <Select
                           label="Corso di Laurea"
-                          value={corsoLaurea}
-                          onChange={(e) => setCorsoLaurea(e.currentTarget.value)}
+                          placeholder="Seleziona corso"
+                          value={corsoLaurea || null}
+                          onChange={(value) => setCorsoLaurea(value || "")}
+                          data={CORSI_LAUREA_OPTIONS}
+                          searchable
                           required
+                          clearable
                           styles={{
                             label: { color: "rgba(11,18,32,0.85)" },
                             input: { backgroundColor: inputBg, borderColor: inputBorder, color: textPrimary },
                           }}
                         />
-                        <TextInput
-                          label="Anno Accademico"
-                          value={annoAccademico}
-                          onChange={(e) => setAnnoAccademico(e.currentTarget.value)}
+
+                        <Select
+                          label="Anno di corso"
+                          placeholder="Seleziona anno"
+                          value={annoAccademico || null}
+                          onChange={(value) => setAnnoAccademico(value || "")}
+                          data={ANNI_CORSO_OPTIONS}
                           required
+                          clearable
                           styles={{
                             label: { color: "rgba(11,18,32,0.85)" },
                             input: { backgroundColor: inputBg, borderColor: inputBorder, color: textPrimary },

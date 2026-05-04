@@ -1,6 +1,7 @@
 // ✅ src/components/RiepilogoOrdineComponents/RiepilogoOrdine.tsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { db } from "../../backend/firebase";
+import { auth, db } from "../../backend/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 import { doc, onSnapshot } from "firebase/firestore";
 import {
   Alert,
@@ -33,6 +34,11 @@ type PaymentPayload = {
     iva: number;
     trasporto: number;
     feePayPal: number;
+
+    // ✅ Nuovo: non rompe nulla perché opzionale
+    scontoGenerale?: number;
+    scontoStudenti?: number;
+    subtotaleLordo?: number;
   };
   delivery?: {
     dateISO: string;
@@ -93,7 +99,9 @@ function parseEuro(prezzo: string): number {
   const val = parseFloat(normalized);
   return isNaN(val) ? 0 : val;
 }
+
 const round2 = (n: number) => Math.round(n * 100) / 100;
+
 const euro = (n: number) =>
   n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -116,6 +124,7 @@ type Fees = {
 /** ======= Config consegne (da Firestore) ======= */
 type TimeRange = { start: string; end: string };
 type BlacklistRange = { from: string; to: string };
+
 type DeliveryConfig = {
   weekdays: number[];
   timeRanges: TimeRange[];
@@ -125,21 +134,68 @@ type DeliveryConfig = {
   blacklistRanges?: BlacklistRange[];
   minLeadDays?: number;
 };
+
 const COLL_CONS = "configConsegne";
 const DOC_CONS = "settings";
 
 /** ======= Config promo (da Firestore) ======= */
-type PromoConfig = {
+type BasePromo = {
   enabled: boolean;
   name?: string;
   description?: string;
   percent: number;
-  startDate?: string;
-  endDate?: string;
   minPdf?: number;
+  startsAt?: string;
+  endsAt?: string;
 };
+
+type StudentPromo = BasePromo & {
+  targetCourse?: string;
+  targetEnrollmentYear?: number | null;
+};
+
+type PromoConfig = {
+  generalPromo: BasePromo;
+  studentPromo: StudentPromo;
+};
+
+type UserProfilePromo = {
+  course: string;
+  academicYear: number | null;
+};
+
 const PROMO_COLL = "configPromo";
 const PROMO_DOC = "current";
+
+// ⚠️ Se la tua collection utenti ha un altro nome, cambia qui.
+const USERS_COLL = "users";
+
+const DEFAULT_GENERAL_PROMO: BasePromo = {
+  enabled: false,
+  name: "Promo generale",
+  description: "",
+  percent: 0,
+  minPdf: 1,
+  startsAt: "",
+  endsAt: "",
+};
+
+const DEFAULT_STUDENT_PROMO: StudentPromo = {
+  enabled: false,
+  name: "Promo facoltà/corso",
+  description: "",
+  percent: 0,
+  minPdf: 1,
+  targetCourse: "",
+  targetEnrollmentYear: null,
+  startsAt: "",
+  endsAt: "",
+};
+
+const DEFAULT_PROMO_CONFIG: PromoConfig = {
+  generalPromo: DEFAULT_GENERAL_PROMO,
+  studentPromo: DEFAULT_STUDENT_PROMO,
+};
 
 /** ======= Utility date ======= */
 type Weekday = 1 | 2 | 3 | 4 | 5 | 6 | 7;
@@ -157,9 +213,11 @@ const DAY_FULL_IT: Record<Weekday, string> = {
 function pad2(n: number) {
   return String(n).padStart(2, "0");
 }
+
 function itShortMonth(d: Date): string {
   return d.toLocaleDateString("it-IT", { month: "short" }).replace(".", "");
 }
+
 function toTZDateISO(date: Date, hour: number, minute: number): string {
   const d = new Date(date);
   d.setHours(hour, minute, 0, 0);
@@ -176,17 +234,21 @@ function toTZDateISO(date: Date, hour: number, minute: number): string {
   const ss = pad2(d.getSeconds());
   return `${yyyy}-${MM}-${DD}T${HH}:${mi}:${ss}${sign}${HHoff}:${MMoff}`;
 }
+
 function ymdLocal(d: Date): string {
   const y = d.getFullYear();
   const m = pad2(d.getMonth() + 1);
   const dd = pad2(d.getDate());
   return `${y}-${m}-${dd}`;
 }
+
 function weekdayToJs(weekday: Weekday): number {
   return weekday === 7 ? 0 : weekday;
 }
 
-function isPromoActiveToday(promo: PromoConfig, numeroPDF: number): boolean {
+const normalizeText = (value?: string | null) => (value || "").trim().toLowerCase();
+
+function isBasePromoActiveToday(promo: BasePromo, numeroPDF: number): boolean {
   if (!promo.enabled) return false;
   if (numeroPDF < (promo.minPdf ?? 1)) return false;
   if (!Number.isFinite(promo.percent) || promo.percent <= 0) return false;
@@ -195,10 +257,61 @@ function isPromoActiveToday(promo: PromoConfig, numeroPDF: number): boolean {
   today.setHours(0, 0, 0, 0);
   const todayYmd = ymdLocal(today);
 
-  if (promo.startDate && todayYmd < promo.startDate) return false;
-  if (promo.endDate && todayYmd > promo.endDate) return false;
+  if (promo.startsAt && todayYmd < promo.startsAt) return false;
+  if (promo.endsAt && todayYmd > promo.endsAt) return false;
 
   return true;
+}
+
+function isStudentPromoActiveToday(
+  promo: StudentPromo,
+  numeroPDF: number,
+  userProfile: UserProfilePromo | null
+): boolean {
+  if (!isBasePromoActiveToday(promo, numeroPDF)) return false;
+  if (!userProfile) return false;
+
+  const userCourse = normalizeText(userProfile.course);
+  const targetCourse = normalizeText(promo.targetCourse);
+
+  if (!userCourse || !targetCourse) return false;
+
+  const courseMatches =
+    userCourse === targetCourse ||
+    userCourse.includes(targetCourse) ||
+    targetCourse.includes(userCourse);
+
+  if (!courseMatches) return false;
+
+  return Number(userProfile.academicYear) === Number(promo.targetEnrollmentYear);
+}
+
+function normalizeBasePromo(data: Partial<BasePromo> | undefined, fallback: BasePromo): BasePromo {
+  return {
+    enabled: typeof data?.enabled === "boolean" ? data.enabled : fallback.enabled,
+    name: typeof data?.name === "string" ? data.name : fallback.name,
+    description:
+      typeof data?.description === "string" ? data.description : fallback.description,
+    percent: typeof data?.percent === "number" ? data.percent : fallback.percent,
+    minPdf: typeof data?.minPdf === "number" ? data.minPdf : fallback.minPdf,
+    startsAt: typeof data?.startsAt === "string" ? data.startsAt : fallback.startsAt,
+    endsAt: typeof data?.endsAt === "string" ? data.endsAt : fallback.endsAt,
+  };
+}
+
+function normalizeStudentPromo(
+  data: Partial<StudentPromo> | undefined,
+  fallback: StudentPromo
+): StudentPromo {
+  return {
+    ...normalizeBasePromo(data, fallback),
+    targetCourse:
+      typeof data?.targetCourse === "string" ? data.targetCourse : fallback.targetCourse,
+    targetEnrollmentYear:
+      typeof data?.targetEnrollmentYear === "number"
+        ? data.targetEnrollmentYear
+        : fallback.targetEnrollmentYear,
+  };
 }
 
 function buildSlotsFromConfig(cfg: DeliveryConfig): DeliverySlot[] {
@@ -232,6 +345,7 @@ function buildSlotsFromConfig(cfg: DeliveryConfig): DeliverySlot[] {
   earliest.setDate(now.getDate() + minLeadDays);
 
   const horizonDays = 120;
+
   for (let i = 0; i < horizonDays && slots.length < slotsAhead; i++) {
     const day = new Date(now);
     day.setDate(now.getDate() + i);
@@ -344,9 +458,12 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
 
   useEffect(() => {
     const ref = doc(db, COLL_CONS, DOC_CONS);
+
     const unsub = onSnapshot(ref, (snap) => {
       if (!snap.exists()) return;
+
       const d = snap.data() as Partial<DeliveryConfig>;
+
       setDeliveryCfg({
         weekdays:
           Array.isArray(d.weekdays) && d.weekdays.length ? (d.weekdays as number[]) : [1, 3, 5],
@@ -363,47 +480,114 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
         minLeadDays: typeof d.minLeadDays === "number" ? d.minLeadDays : 1,
       });
     });
+
     return () => unsub();
   }, []);
 
-  const [promoCfg, setPromoCfg] = useState<PromoConfig>({
-    enabled: false,
-    name: "Promo",
-    description: "",
-    percent: 0,
-    startDate: "",
-    endDate: "",
-    minPdf: 1,
-  });
+  const [promoCfg, setPromoCfg] = useState<PromoConfig>(DEFAULT_PROMO_CONFIG);
+  const [userProfilePromo, setUserProfilePromo] = useState<UserProfilePromo | null>(null);
 
   useEffect(() => {
     const ref = doc(db, PROMO_COLL, PROMO_DOC);
+
     const unsub = onSnapshot(
       ref,
       (snap) => {
         if (!snap.exists()) {
-          setPromoCfg((prev) => ({ ...prev, enabled: false, percent: 0 }));
+          setPromoCfg(DEFAULT_PROMO_CONFIG);
           return;
         }
+
         const d = snap.data() as Partial<PromoConfig>;
+
         setPromoCfg({
-          enabled: typeof d.enabled === "boolean" ? d.enabled : false,
-          name: typeof d.name === "string" ? d.name : "Promo",
-          description: typeof d.description === "string" ? d.description : "",
-          percent: typeof d.percent === "number" ? d.percent : 0,
-          startDate: typeof d.startDate === "string" ? d.startDate : "",
-          endDate: typeof d.endDate === "string" ? d.endDate : "",
-          minPdf: typeof d.minPdf === "number" ? d.minPdf : 1,
+          generalPromo: normalizeBasePromo(d.generalPromo, DEFAULT_GENERAL_PROMO),
+          studentPromo: normalizeStudentPromo(d.studentPromo, DEFAULT_STUDENT_PROMO),
         });
       },
       (err) => console.error("Errore lettura promo:", err)
     );
+
     return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    let unsubUser: (() => void) | undefined;
+
+    const unsubAuth = onAuthStateChanged(auth, (user) => {
+      if (unsubUser) {
+        unsubUser();
+        unsubUser = undefined;
+      }
+
+      if (!user) {
+        setUserProfilePromo(null);
+        return;
+      }
+
+      const ref = doc(db, USERS_COLL, user.uid);
+
+      unsubUser = onSnapshot(
+        ref,
+        (snap) => {
+          if (!snap.exists()) {
+            setUserProfilePromo(null);
+            return;
+          }
+
+          const d = snap.data() as Record<string, unknown>;
+
+          const course =
+            typeof d.course === "string"
+              ? d.course
+              : typeof d.corsoLaurea === "string"
+                ? d.corsoLaurea
+                : typeof d.degreeCourse === "string"
+                  ? d.degreeCourse
+                  : typeof d.universityCourse === "string"
+                    ? d.universityCourse
+                    : typeof d.corso === "string"
+                      ? d.corso
+                      : "";
+
+          const yearRaw =
+            d.academicYear ??
+            d.annoAccademico ??
+            d.enrollmentYear ??
+            d.targetEnrollmentYear ??
+            d.year ??
+            d.anno ??
+            null;
+
+          const academicYear =
+            typeof yearRaw === "number"
+              ? yearRaw
+              : typeof yearRaw === "string" && yearRaw.trim()
+                ? Number(yearRaw)
+                : null;
+
+          setUserProfilePromo({
+            course,
+            academicYear: Number.isFinite(academicYear) ? Number(academicYear) : null,
+          });
+        },
+        (err) => {
+          console.error("Errore lettura profilo utente:", err);
+          setUserProfilePromo(null);
+        }
+      );
+    });
+
+    return () => {
+      unsubAuth();
+      if (unsubUser) unsubUser();
+    };
   }, []);
 
   const deliverySlots = useMemo(() => buildSlotsFromConfig(deliveryCfg), [deliveryCfg]);
 
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
+
   const selectedSlot = useMemo(
     () => deliverySlots.find((s) => s.id === selectedSlotId) || null,
     [deliverySlots, selectedSlotId]
@@ -411,18 +595,22 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
 
   // ✅ obbligatorio: Sì/No (slot obbligatorio solo se Sì)
   const [isStudent, setIsStudent] = useState<boolean | null>(null);
+
   const canProceedPay = useMemo(() => {
     return isStudent !== null && (isStudent === false || (isStudent === true && !!selectedSlot));
   }, [isStudent, selectedSlot]);
 
   useEffect(() => {
     const ref = doc(db, FEES_COLLECTION, FEES_DOC);
+
     const unsub = onSnapshot(ref, (snap) => {
       if (!snap.exists()) {
         setFees({ ivaRate, transportFeeEuro, paypalPercent, paypalFixed });
         return;
       }
+
       const d = snap.data() as Partial<Fees>;
+
       setFees({
         ivaRate: typeof d.ivaRate === "number" ? d.ivaRate : ivaRate,
         transportFeeEuro:
@@ -431,19 +619,39 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
         paypalFixed: typeof d.paypalFixed === "number" ? d.paypalFixed : paypalFixed,
       });
     });
+
     return () => unsub();
   }, [ivaRate, transportFeeEuro, paypalPercent, paypalFixed]);
 
   const totals = useMemo(() => {
     const baseLordo = round2(parseEuro(prezzo));
 
-    const promoAttiva = isPromoActiveToday(promoCfg, numeroPDF);
-    const scontoPercent = promoAttiva ? promoCfg.percent : 0;
-    const scontoPromo = scontoPercent > 0 ? round2(baseLordo * (scontoPercent / 100)) : 0;
+    const generalPromo = promoCfg.generalPromo;
+    const studentPromo = promoCfg.studentPromo;
 
-    const base = round2(baseLordo - scontoPromo);
+    const generalPromoAttiva = isBasePromoActiveToday(generalPromo, numeroPDF);
+    const studentPromoAttiva = isStudentPromoActiveToday(
+      studentPromo,
+      numeroPDF,
+      userProfilePromo
+    );
+
+    const scontoGeneralePercent = generalPromoAttiva ? generalPromo.percent : 0;
+    const scontoGenerale =
+      scontoGeneralePercent > 0 ? round2(baseLordo * (scontoGeneralePercent / 100)) : 0;
+
+    const baseDopoScontoGenerale = round2(baseLordo - scontoGenerale);
+
+    const scontoStudentiPercent = studentPromoAttiva ? studentPromo.percent : 0;
+    const scontoStudenti =
+      scontoStudentiPercent > 0
+        ? round2(baseDopoScontoGenerale * (scontoStudentiPercent / 100))
+        : 0;
+
+    const base = round2(baseDopoScontoGenerale - scontoStudenti);
 
     const iva = round2(base * fees.ivaRate);
+
     // ✅ trasporto solo se consegna = Sì
     const trasporto = isStudent === true ? round2(fees.transportFeeEuro) : 0;
 
@@ -461,9 +669,16 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
     return {
       baseLordo,
       base,
-      scontoPromo,
-      scontoPercent,
-      promoAttiva,
+
+      generalPromoAttiva,
+      studentPromoAttiva,
+
+      scontoGenerale,
+      scontoGeneralePercent,
+
+      scontoStudenti,
+      scontoStudentiPercent,
+
       iva,
       trasporto,
       subTotale,
@@ -472,7 +687,8 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
       totalePayPal,
       totaleDaAddebitare,
     };
-  }, [prezzo, fees, paymentMethod, promoCfg, numeroPDF, isStudent]);
+  }, [prezzo, fees, paymentMethod, promoCfg, numeroPDF, isStudent, userProfilePromo]);
+
   useEffect(() => {
     if (paymentMethod !== "paypal") return;
 
@@ -532,7 +748,9 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
           amount: totals.totaleDaAddebitare.toFixed(2),
           currency: "EUR",
         });
+
         if (!data?.orderId) throw new Error("Risposta backend priva di orderId");
+
         return data.orderId;
       },
 
@@ -559,6 +777,9 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
                 iva: totals.iva,
                 trasporto: totals.trasporto,
                 feePayPal: totals.feePP,
+                scontoGenerale: totals.scontoGenerale,
+                scontoStudenti: totals.scontoStudenti,
+                subtotaleLordo: totals.baseLordo,
               },
               delivery: selectedSlot
                 ? {
@@ -591,13 +812,23 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
         /* noop */
       }
     };
-  }, [paymentMethod, paypalReady, submitted, totals, onConfirmOrder, fetchJSON, selectedSlot, isStudent]);
+  }, [
+    paymentMethod,
+    paypalReady,
+    submitted,
+    totals,
+    onConfirmOrder,
+    fetchJSON,
+    selectedSlot,
+    isStudent,
+  ]);
 
   const handleConfirmOrderCash = async () => {
     if (isStudent === null) {
       alert("Seleziona “Sì” oppure “No”.");
       return;
     }
+
     if (isStudent === true && !selectedSlot) {
       alert("Seleziona prima uno slot di consegna.");
       return;
@@ -612,6 +843,9 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
         iva: totals.iva,
         trasporto: totals.trasporto,
         feePayPal: 0,
+        scontoGenerale: totals.scontoGenerale,
+        scontoStudenti: totals.scontoStudenti,
+        subtotaleLordo: totals.baseLordo,
       },
       delivery: selectedSlot
         ? {
@@ -626,12 +860,16 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
 
   useEffect(() => {
     if (!loading) return;
+
     let current = 0;
+
     const interval = setInterval(() => {
       current += Math.floor(Math.random() * 10) + 5;
+
       if (current >= 90) clearInterval(interval);
       else setProgress(current);
     }, 300);
+
     return () => clearInterval(interval);
   }, [loading]);
 
@@ -661,18 +899,41 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
             <Title order={3} size="h4">
               📋 Riepilogo Ordine {tipo}
             </Title>
-            {totals.promoAttiva && (
-              <Badge variant="light" color="yellow">
-                -{totals.scontoPercent.toFixed(0)}%
-              </Badge>
+
+            {(totals.generalPromoAttiva || totals.studentPromoAttiva) && (
+              <Group gap="xs">
+                {totals.generalPromoAttiva && (
+                  <Badge variant="light" color="yellow">
+                    Generale -{totals.scontoGeneralePercent.toFixed(0)}%
+                  </Badge>
+                )}
+
+                {totals.studentPromoAttiva && (
+                  <Badge variant="light" color="green">
+                    Studenti -{totals.scontoStudentiPercent.toFixed(0)}%
+                  </Badge>
+                )}
+              </Group>
             )}
           </Group>
 
-          {totals.promoAttiva && (
+          {totals.generalPromoAttiva && (
             <Alert icon={<IconInfoCircle size={18} />} color="yellow" variant="light">
-              {promoCfg.description
-                ? promoCfg.description
-                : `🎄 ${promoCfg.name ?? "Promo"}: -${totals.scontoPercent.toFixed(0)}% sulle stampe PDF`}
+              {promoCfg.generalPromo.description
+                ? promoCfg.generalPromo.description
+                : `${promoCfg.generalPromo.name ?? "Promo generale"}: -${totals.scontoGeneralePercent.toFixed(
+                  0
+                )}% sulle stampe PDF`}
+            </Alert>
+          )}
+
+          {totals.studentPromoAttiva && (
+            <Alert icon={<IconInfoCircle size={18} />} color="green" variant="light">
+              {promoCfg.studentPromo.description
+                ? promoCfg.studentPromo.description
+                : `${promoCfg.studentPromo.name ?? "Promo studenti"}: -${totals.scontoStudentiPercent.toFixed(
+                  0
+                )}% aggiuntivo sulle stampe PDF`}
             </Alert>
           )}
 
@@ -680,6 +941,7 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
             <Stack gap="xs">
               <Text fw={800}>Dettagli ordine</Text>
               <Divider />
+
               <KeyValueRow label="Numero PDF" value={numeroPDF} />
               <KeyValueRow label="Inchiostro" value={inchiostro} />
               <KeyValueRow label="Layout" value={layout} />
@@ -693,7 +955,6 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
 
               <KeyValueRow label="Intervallo pagine" value={intervalloPagine} />
               <KeyValueRow label="Numero copie" value={numeroCopie} />
-
             </Stack>
           </Card>
 
@@ -707,15 +968,36 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
 
           <Card withBorder radius="md" p="md">
             <Stack gap="xs">
-              {totals.promoAttiva && totals.scontoPromo > 0 && (
+              {(totals.scontoGenerale > 0 || totals.scontoStudenti > 0) && (
+                <KeyValueRow label="Subtotale" value={`${euro(totals.baseLordo)} €`} />
+              )}
+
+              {totals.scontoGenerale > 0 && (
                 <Group justify="space-between" align="baseline">
                   <Text size="sm" c="green">
-                    {promoCfg.name || "Promo"} (-{totals.scontoPercent.toFixed(0)}%)
+                    {promoCfg.generalPromo.name || "Promo generale"} (-
+                    {totals.scontoGeneralePercent.toFixed(0)}%)
                   </Text>
                   <Text size="sm" c="green" fw={700}>
-                    - {euro(totals.scontoPromo)} €
+                    - {euro(totals.scontoGenerale)} €
                   </Text>
                 </Group>
+              )}
+
+              {totals.scontoStudenti > 0 && (
+                <Group justify="space-between" align="baseline">
+                  <Text size="sm" c="green">
+                    {promoCfg.studentPromo.name || "Promo studenti"} (-
+                    {totals.scontoStudentiPercent.toFixed(0)}%)
+                  </Text>
+                  <Text size="sm" c="green" fw={700}>
+                    - {euro(totals.scontoStudenti)} €
+                  </Text>
+                </Group>
+              )}
+
+              {(totals.scontoGenerale > 0 || totals.scontoStudenti > 0) && (
+                <KeyValueRow label="Imponibile scontato" value={`${euro(totals.base)} €`} />
               )}
 
               {paymentMethod === "paypal" && (
@@ -764,6 +1046,7 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
                         </Text>
                       </Group>
                     )}
+
                     <Box ref={paypalButtonsContainerRef} mt="sm" />
                   </Box>
                 )}

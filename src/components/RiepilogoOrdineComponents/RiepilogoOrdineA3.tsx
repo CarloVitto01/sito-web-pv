@@ -2,10 +2,12 @@
 // Aggiornato per usare:
 // - ConsegnaSlotPicker ✅ (con scelta Studente Sì/No obbligatoria; slot obbligatorio solo se Sì)
 // - MetodoPagamentoPicker ✅
+// - Promo generale + promo facoltà/corso ✅
 // Senza rimuovere nulla: il vecchio UI resta ma viene "nascosto" (render condizionale)
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { db } from "../../backend/firebase";
+import { auth, db } from "../../backend/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 import { doc, onSnapshot } from "firebase/firestore";
 import {
   Alert,
@@ -41,6 +43,11 @@ type PaymentPayload = {
     iva: number;
     trasporto: number;
     feePayPal: number;
+
+    // ✅ opzionali: non rompono la logica esistente
+    scontoGenerale?: number;
+    scontoStudenti?: number;
+    subtotaleLordo?: number;
   };
   delivery?: {
     dateISO: string;
@@ -85,8 +92,11 @@ function parseEuro(prezzo: string): number {
   const val = parseFloat(normalized);
   return isNaN(val) ? 0 : val;
 }
+
 const round2 = (n: number) => Math.round(n * 100) / 100;
-const euro = (n: number) => n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+const euro = (n: number) =>
+  n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 declare global {
   interface Window {
@@ -106,6 +116,7 @@ type Fees = {
 
 type TimeRange = { start: string; end: string };
 type BlacklistRange = { from: string; to: string };
+
 type DeliveryConfig = {
   weekdays: number[];
   timeRanges: TimeRange[];
@@ -115,10 +126,12 @@ type DeliveryConfig = {
   blacklistRanges?: BlacklistRange[];
   minLeadDays?: number;
 };
+
 const COLL_CONS = "configConsegne";
 const DOC_CONS = "settings";
 
 type Weekday = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+
 type DeliverySlot = {
   id: string;
   weekday: Weekday;
@@ -127,18 +140,62 @@ type DeliverySlot = {
   timeRange: string;
 };
 
-type PromoConfig = {
+/** ======= Config promo nuova struttura ======= */
+type BasePromo = {
   enabled: boolean;
   name?: string;
   description?: string;
   percent: number;
-  startDate?: string;
-  endDate?: string;
   minPdf?: number;
+  startsAt?: string;
+  endsAt?: string;
+};
+
+type StudentPromo = BasePromo & {
+  targetCourse?: string;
+  targetEnrollmentYear?: number | null; // in realtà ora è anno di corso: 1,2,3...
+};
+
+type PromoConfig = {
+  generalPromo: BasePromo;
+  studentPromo: StudentPromo;
+};
+
+type UserProfilePromo = {
+  course: string;
+  academicYear: number | null;
 };
 
 const PROMO_COLL = "configPromo";
 const PROMO_DOC = "current";
+const USERS_COLL = "users";
+
+const DEFAULT_GENERAL_PROMO: BasePromo = {
+  enabled: false,
+  name: "Promo generale",
+  description: "",
+  percent: 0,
+  minPdf: 1,
+  startsAt: "",
+  endsAt: "",
+};
+
+const DEFAULT_STUDENT_PROMO: StudentPromo = {
+  enabled: false,
+  name: "Promo facoltà/corso",
+  description: "",
+  percent: 0,
+  minPdf: 1,
+  targetCourse: "",
+  targetEnrollmentYear: null,
+  startsAt: "",
+  endsAt: "",
+};
+
+const DEFAULT_PROMO_CONFIG: PromoConfig = {
+  generalPromo: DEFAULT_GENERAL_PROMO,
+  studentPromo: DEFAULT_STUDENT_PROMO,
+};
 
 const DAY_FULL_IT: Record<Weekday, string> = {
   1: "Lunedì",
@@ -153,9 +210,11 @@ const DAY_FULL_IT: Record<Weekday, string> = {
 function pad2(n: number) {
   return String(n).padStart(2, "0");
 }
+
 function itShortMonth(d: Date): string {
   return d.toLocaleDateString("it-IT", { month: "short" }).replace(".", "");
 }
+
 function toTZDateISO(date: Date, hour: number, minute: number): string {
   const d = new Date(date);
   d.setHours(hour, minute, 0, 0);
@@ -172,14 +231,18 @@ function toTZDateISO(date: Date, hour: number, minute: number): string {
   const ss = pad2(d.getSeconds());
   return `${yyyy}-${MM}-${DD}T${HH}:${mi}:${ss}${sign}${HHoff}:${MMoff}`;
 }
+
 function ymdLocal(d: Date): string {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
+
 function weekdayToJs(weekday: Weekday): number {
   return weekday === 7 ? 0 : weekday;
 }
 
-function isPromoActiveToday(promo: PromoConfig, numeroPDF: number): boolean {
+const normalizeText = (value?: string | null) => (value || "").trim().toLowerCase();
+
+function isBasePromoActiveToday(promo: BasePromo, numeroPDF: number): boolean {
   if (!promo.enabled) return false;
   if (numeroPDF < (promo.minPdf ?? 1)) return false;
   if (!Number.isFinite(promo.percent) || promo.percent <= 0) return false;
@@ -188,19 +251,73 @@ function isPromoActiveToday(promo: PromoConfig, numeroPDF: number): boolean {
   today.setHours(0, 0, 0, 0);
   const todayYmd = ymdLocal(today);
 
-  if (promo.startDate && todayYmd < promo.startDate) return false;
-  if (promo.endDate && todayYmd > promo.endDate) return false;
+  if (promo.startsAt && todayYmd < promo.startsAt) return false;
+  if (promo.endsAt && todayYmd > promo.endsAt) return false;
 
   return true;
 }
 
+function isStudentPromoActiveToday(
+  promo: StudentPromo,
+  numeroPDF: number,
+  userProfile: UserProfilePromo | null
+): boolean {
+  if (!isBasePromoActiveToday(promo, numeroPDF)) return false;
+  if (!userProfile) return false;
+
+  const userCourse = normalizeText(userProfile.course);
+  const targetCourse = normalizeText(promo.targetCourse);
+
+  if (!userCourse || !targetCourse) return false;
+
+  const courseMatches =
+    userCourse === targetCourse ||
+    userCourse.includes(targetCourse) ||
+    targetCourse.includes(userCourse);
+
+  if (!courseMatches) return false;
+
+  return Number(userProfile.academicYear) === Number(promo.targetEnrollmentYear);
+}
+
+function normalizeBasePromo(data: Partial<BasePromo> | undefined, fallback: BasePromo): BasePromo {
+  return {
+    enabled: typeof data?.enabled === "boolean" ? data.enabled : fallback.enabled,
+    name: typeof data?.name === "string" ? data.name : fallback.name,
+    description:
+      typeof data?.description === "string" ? data.description : fallback.description,
+    percent: typeof data?.percent === "number" ? data.percent : fallback.percent,
+    minPdf: typeof data?.minPdf === "number" ? data.minPdf : fallback.minPdf,
+    startsAt: typeof data?.startsAt === "string" ? data.startsAt : fallback.startsAt,
+    endsAt: typeof data?.endsAt === "string" ? data.endsAt : fallback.endsAt,
+  };
+}
+
+function normalizeStudentPromo(
+  data: Partial<StudentPromo> | undefined,
+  fallback: StudentPromo
+): StudentPromo {
+  return {
+    ...normalizeBasePromo(data, fallback),
+    targetCourse:
+      typeof data?.targetCourse === "string" ? data.targetCourse : fallback.targetCourse,
+    targetEnrollmentYear:
+      typeof data?.targetEnrollmentYear === "number"
+        ? data.targetEnrollmentYear
+        : fallback.targetEnrollmentYear,
+  };
+}
+
 function buildSlotsFromConfig(cfg: DeliveryConfig): DeliverySlot[] {
-  const weekdays = (Array.isArray(cfg.weekdays) && cfg.weekdays.length ? cfg.weekdays : [1, 3, 5]).map((w) =>
-    Math.min(7, Math.max(1, Number(w)))
-  ) as Weekday[];
+  const weekdays = (Array.isArray(cfg.weekdays) && cfg.weekdays.length
+    ? cfg.weekdays
+    : [1, 3, 5]
+  ).map((w) => Math.min(7, Math.max(1, Number(w)))) as Weekday[];
 
   const timeRanges =
-    Array.isArray(cfg.timeRanges) && cfg.timeRanges.length ? cfg.timeRanges : [{ start: "12:00", end: "13:00" }];
+    Array.isArray(cfg.timeRanges) && cfg.timeRanges.length
+      ? cfg.timeRanges
+      : [{ start: "12:00", end: "13:00" }];
 
   const slotsAhead = Math.max(1, Number(cfg.slotsAhead) || 6);
   const minLeadDays = Math.max(1, Number(cfg.minLeadDays) || 1);
@@ -222,6 +339,7 @@ function buildSlotsFromConfig(cfg: DeliveryConfig): DeliverySlot[] {
   earliest.setDate(now.getDate() + minLeadDays);
 
   const horizonDays = 120;
+
   for (let i = 0; i < horizonDays && slots.length < slotsAhead; i++) {
     const day = new Date(now);
     day.setDate(now.getDate() + i);
@@ -282,6 +400,7 @@ function buildUpcomingSlotsStatic(n: number, minLeadDays: number = 1): DeliveryS
 
     const jsDay = day.getDay();
     const weekday: Weekday = (jsDay === 0 ? 7 : (jsDay as 1 | 2 | 3 | 4 | 5 | 6)) as Weekday;
+
     if (![1, 3, 5].includes(weekday)) continue;
 
     const dateISO = toTZDateISO(day, SLOT_START.hour, SLOT_START.minute);
@@ -292,7 +411,9 @@ function buildUpcomingSlotsStatic(n: number, minLeadDays: number = 1): DeliveryS
       weekday,
       dateISO,
       dayLabel: label,
-      timeRange: `${pad2(SLOT_START.hour)}:${pad2(SLOT_START.minute)}–${pad2(SLOT_END.hour)}:${pad2(SLOT_END.minute)}`,
+      timeRange: `${pad2(SLOT_START.hour)}:${pad2(SLOT_START.minute)}–${pad2(
+        SLOT_END.hour
+      )}:${pad2(SLOT_END.minute)}`,
     });
   }
 
@@ -364,97 +485,202 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
     const ref = doc(db, COLL_CONS, DOC_CONS);
     const unsub = onSnapshot(ref, (snap) => {
       if (!snap.exists()) return;
+
       const d = snap.data() as Partial<DeliveryConfig>;
+
       setDeliveryCfg({
-        weekdays: Array.isArray(d.weekdays) && d.weekdays.length ? (d.weekdays as number[]) : [1, 3, 5],
+        weekdays:
+          Array.isArray(d.weekdays) && d.weekdays.length ? (d.weekdays as number[]) : [1, 3, 5],
         timeRanges:
-          Array.isArray(d.timeRanges) && d.timeRanges.length ? (d.timeRanges as TimeRange[]) : [{ start: "12:00", end: "13:00" }],
+          Array.isArray(d.timeRanges) && d.timeRanges.length
+            ? (d.timeRanges as TimeRange[])
+            : [{ start: "12:00", end: "13:00" }],
         slotsAhead: typeof d.slotsAhead === "number" ? d.slotsAhead : 6,
         timezone: typeof d.timezone === "string" && d.timezone ? d.timezone : "Europe/Rome",
         blacklistDates: Array.isArray(d.blacklistDates) ? (d.blacklistDates as string[]) : [],
-        blacklistRanges: Array.isArray(d.blacklistRanges) ? (d.blacklistRanges as BlacklistRange[]) : [],
+        blacklistRanges: Array.isArray(d.blacklistRanges)
+          ? (d.blacklistRanges as BlacklistRange[])
+          : [],
         minLeadDays: typeof d.minLeadDays === "number" ? d.minLeadDays : 1,
       });
     });
+
     return () => unsub();
   }, []);
 
-  const [promoCfg, setPromoCfg] = useState<PromoConfig>({
-    enabled: false,
-    name: "Promo",
-    description: "",
-    percent: 0,
-    startDate: "",
-    endDate: "",
-    minPdf: 1,
-  });
+  const [promoCfg, setPromoCfg] = useState<PromoConfig>(DEFAULT_PROMO_CONFIG);
+  const [userProfilePromo, setUserProfilePromo] = useState<UserProfilePromo | null>(null);
 
   useEffect(() => {
     const ref = doc(db, PROMO_COLL, PROMO_DOC);
+
     const unsub = onSnapshot(
       ref,
       (snap) => {
         if (!snap.exists()) {
-          setPromoCfg((prev) => ({ ...prev, enabled: false, percent: 0 }));
+          setPromoCfg(DEFAULT_PROMO_CONFIG);
           return;
         }
+
         const d = snap.data() as Partial<PromoConfig>;
+
         setPromoCfg({
-          enabled: typeof d.enabled === "boolean" ? d.enabled : false,
-          name: typeof d.name === "string" ? d.name : "Promo",
-          description: typeof d.description === "string" ? d.description : "",
-          percent: typeof d.percent === "number" ? d.percent : 0,
-          startDate: typeof d.startDate === "string" ? d.startDate : "",
-          endDate: typeof d.endDate === "string" ? d.endDate : "",
-          minPdf: typeof d.minPdf === "number" ? d.minPdf : 1,
+          generalPromo: normalizeBasePromo(d.generalPromo, DEFAULT_GENERAL_PROMO),
+          studentPromo: normalizeStudentPromo(d.studentPromo, DEFAULT_STUDENT_PROMO),
         });
       },
       (err) => console.error("Errore lettura promo:", err)
     );
+
     return () => unsub();
   }, []);
 
+  useEffect(() => {
+    let unsubUser: (() => void) | undefined;
+
+    const unsubAuth = onAuthStateChanged(auth, (user) => {
+      if (unsubUser) {
+        unsubUser();
+        unsubUser = undefined;
+      }
+
+      if (!user) {
+        setUserProfilePromo(null);
+        return;
+      }
+
+      const ref = doc(db, USERS_COLL, user.uid);
+
+      unsubUser = onSnapshot(
+        ref,
+        (snap) => {
+          if (!snap.exists()) {
+            setUserProfilePromo(null);
+            return;
+          }
+
+          const d = snap.data() as Record<string, unknown>;
+
+          const course =
+            typeof d.corsoLaurea === "string"
+              ? d.corsoLaurea
+              : typeof d.course === "string"
+                ? d.course
+                : typeof d.degreeCourse === "string"
+                  ? d.degreeCourse
+                  : typeof d.universityCourse === "string"
+                    ? d.universityCourse
+                    : typeof d.corso === "string"
+                      ? d.corso
+                      : "";
+
+          const yearRaw =
+            d.annoAccademico ??
+            d.academicYear ??
+            d.enrollmentYear ??
+            d.targetEnrollmentYear ??
+            d.year ??
+            d.anno ??
+            null;
+
+          const academicYear =
+            typeof yearRaw === "number"
+              ? yearRaw
+              : typeof yearRaw === "string" && yearRaw.trim()
+                ? Number(yearRaw)
+                : null;
+
+          setUserProfilePromo({
+            course,
+            academicYear: Number.isFinite(academicYear) ? Number(academicYear) : null,
+          });
+        },
+        (err) => {
+          console.error("Errore lettura profilo utente:", err);
+          setUserProfilePromo(null);
+        }
+      );
+    });
+
+    return () => {
+      unsubAuth();
+      if (unsubUser) unsubUser();
+    };
+  }, []);
+
   const deliverySlotsFromCfg = useMemo(() => buildSlotsFromConfig(deliveryCfg), [deliveryCfg]);
+
   const deliverySlots = useMemo(
-    () => (deliverySlotsFromCfg.length ? deliverySlotsFromCfg : buildUpcomingSlotsStatic(6, deliveryCfg?.minLeadDays ?? 1)),
+    () =>
+      deliverySlotsFromCfg.length
+        ? deliverySlotsFromCfg
+        : buildUpcomingSlotsStatic(6, deliveryCfg?.minLeadDays ?? 1),
     [deliverySlotsFromCfg, deliveryCfg?.minLeadDays]
   );
 
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
-  const selectedSlot = useMemo(() => deliverySlots.find((s) => s.id === selectedSlotId) || null, [deliverySlots, selectedSlotId]);
+
+  const selectedSlot = useMemo(
+    () => deliverySlots.find((s) => s.id === selectedSlotId) || null,
+    [deliverySlots, selectedSlotId]
+  );
 
   // ✅ obbligatorio: Sì/No (slot obbligatorio solo se Sì)
   const [isStudent, setIsStudent] = useState<boolean | null>(null);
+
   const canProceedPay = useMemo(() => {
     return isStudent !== null && (isStudent === false || (isStudent === true && !!selectedSlot));
   }, [isStudent, selectedSlot]);
 
   useEffect(() => {
     const ref = doc(db, FEES_COLLECTION, FEES_DOC);
+
     const unsub = onSnapshot(ref, (snap) => {
       if (!snap.exists()) {
         setFees({ ivaRate, transportFeeEuro, paypalPercent, paypalFixed });
         return;
       }
+
       const d = snap.data() as Partial<Fees>;
+
       setFees({
         ivaRate: typeof d.ivaRate === "number" ? d.ivaRate : ivaRate,
-        transportFeeEuro: typeof d.transportFeeEuro === "number" ? d.transportFeeEuro : transportFeeEuro,
+        transportFeeEuro:
+          typeof d.transportFeeEuro === "number" ? d.transportFeeEuro : transportFeeEuro,
         paypalPercent: typeof d.paypalPercent === "number" ? d.paypalPercent : paypalPercent,
         paypalFixed: typeof d.paypalFixed === "number" ? d.paypalFixed : paypalFixed,
       });
     });
+
     return () => unsub();
   }, [ivaRate, transportFeeEuro, paypalPercent, paypalFixed]);
 
   const totals = useMemo(() => {
     const baseLordo = round2(parseEuro(prezzo));
 
-    const promoAttiva = isPromoActiveToday(promoCfg, numeroPDF);
-    const scontoPercent = promoAttiva ? promoCfg.percent : 0;
-    const scontoPromo = scontoPercent > 0 ? round2(baseLordo * (scontoPercent / 100)) : 0;
+    const generalPromo = promoCfg.generalPromo;
+    const studentPromo = promoCfg.studentPromo;
 
-    const base = round2(baseLordo - scontoPromo);
+    const generalPromoAttiva = isBasePromoActiveToday(generalPromo, numeroPDF);
+    const studentPromoAttiva = isStudentPromoActiveToday(
+      studentPromo,
+      numeroPDF,
+      userProfilePromo
+    );
+
+    const scontoGeneralePercent = generalPromoAttiva ? generalPromo.percent : 0;
+    const scontoGenerale =
+      scontoGeneralePercent > 0 ? round2(baseLordo * (scontoGeneralePercent / 100)) : 0;
+
+    const baseDopoScontoGenerale = round2(baseLordo - scontoGenerale);
+
+    const scontoStudentiPercent = studentPromoAttiva ? studentPromo.percent : 0;
+    const scontoStudenti =
+      scontoStudentiPercent > 0
+        ? round2(baseDopoScontoGenerale * (scontoStudentiPercent / 100))
+        : 0;
+
+    const base = round2(baseDopoScontoGenerale - scontoStudenti);
 
     const iva = round2(base * fees.ivaRate);
 
@@ -475,9 +701,16 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
     return {
       baseLordo,
       base,
-      scontoPromo,
-      scontoPercent,
-      promoAttiva,
+
+      generalPromoAttiva,
+      studentPromoAttiva,
+
+      scontoGenerale,
+      scontoGeneralePercent,
+
+      scontoStudenti,
+      scontoStudentiPercent,
+
       iva,
       trasporto,
       subTotale,
@@ -486,20 +719,25 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
       totalePayPal,
       totaleDaAddebitare,
     };
-  }, [prezzo, fees, paymentMethod, promoCfg, numeroPDF, isStudent]);
+  }, [prezzo, fees, paymentMethod, promoCfg, numeroPDF, isStudent, userProfilePromo]);
 
   useEffect(() => {
     if (paymentMethod !== "paypal") return;
+
     if (window.paypal) {
       setPaypalReady(true);
       return;
     }
+
     if (!PAYPAL_CLIENT_ID) {
       console.error("PAYPAL_CLIENT_ID mancante");
       return;
     }
+
     const script = document.createElement("script");
-    script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(PAYPAL_CLIENT_ID)}&currency=EUR&intent=capture&components=buttons`;
+    script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(
+      PAYPAL_CLIENT_ID
+    )}&currency=EUR&intent=capture&components=buttons`;
     script.async = true;
     script.onload = () => setPaypalReady(true);
     script.onerror = () => console.error("Impossibile caricare PayPal SDK");
@@ -519,6 +757,7 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
         console.error(`HTTP ${res.status} su ${url}. Body:`, text.slice(0, 500));
         throw new Error(`Request failed (${res.status})`);
       }
+
       try {
         return JSON.parse(text) as T;
       } catch {
@@ -550,7 +789,11 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
           amount: totals.totaleDaAddebitare.toFixed(2),
           currency: "EUR",
         });
-        if (!data?.orderId || typeof data.orderId !== "string") throw new Error("Risposta backend priva di orderId");
+
+        if (!data?.orderId || typeof data.orderId !== "string") {
+          throw new Error("Risposta backend priva di orderId");
+        }
+
         return data.orderId;
       },
 
@@ -577,6 +820,9 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
                 iva: totals.iva,
                 trasporto: totals.trasporto,
                 feePayPal: totals.feePP,
+                scontoGenerale: totals.scontoGenerale,
+                scontoStudenti: totals.scontoStudenti,
+                subtotaleLordo: totals.baseLordo,
               },
               delivery: selectedSlot
                 ? {
@@ -620,6 +866,9 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
     totals.iva,
     totals.trasporto,
     totals.feePP,
+    totals.scontoGenerale,
+    totals.scontoStudenti,
+    totals.baseLordo,
     onConfirmOrder,
     fetchJSON,
     selectedSlot,
@@ -632,6 +881,7 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
       alert("Seleziona “Sì” oppure “No”.");
       return;
     }
+
     // ✅ slot obbligatorio solo se Sì
     if (isStudent === true && !selectedSlot) {
       alert("Seleziona prima uno slot di consegna.");
@@ -647,6 +897,9 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
         iva: totals.iva,
         trasporto: totals.trasporto,
         feePayPal: 0,
+        scontoGenerale: totals.scontoGenerale,
+        scontoStudenti: totals.scontoStudenti,
+        subtotaleLordo: totals.baseLordo,
       },
       delivery: selectedSlot
         ? {
@@ -661,12 +914,15 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
 
   useEffect(() => {
     if (!loading) return;
+
     let current = 0;
+
     const interval = setInterval(() => {
       current += Math.floor(Math.random() * 10) + 5;
       if (current >= 90) clearInterval(interval);
       else setProgress(current);
     }, 300);
+
     return () => clearInterval(interval);
   }, [loading]);
 
@@ -675,7 +931,9 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
   }, [submitted]);
 
   const deliveryTitleSuffix =
-    deliveryCfg.timeRanges?.length === 1 ? ` (${deliveryCfg.timeRanges[0].start}–${deliveryCfg.timeRanges[0].end})` : "";
+    deliveryCfg.timeRanges?.length === 1
+      ? ` (${deliveryCfg.timeRanges[0].start}–${deliveryCfg.timeRanges[0].end})`
+      : "";
 
   return (
     <Card withBorder radius="lg" p="md">
@@ -684,16 +942,41 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
           <Title order={3} size="h4">
             📋 Riepilogo Ordine A3
           </Title>
-          {totals.promoAttiva && (
-            <Badge variant="light" color="yellow">
-              -{totals.scontoPercent.toFixed(0)}%
-            </Badge>
+
+          {(totals.generalPromoAttiva || totals.studentPromoAttiva) && (
+            <Group gap="xs">
+              {totals.generalPromoAttiva && (
+                <Badge variant="light" color="yellow">
+                  Generale -{totals.scontoGeneralePercent.toFixed(0)}%
+                </Badge>
+              )}
+
+              {totals.studentPromoAttiva && (
+                <Badge variant="light" color="green">
+                  Studenti -{totals.scontoStudentiPercent.toFixed(0)}%
+                </Badge>
+              )}
+            </Group>
           )}
         </Group>
 
-        {totals.promoAttiva && (
+        {totals.generalPromoAttiva && (
           <Alert icon={<IconInfoCircle size={18} />} color="yellow" variant="light">
-            {promoCfg.description ? promoCfg.description : `🎄 ${promoCfg.name ?? "Promo"}: -${totals.scontoPercent.toFixed(0)}% sulle stampe A3`}
+            {promoCfg.generalPromo.description
+              ? promoCfg.generalPromo.description
+              : `${promoCfg.generalPromo.name ?? "Promo generale"}: -${totals.scontoGeneralePercent.toFixed(
+                0
+              )}% sulle stampe A3`}
+          </Alert>
+        )}
+
+        {totals.studentPromoAttiva && (
+          <Alert icon={<IconInfoCircle size={18} />} color="green" variant="light">
+            {promoCfg.studentPromo.description
+              ? promoCfg.studentPromo.description
+              : `${promoCfg.studentPromo.name ?? "Promo studenti"}: -${totals.scontoStudentiPercent.toFixed(
+                0
+              )}% aggiuntivo sulle stampe A3`}
           </Alert>
         )}
 
@@ -779,31 +1062,55 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
                 {paymentMethod === "paypal" ? "PayPal" : paymentMethod === "cash" ? "Contanti" : "—"}
               </Badge>
             </Group>
+
             <Divider />
 
-            {totals.promoAttiva && totals.scontoPromo > 0 && (
+            {(totals.scontoGenerale > 0 || totals.scontoStudenti > 0) && (
+              <KeyValueRow label="Subtotale" value={`${euro(totals.baseLordo)} €`} />
+            )}
+
+            {totals.scontoGenerale > 0 && (
               <Group justify="space-between" align="baseline">
                 <Text size="sm" c="green">
-                  {promoCfg.name || "Promo"} (-{totals.scontoPercent.toFixed(0)}%)
+                  {promoCfg.generalPromo.name || "Promo generale"} (-
+                  {totals.scontoGeneralePercent.toFixed(0)}%)
                 </Text>
                 <Text size="sm" c="green" fw={700}>
-                  - {euro(totals.scontoPromo)} €
+                  - {euro(totals.scontoGenerale)} €
+                </Text>
+              </Group>
+            )}
+
+            {totals.scontoStudenti > 0 && (
+              <Group justify="space-between" align="baseline">
+                <Text size="sm" c="green">
+                  {promoCfg.studentPromo.name || "Promo studenti"} (-
+                  {totals.scontoStudentiPercent.toFixed(0)}%)
+                </Text>
+                <Text size="sm" c="green" fw={700}>
+                  - {euro(totals.scontoStudenti)} €
                 </Text>
               </Group>
             )}
 
             <KeyValueRow label="Imponibile" value={`${euro(totals.base)} €`} />
-            <KeyValueRow label={`IVA (${(fees.ivaRate * 100).toFixed(0)}%)`} value={`${euro(totals.iva)} €`} />
+            <KeyValueRow
+              label={`IVA (${(fees.ivaRate * 100).toFixed(0)}%)`}
+              value={`${euro(totals.iva)} €`}
+            />
             <KeyValueRow label="Trasporto" value={`${euro(totals.trasporto)} €`} />
 
             {paymentMethod === "paypal" && (
               <KeyValueRow
-                label={`Fee PayPal (${(fees.paypalPercent * 100).toFixed(2)}% + ${euro(fees.paypalFixed)} €)`}
+                label={`Fee PayPal (${(fees.paypalPercent * 100).toFixed(2)}% + ${euro(
+                  fees.paypalFixed
+                )} €)`}
                 value={`${euro(totals.feePP)} €`}
               />
             )}
 
             <Divider />
+
             <Group justify="space-between" align="baseline">
               <Text fw={900}>Totale finale</Text>
               <Text fw={900} size="lg">
@@ -814,19 +1121,29 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
         </Card>
 
         {/* ✅ NUOVO: Picker metodo pagamento */}
-        <MetodoPagamentoPicker value={paymentMethod} onChange={(v) => setPaymentMethod(v)} hint="Scegli come preferisci pagare" />
+        <MetodoPagamentoPicker
+          value={paymentMethod}
+          onChange={(v) => setPaymentMethod(v)}
+          hint="Scegli come preferisci pagare"
+        />
 
         {/* ✅ VECCHIO: 2 bottoni (non cancellati) - li teniamo ma li nascondiamo */}
         {false && (
           <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-            <Button variant={paymentMethod === "cash" ? "light" : "default"} onClick={() => setPaymentMethod("cash")}>
+            <Button
+              variant={paymentMethod === "cash" ? "light" : "default"}
+              onClick={() => setPaymentMethod("cash")}
+            >
               💵 Contanti
               <Text component="span" c="dimmed" size="xs" ml="xs">
                 Paga alla consegna
               </Text>
             </Button>
 
-            <Button variant={paymentMethod === "paypal" ? "light" : "default"} onClick={() => setPaymentMethod("paypal")}>
+            <Button
+              variant={paymentMethod === "paypal" ? "light" : "default"}
+              onClick={() => setPaymentMethod("paypal")}
+            >
               🟦 PayPal
               <Text component="span" c="dimmed" size="xs" ml="xs">
                 Paga online
@@ -839,7 +1156,8 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
           <Card withBorder radius="md" p="md">
             <Stack gap="xs">
               <Text size="sm" c="dimmed">
-                Completa il pagamento di <strong>{euro(totals.totaleDaAddebitare)} €</strong> con PayPal. Al termine l’ordine partirà automaticamente.
+                Completa il pagamento di <strong>{euro(totals.totaleDaAddebitare)} €</strong>{" "}
+                con PayPal. Al termine l’ordine partirà automaticamente.
               </Text>
 
               {isStudent === null ? (
@@ -868,7 +1186,12 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
         )}
 
         {!loading && !submitted && paymentMethod === "cash" && (
-          <Button fullWidth size="md" onClick={handleConfirmOrderCash} disabled={disabled || loading || submitted || !canProceedPay}>
+          <Button
+            fullWidth
+            size="md"
+            onClick={handleConfirmOrderCash}
+            disabled={disabled || loading || submitted || !canProceedPay}
+          >
             ✅ Conferma Ordine
           </Button>
         )}

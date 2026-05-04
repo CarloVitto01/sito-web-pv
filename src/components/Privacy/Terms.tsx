@@ -50,7 +50,7 @@ export default function Terms() {
         <p style={pStyle}><strong>Nome commerciale:</strong> Photo &amp; Vision</p>
         <p style={pStyle}><strong>Sede legale:</strong> Via Colonello Gino Chiriatti 19, 73025 Martano (LE)</p>
         <p style={pStyle}><strong>P.IVA:</strong> 05433670758</p>
-        <p style={pStyle}><strong>Email:</strong> pv.photoandvision@gmail.com</p>
+        <p style={pStyle}><strong>Email:</strong> info@photoandvision.it</p>
       </section>
 
       <section style={card}>

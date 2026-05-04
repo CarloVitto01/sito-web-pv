@@ -23,6 +23,7 @@ import {
   Loader,
   Pagination,
   ScrollArea,
+  Select,
 } from "@mantine/core";
 
 import {
@@ -77,6 +78,54 @@ type Order = {
 };
 
 const PAGE_SIZE = 10;
+
+const CORSI_LAUREA_OPTIONS = [
+  { value: "Medicina", label: "Medicina" },
+  { value: "Odontoiatria", label: "Odontoiatria" },
+  { value: "Infermieristica", label: "Infermieristica" },
+  { value: "Fisioterapia", label: "Fisioterapia" },
+  { value: "Biotecnologie", label: "Biotecnologie" },
+  { value: "Farmacia", label: "Farmacia" },
+  { value: "CTF", label: "CTF" },
+  { value: "Giurisprudenza", label: "Giurisprudenza" },
+  { value: "Economia", label: "Economia" },
+  { value: "Ingegneria", label: "Ingegneria" },
+  { value: "Lettere", label: "Lettere" },
+  { value: "Scienze della formazione", label: "Scienze della formazione" },
+  { value: "Scienze motorie", label: "Scienze motorie" },
+  { value: "Altro", label: "Altro" },
+];
+
+const ANNI_CORSO_OPTIONS = [
+  { value: "1", label: "1° anno" },
+  { value: "2", label: "2° anno" },
+  { value: "3", label: "3° anno" },
+  { value: "4", label: "4° anno" },
+  { value: "5", label: "5° anno" },
+  { value: "6", label: "6° anno" },
+];
+
+const normalizeAnnoCorsoValue = (value: any): string | null => {
+  const raw = String(value || "").trim();
+
+  if (["1", "2", "3", "4", "5", "6"].includes(raw)) return raw;
+
+  // Retrocompatibilità: se prima avevi salvato 2026, non lo selezioniamo automaticamente.
+  // L'utente dovrà scegliere 1°, 2°, ecc.
+  return null;
+};
+
+const normalizeCorsoLaureaValue = (value: any): string | null => {
+  const raw = String(value || "").trim();
+
+  if (!raw) return null;
+
+  const match = CORSI_LAUREA_OPTIONS.find(
+    (opt) => opt.value.toLowerCase() === raw.toLowerCase()
+  );
+
+  return match?.value || null;
+};
 
 const AccountPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -182,7 +231,15 @@ const AccountPage: React.FC = () => {
   }, [orders, page]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setUserData((prev: any) => ({ ...(prev || {}), [e.target.name]: e.target.value }));
+    const { name, value } = e.currentTarget;
+    setUserData((prev: any) => ({ ...(prev || {}), [name]: value }));
+  };
+
+  const handleSelectChange = (name: string, value: string | null) => {
+    setUserData((prev: any) => ({
+      ...(prev || {}),
+      [name]: value || "",
+    }));
   };
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -199,6 +256,19 @@ const AccountPage: React.FC = () => {
       delete updatedData.corsoLaurea;
       delete updatedData.annoAccademico;
       setUserData((prev: any) => ({ ...(prev || {}), corsoLaurea: "", annoAccademico: "" }));
+    } else {
+      updatedData.corsoLaurea = normalizeCorsoLaureaValue(updatedData.corsoLaurea) || "";
+      updatedData.annoAccademico = normalizeAnnoCorsoValue(updatedData.annoAccademico) || "";
+
+      if (!updatedData.corsoLaurea) {
+        setError("Seleziona il corso di laurea.");
+        return;
+      }
+
+      if (!updatedData.annoAccademico) {
+        setError("Seleziona l'anno di corso.");
+        return;
+      }
     }
 
     try {
@@ -247,10 +317,14 @@ const AccountPage: React.FC = () => {
               {/* HEADER (stile gestionale) */}
               <Group justify="space-between" align="flex-end" wrap="wrap">
                 <div>
-                  <Title order={2}
+                  <Title
+                    order={2}
                     style={{
-                      color: "white"
-                    }}>Il mio account</Title>
+                      color: "white",
+                    }}
+                  >
+                    Il mio account
+                  </Title>
                   <Text size="sm" c="dimmed">
                     Gestisci i tuoi dati e rivedi gli ordini effettuati su Photo &amp; Vision.
                   </Text>
@@ -366,11 +440,19 @@ const AccountPage: React.FC = () => {
                           setIsStudente(checked);
 
                           if (!checked) {
-                            setUserData((prev: any) => ({ ...(prev || {}), corsoLaurea: "", annoAccademico: "" }));
+                            setUserData((prev: any) => ({
+                              ...(prev || {}),
+                              corsoLaurea: "",
+                              annoAccademico: "",
+                            }));
+
                             const user = auth.currentUser;
                             if (user) {
                               try {
-                                await updateDoc(doc(db, "users", user.uid), { corsoLaurea: "", annoAccademico: "" });
+                                await updateDoc(doc(db, "users", user.uid), {
+                                  corsoLaurea: "",
+                                  annoAccademico: "",
+                                });
                               } catch { }
                             }
                           }
@@ -379,17 +461,23 @@ const AccountPage: React.FC = () => {
 
                       {isStudente && (
                         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-                          <TextInput
+                          <Select
                             label="Corso di Laurea"
-                            name="corsoLaurea"
-                            value={userData?.corsoLaurea || ""}
-                            onChange={handleChange}
+                            placeholder="Seleziona corso"
+                            value={normalizeCorsoLaureaValue(userData?.corsoLaurea)}
+                            onChange={(value) => handleSelectChange("corsoLaurea", value)}
+                            data={CORSI_LAUREA_OPTIONS}
+                            searchable
+                            clearable
                           />
-                          <TextInput
-                            label="Anno Accademico"
-                            name="annoAccademico"
-                            value={userData?.annoAccademico || ""}
-                            onChange={handleChange}
+
+                          <Select
+                            label="Anno di corso"
+                            placeholder="Seleziona anno"
+                            value={normalizeAnnoCorsoValue(userData?.annoAccademico)}
+                            onChange={(value) => handleSelectChange("annoAccademico", value)}
+                            data={ANNI_CORSO_OPTIONS}
+                            clearable
                           />
                         </SimpleGrid>
                       )}
@@ -454,9 +542,7 @@ const AccountPage: React.FC = () => {
                                           {dateStr}
                                         </Badge>
 
-                                        {order?.stato && (
-                                          <Badge variant="light">{String(order.stato)}</Badge>
-                                        )}
+                                        {order?.stato && <Badge variant="light">{String(order.stato)}</Badge>}
                                       </Group>
                                     </div>
                                   </Group>
