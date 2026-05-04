@@ -18,7 +18,7 @@ export default function PrivacyPolicy() {
             <br />
             <strong>Sede:</strong> Via Colonello Gino Chiriatti, 19 — 73025, Martano (LE), Italia
             <br />
-            <strong>Email:</strong> pv.photoandvision@gmail.com
+            <strong>Email:</strong> info@photoandvision.it
             <br />
             <strong>P.IVA / CF:</strong> 05433670758
           </p>
@@ -140,7 +140,7 @@ export default function PrivacyPolicy() {
           <p>
             Puoi esercitare i diritti previsti dagli artt. 15–22 GDPR (accesso, rettifica, cancellazione, limitazione,
             portabilità, opposizione) e revocare eventuali consensi, scrivendo a{" "}
-            <strong>pv.photoandvision@gmail.com</strong>.
+            <strong>info@photoandvision.it</strong>.
             Hai inoltre diritto di proporre reclamo al Garante per la protezione dei dati personali.
           </p>
         </section>

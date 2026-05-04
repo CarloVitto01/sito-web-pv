@@ -96,7 +96,7 @@ const Footer = () => {
                   >
                     <IconMail size={18} />
                   </ActionIcon>
-                  <Text fw={700}>pv.photoandvision@gmail.com</Text>
+                  <Text fw={700}>info@photoandvision.it</Text>
                 </Group>
               </Anchor>
             </Stack>
