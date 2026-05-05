@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { db } from "../../backend/firebase";
 import { doc, onSnapshot } from "firebase/firestore";
 
-import { Alert, Box, Center, Container, Text } from "@mantine/core";
+import { Alert, Box, Center, Container, Group, Stack, Text } from "@mantine/core";
 import {
   IconInfoCircle,
   IconAlertTriangle,
@@ -52,51 +52,51 @@ const Banner: React.FC = () => {
     }
   }, [variant]);
 
-  // Palette (pulita + professionale, coerente con PV)
+  // Palette dark-friendly, coerente con PV e leggibile su background scuro
   const tone = useMemo(() => {
     if (variant === "christmas") {
       return {
-        bg: "rgba(199, 171, 43, 0.14)",
-        border: "rgba(199, 171, 43, 0.30)",
-        text: "#1b1b1b",
-        iconBg: "rgba(199, 171, 43, 0.22)",
+        bg: "rgba(199, 171, 43, 0.12)",
+        border: "rgba(199, 171, 43, 0.45)",
+        text: "#f8f8f8",
+        iconBg: "rgba(199, 171, 43, 0.18)",
         iconColor: ACCENT,
       };
     }
     if (variant === "success") {
       return {
         bg: "rgba(34, 197, 94, 0.12)",
-        border: "rgba(34, 197, 94, 0.28)",
-        text: "#0f172a",
-        iconBg: "rgba(34, 197, 94, 0.16)",
-        iconColor: "#16a34a",
+        border: "rgba(34, 197, 94, 0.45)",
+        text: "#f8f8f8",
+        iconBg: "rgba(34, 197, 94, 0.18)",
+        iconColor: "#22c55e",
       };
     }
     if (variant === "warning") {
       return {
-        bg: "rgba(245, 158, 11, 0.14)",
-        border: "rgba(245, 158, 11, 0.30)",
-        text: "#0f172a",
+        bg: "rgba(245, 158, 11, 0.13)",
+        border: "rgba(245, 158, 11, 0.50)",
+        text: "#f8f8f8",
         iconBg: "rgba(245, 158, 11, 0.18)",
-        iconColor: "#d97706",
+        iconColor: "#f59e0b",
       };
     }
     if (variant === "error") {
       return {
         bg: "rgba(239, 68, 68, 0.12)",
-        border: "rgba(239, 68, 68, 0.28)",
-        text: "#0f172a",
-        iconBg: "rgba(239, 68, 68, 0.16)",
-        iconColor: "#dc2626",
+        border: "rgba(239, 68, 68, 0.45)",
+        text: "#f8f8f8",
+        iconBg: "rgba(239, 68, 68, 0.18)",
+        iconColor: "#ef4444",
       };
     }
     // info
     return {
-      bg: "rgba(59, 130, 246, 0.10)",
-      border: "rgba(59, 130, 246, 0.24)",
-      text: "#0f172a",
-      iconBg: "rgba(59, 130, 246, 0.14)",
-      iconColor: "#2563eb",
+      bg: "rgba(59, 130, 246, 0.12)",
+      border: "rgba(59, 130, 246, 0.45)",
+      text: "#f8f8f8",
+      iconBg: "rgba(59, 130, 246, 0.18)",
+      iconColor: "#3b82f6",
     };
   }, [variant]);
 
@@ -117,40 +117,61 @@ const Banner: React.FC = () => {
       <Container size="xl">
         <Alert
           radius="xl"
-          title={meta.title}
-          icon={<Icon size={18} />}
           styles={{
             root: {
               background: tone.bg,
               border: `1px solid ${tone.border}`,
-              boxShadow: "0 10px 22px rgba(0,0,0,0.08)",
+              boxShadow: "0 12px 28px rgba(0,0,0,0.28)",
+              backdropFilter: "blur(10px)",
+              padding: "16px 18px",
             },
-            icon: {
-              background: tone.iconBg,
-              color: tone.iconColor,
-              borderRadius: 999,
-              width: 34,
-              height: 34,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            },
-            title: {
-              fontWeight: 900,
-              letterSpacing: 0.2,
-              color: tone.text,
+            body: {
+              width: "100%",
             },
             message: {
-              color: tone.text,
-              opacity: 0.95,
-              fontWeight: 600,
-              lineHeight: 1.35,
+              width: "100%",
             },
           }}
         >
-          <Center>
-            <Text ta="center">{text}</Text>
-          </Center>
+          <Stack gap={8} align="center" ta="center">
+            <Group gap={10} justify="center" align="center">
+              <Center
+                style={{
+                  background: tone.iconBg,
+                  color: tone.iconColor,
+                  borderRadius: 999,
+                  width: 34,
+                  height: 34,
+                  flexShrink: 0,
+                }}
+              >
+                <Icon size={18} />
+              </Center>
+
+              <Text
+                fw={900}
+                c={tone.text}
+                style={{
+                  letterSpacing: 0.2,
+                }}
+              >
+                {meta.title}
+              </Text>
+            </Group>
+
+            <Text
+              ta="center"
+              c={tone.text}
+              fw={600}
+              lh={1.45}
+              style={{
+                opacity: 0.95,
+                maxWidth: 520,
+              }}
+            >
+              {text}
+            </Text>
+          </Stack>
         </Alert>
       </Container>
     </Box>
