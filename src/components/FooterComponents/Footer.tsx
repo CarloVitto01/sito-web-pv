@@ -79,7 +79,7 @@ const Footer = () => {
               </Text>
 
               <Anchor
-                href="mailto:pv.photoandvision@gmail.com"
+                href="mailto:info@photoandvision.it"
                 underline="never"
                 style={{ color: "#fff" }}
               >
@@ -182,10 +182,6 @@ const Footer = () => {
                   <IconPhone size={20} />
                 </ActionIcon>
               </Group>
-
-              <Anchor href="tel:+393791780539" underline="never" style={{ color: "#fff" }}>
-                <Text fw={700}>+39 379 178 0539</Text>
-              </Anchor>
 
               <Text size="xs" style={{ color: "rgba(255,255,255,.55)" }}>
                 Risposta rapida via WhatsApp / Telegram
