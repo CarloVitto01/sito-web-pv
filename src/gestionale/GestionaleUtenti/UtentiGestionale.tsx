@@ -185,7 +185,7 @@ const UtentiGestionale: React.FC = () => {
         <Stack gap="lg">
           <Group justify="space-between" align="flex-start" wrap="wrap">
             <Stack gap={4}>
-              <Title order={2}>👥 Utenti registrati</Title>
+              <Title order={2} c="white">👥 Utenti registrati</Title>
               <Text c="dimmed">
                 Filtra per ruolo, cerca rapidamente e gestisci i ruoli degli utenti.
               </Text>

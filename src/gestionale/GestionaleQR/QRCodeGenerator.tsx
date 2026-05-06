@@ -155,7 +155,7 @@ const QRCodeGenerator: React.FC = () => {
           <Stack gap="md">
             <Group justify="space-between" align="flex-end">
               <div>
-                <Title order={2}>Crea Codice QR</Title>
+                <Title order={2} c="white">Crea Codice QR</Title>
                 <Text size="sm" c="dimmed">
                   Genera QR con colori, sfondo trasparente e logo centrale. Download in PNG o PDF.
                 </Text>

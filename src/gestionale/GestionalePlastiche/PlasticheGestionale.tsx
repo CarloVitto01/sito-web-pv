@@ -1,9 +1,3 @@
-// ✅ PATCH: src/gestionale/PlasticheGestionale/PlasticheGestionale.tsx
-// - rimuove colori preimpostati (default vuoto)
-// - se doc non esiste -> crea {items: []}
-// - input HEX con color picker (tavolozza) + preview
-// - edit anche del NOME (non solo HEX)
-
 import React, { useEffect, useMemo, useState } from "react";
 import { db } from "../../backend/firebase";
 import { doc, onSnapshot, setDoc } from "firebase/firestore";
@@ -184,7 +178,7 @@ const PlasticheGestionale: React.FC = () => {
         <Stack gap="lg">
           <Group justify="space-between" align="flex-start" wrap="wrap">
             <Stack gap={4}>
-              <Title order={2}>🧩 Gestionale Plastiche (Colori)</Title>
+              <Title order={2} c="white">Gestione Plastiche</Title>
               <Text c="dimmed">Crea i colori per il picker in PdfPrintPage (A4).</Text>
             </Stack>
 
