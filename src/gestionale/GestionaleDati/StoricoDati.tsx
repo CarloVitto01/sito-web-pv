@@ -14,8 +14,40 @@ import {
 
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
-import styles from "./StoricoDati.module.css";
+
 import Header from "../../components/HeaderComponents/Header";
+
+import {
+  Badge,
+  Box,
+  Button,
+  Card,
+  Container,
+  Group,
+  Modal,
+  Paper,
+  ScrollArea,
+  SegmentedControl,
+  SimpleGrid,
+  Stack,
+  Table,
+  Text,
+  TextInput,
+  Title,
+  Tooltip,
+} from "@mantine/core";
+
+import {
+  IconArchive,
+  IconCheck,
+  IconDownload,
+  IconEdit,
+  IconRefresh,
+  IconSearch,
+  IconSnowflake,
+  IconTrash,
+  IconUsers,
+} from "@tabler/icons-react";
 
 type DettaglioRow = {
   Cliente: string;
@@ -1131,435 +1163,610 @@ const StoricoDati: React.FC = () => {
   };
 
   // ------- KPI derivati -------
+  // ------- KPI derivati -------
   const countA4 = detailA4.length;
   const countA3 = detailA3.length;
   const totalAll = (totaleA4 || 0) + (totaleA3 || 0);
   const countAll = countA4 + countA3;
 
+  const renderDetailTable = (
+    tipo: "A4" | "A3",
+    rows: DettaglioRow[],
+    docs: any[],
+    totale: number
+  ) => {
+    const headers = [
+      "Cliente",
+      "Data",
+      "Metodo",
+      "Prezzo Lordo (€)",
+      "Variazione (€)",
+      "Lordo (effettivo) (€)",
+      "Imponibile (€)",
+      "IVA (€)",
+      "Fee PayPal (€)",
+      "Trasporto (€)",
+      "Costi interni (€)",
+      "nFogli",
+      "Margine netto (€)",
+      "Congelato",
+      "Note / Azioni",
+    ];
+
+    return (
+      <Card
+        withBorder
+        radius="xl"
+        p="lg"
+        bg="rgba(255,255,255,0.04)"
+        style={{ borderColor: "rgba(255,255,255,0.10)" }}
+      >
+        <Group justify="space-between" align="flex-start" mb="md">
+          <Stack gap={4}>
+            <Title order={4} c="black">
+              Dettaglio {tipo}
+            </Title>
+            <Text size="sm" c="dimmed">
+              Anteprima economica degli ordini filtrati
+            </Text>
+          </Stack>
+
+          <Group gap="xs">
+            <Badge variant="light" color="yellow">
+              {rows.length} ordini
+            </Badge>
+            <Badge variant="filled" color="dark">
+              Totale lordo: {totale.toFixed(2)} €
+            </Badge>
+          </Group>
+        </Group>
+
+        {rows.length ? (
+          <ScrollArea h={520} offsetScrollbars scrollbarSize={8}>
+            <Table.ScrollContainer minWidth={1500}>
+              <Table
+                striped
+                highlightOnHover
+                verticalSpacing="sm"
+                horizontalSpacing="md"
+                withTableBorder
+                withColumnBorders
+                styles={{
+                  table: {
+                    background: "rgba(255,255,255,0.03)",
+                    borderColor: "rgba(255,255,255,0.10)",
+                  },
+                  th: {
+                    color: "black",
+                    background: "rgba(255,255,255,0.08)",
+                    fontSize: 12,
+                    whiteSpace: "nowrap",
+                  },
+                  td: {
+                    color: "rgba(0, 0, 0, 0.86)",
+                    fontSize: 13,
+                    whiteSpace: "nowrap",
+                  },
+                }}
+              >
+                <Table.Thead>
+                  <Table.Tr>
+                    {headers.map((h) => (
+                      <Table.Th key={h}>{h}</Table.Th>
+                    ))}
+                  </Table.Tr>
+                </Table.Thead>
+
+                <Table.Tbody>
+                  {rows.map((row, idx) => (
+                    <Table.Tr key={`${tipo}-${idx}`}>
+                      <Table.Td>{row.Cliente || "-"}</Table.Td>
+                      <Table.Td>{row.Data || "-"}</Table.Td>
+                      <Table.Td>{row.Metodo || "-"}</Table.Td>
+                      <Table.Td>{row["Prezzo Lordo (€)"]}</Table.Td>
+                      <Table.Td>{row["Variazione (€)"] || "-"}</Table.Td>
+                      <Table.Td>
+                        {row["Lordo (effettivo) (€)"] || row["Prezzo Lordo (€)"]}
+                      </Table.Td>
+                      <Table.Td>{row["Imponibile (€)"]}</Table.Td>
+                      <Table.Td>{row["IVA (€)"]}</Table.Td>
+                      <Table.Td>{row["Fee PayPal (€)"]}</Table.Td>
+                      <Table.Td>{row["Trasporto (€)"]}</Table.Td>
+                      <Table.Td>{row["Costi interni (€)"]}</Table.Td>
+                      <Table.Td>{row.nFogli || "-"}</Table.Td>
+                      <Table.Td>
+                        <Text
+                          fw={700}
+                          c={Number(row["Margine netto (€)"]) >= 0 ? "green.4" : "red.4"}
+                        >
+                          {row["Margine netto (€)"]}
+                        </Text>
+                      </Table.Td>
+                      <Table.Td>
+                        <Badge
+                          size="sm"
+                          variant="light"
+                          color={row.Congelato === "Sì" ? "green" : "gray"}
+                        >
+                          {row.Congelato || "No"}
+                        </Badge>
+                      </Table.Td>
+                      <Table.Td>
+                        <Group gap="xs" wrap="nowrap">
+                          <Text size="xs" c="dimmed" maw={220} truncate>
+                            {row.Note || "-"}
+                          </Text>
+
+                          {docs[idx]?.ref && (
+                            <Tooltip label="Modifica variazione">
+                              <Button
+                                size="xs"
+                                variant="light"
+                                color="yellow"
+                                leftSection={<IconEdit size={14} />}
+                                onClick={() => openEdit(docs[idx].ref, docs[idx].data)}
+                              >
+                                Modifica
+                              </Button>
+                            </Tooltip>
+                          )}
+                        </Group>
+                      </Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            </Table.ScrollContainer>
+          </ScrollArea>
+        ) : (
+          <Paper radius="lg" p="xl" bg="rgba(255,255,255,0.04)" ta="center">
+            <Text c="dimmed">
+              Nessun risultato {tipo}. Applica i filtri e aggiorna i risultati.
+            </Text>
+          </Paper>
+        )}
+      </Card>
+    );
+  };
+
+
   return (
-    <div className={styles.page}>
+    <Box
+      mih="100vh"
+      bg="#050505"
+      style={{
+        background:
+          "radial-gradient(circle at top left, rgba(234,179,8,0.16), transparent 34%), linear-gradient(180deg, #050505 0%, #111111 100%)",
+      }}
+    >
       <Header />
 
-      {/* Header e badge */}
-      <div className={styles.pageHeader}>
-        <div>
-          <h2 className={styles.pageTitle}>📦 Storico Dati</h2>
-          <p className={styles.pageSubtitle}>
-            Esporta, filtra, anteprima ed elimina in sicurezza (digita <code>ELIMINA</code> per confermare).
-          </p>
-        </div>
-        <div className={styles.badges}>
-          <span className={`${styles.badge} ${styles.badgeNeutral}`}>ArchivioOrdini</span>
-          <span className={`${styles.badge} ${styles.badgeGold}`}>{filtroTipo}</span>
-        </div>
-      </div>
+      <Container size="xl" py="xl">
+        <Stack gap="xl">
+          {/* Header pagina */}
+          <Group justify="space-between" align="flex-start">
+            <Stack gap={6}>
+              <Title order={2} c="white">
+                📦 Storico Dati
+              </Title>
+              <Text c="dimmed" maw={760}>
+                Esporta, filtra, visualizza anteprime economiche, congela breakdown ed elimina ordini in sicurezza.
+              </Text>
+            </Stack>
 
-      {/* KPI */}
-      <section className={styles.kpiGrid}>
-        <div className={styles.kpiCard}>
-          <div className={styles.kpiLabel}>Totale ordini</div>
-          <div className={styles.kpiValue}>{countAll}</div>
-          <div className={styles.kpiHint}>A4: {countA4} • A3: {countA3}</div>
-        </div>
-        <div className={styles.kpiCard}>
-          <div className={styles.kpiLabel}>Incassato (tutti + IVA)</div>
-          <div className={styles.kpiValue}>{totalAll.toFixed(2)} €</div>
-          <div className={styles.kpiHint}>A4: {totaleA4.toFixed(2)} € • A3: {totaleA3.toFixed(2)} €</div>
-        </div>
-        <div className={styles.kpiCard}>
-          <div className={styles.kpiLabel}>Periodo</div>
-          <div className={styles.kpiValue}>
-            {dataInizio || "inizio"} → {dataFine || "fine"}
-          </div>
-          <div className={styles.kpiHint}>{ricercaUtente ? `Utente: ${ricercaUtente}` : "Tutti gli utenti"}</div>
-        </div>
-      </section>
+            <Group gap="xs">
+              <Badge variant="light" color="gray" size="lg">
+                ArchivioOrdini
+              </Badge>
+              <Badge variant="filled" color="yellow" size="lg">
+                {filtroTipo}
+              </Badge>
+            </Group>
+          </Group>
 
-      {/* Card filtri */}
-      <section className={styles.card}>
-        <div className={styles.cardHeader}>
-          <h3 className={styles.cardTitle}>Filtri</h3>
-          <div className={styles.tabs}>
-            <button
-              className={`${styles.tab} ${filtroTipo === "Tutti" ? styles.tabActive : ""}`}
-              onClick={() => setFiltroTipo("Tutti")}
+          {/* KPI */}
+          <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
+            <Card
+              withBorder
+              radius="xl"
+              p="lg"
+              bg="rgba(255,255,255,0.04)"
+              style={{ borderColor: "rgba(255,255,255,0.10)" }}
             >
-              Tutti
-            </button>
-            <button
-              className={`${styles.tab} ${filtroTipo === "A4" ? styles.tabActive : ""}`}
-              onClick={() => setFiltroTipo("A4")}
+              <Text size="sm" c="dimmed">
+                Totale ordini
+              </Text>
+              <Title order={2} c="black" mt={6}>
+                {countAll}
+              </Title>
+              <Text size="sm" c="dimmed" mt={4}>
+                A4: {countA4} • A3: {countA3}
+              </Text>
+            </Card>
+
+            <Card
+              withBorder
+              radius="xl"
+              p="lg"
+              bg="rgba(255,255,255,0.04)"
+              style={{ borderColor: "rgba(255,255,255,0.10)" }}
             >
-              A4
-            </button>
-            <button
-              className={`${styles.tab} ${filtroTipo === "A3" ? styles.tabActive : ""}`}
-              onClick={() => setFiltroTipo("A3")}
+              <Text size="sm" c="dimmed">
+                Incassato totale
+              </Text>
+              <Title order={2} c="black" mt={6}>
+                {totalAll.toFixed(2)} €
+              </Title>
+              <Text size="sm" c="dimmed" mt={4}>
+                A4: {totaleA4.toFixed(2)} € • A3: {totaleA3.toFixed(2)} €
+              </Text>
+            </Card>
+
+            <Card
+              withBorder
+              radius="xl"
+              p="lg"
+              bg="rgba(255,255,255,0.04)"
+              style={{ borderColor: "rgba(255,255,255,0.10)" }}
             >
-              A3
-            </button>
-          </div>
-        </div>
+              <Text size="sm" c="dimmed">
+                Periodo
+              </Text>
+              <Title order={3} c="black" mt={6}>
+                {dataInizio || "inizio"} → {dataFine || "fine"}
+              </Title>
+              <Text size="sm" c="dimmed" mt={4}>
+                {ricercaUtente ? `Utente: ${ricercaUtente}` : "Tutti gli utenti"}
+              </Text>
+            </Card>
+          </SimpleGrid>
 
-        <div className={styles.filterGrid}>
-          <div className={styles.filterGroup}>
-            <label className={styles.label}>Dal</label>
-            <input
-              type="date"
-              value={dataInizio}
-              onChange={(e) => setDataInizio(e.target.value)}
-              className={styles.input}
-            />
-          </div>
-          <div className={styles.filterGroup}>
-            <label className={styles.label}>Al</label>
-            <input
-              type="date"
-              value={dataFine}
-              onChange={(e) => setDataFine(e.target.value)}
-              className={styles.input}
-            />
-          </div>
-          <div className={styles.filterGroup} style={{ gridColumn: "span 2" }}>
-            <label className={styles.label}>Cerca Utente</label>
-            <input
-              type="text"
-              placeholder="Nome, Cognome, Email, Telefono"
-              value={ricercaUtente}
-              onChange={(e) => setRicercaUtente(e.target.value)}
-              className={styles.input}
-            />
-          </div>
-        </div>
+          {/* Filtri */}
+          <Paper
+            withBorder
+            radius="xl"
+            p="lg"
+            bg="rgba(255,255,255,0.04)"
+            style={{ borderColor: "rgba(255,255,255,0.10)" }}
+          >
+            <Stack gap="lg">
+              <Group justify="space-between" align="center">
+                <Stack gap={2}>
+                  <Title order={4} c="black">
+                    Filtri
+                  </Title>
+                  <Text size="sm" c="dimmed">
+                    Seleziona periodo, utente e formato ordine.
+                  </Text>
+                </Stack>
 
-        <div className={styles.actionsRow}>
-          <div className={styles.actionsLeft}>
-            <button
-              className={styles.button}
-              onClick={generaAnteprima}
-              disabled={!configsReady}
-              title={!configsReady ? "Attendi il caricamento delle configurazioni…" : "Mostra risultati"}
-            >
-              🔍 Aggiorna risultati
-            </button>
-            <button className={styles.buttonAlt} onClick={resetFiltri}>♻️ Resetta</button>
-          </div>
-          <div className={styles.actionsRight}>
-            <button className={styles.buttonAlt} onClick={() => exportUtenti()}>📥 Esporta utenti</button>
-            <button className={styles.buttonAlt} onClick={() => exportOrdini("A4")}>📄 Esporta A4</button>
-            <button className={styles.buttonAlt} onClick={() => exportOrdini("A3")}>📄 Esporta A3</button>
-            <button
-              className={styles.buttonDanger}
-              onClick={openDeleteModal}
-              title="Elimina tutti gli ordini che corrispondono ai filtri attuali"
-            >
-              🗑️ Elimina filtrati
-            </button>
-            <button
-              className={styles.buttonAlt}
-              onClick={openFreezeModal}
-              title="Crea e salva breakdown + pricingSnapshot per gli ordini filtrati che ne sono sprovvisti"
-            >
-              ❄️ Congela ordini filtrati
-            </button>
-          </div>
-        </div>
-      </section>
+                <SegmentedControl
+                  value={filtroTipo}
+                  onChange={(value) => setFiltroTipo(value)}
+                  data={[
+                    { label: "Tutti", value: "Tutti" },
+                    { label: "A4", value: "A4" },
+                    { label: "A3", value: "A3" },
+                  ]}
+                />
+              </Group>
 
-      {/* RISULTATI: tabella DETTAGLIO */}
-      <section className={styles.resultsGrid}>
-        {(filtroTipo === "Tutti" || filtroTipo === "A4") && (
-          <div className={styles.resultCard}>
-            <div className={styles.resultHeader}>
-              <h4 className={styles.resultTitle}>Dettaglio A4</h4>
-              <div className={styles.resultMeta}>
-                <span className={`${styles.badge} ${styles.badgeGold}`}>{detailA4.length}</span>
-                <span className={styles.totalChip}>Totale lordo: {totaleA4.toFixed(2)} €</span>
-              </div>
-            </div>
+              <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="md">
+                <TextInput
+                  label="Dal"
+                  type="date"
+                  value={dataInizio}
+                  onChange={(e) => setDataInizio(e.currentTarget.value)}
+                  styles={{
+                    label: { color: "black" },
+                    input: {
+                      background: "rgba(255,255,255,0.06)",
+                      color: "black",
+                      borderColor: "rgba(255,255,255,0.16)",
+                    },
+                  }}
+                />
 
-            <div className={styles.tableScroll}>
-              {detailA4.length ? (
-                <div className={styles.table}>
-                  <div className={`${styles.tr} ${styles.thRow}`}>
-                    <div className={styles.th}>Cliente</div>
-                    <div className={styles.th}>Data</div>
-                    <div className={styles.th}>Metodo</div>
-                    <div className={styles.th}>Prezzo Lordo (€)</div>
-                    <div className={styles.th}>Variazione (€)</div>
-                    <div className={styles.th}>Lordo (effettivo) (€)</div>
-                    <div className={styles.th}>Imponibile (€)</div>
-                    <div className={styles.th}>IVA (€)</div>
-                    <div className={styles.th}>Fee PayPal (€)</div>
-                    <div className={styles.th}>Trasporto (€)</div>
-                    <div className={styles.th}>Costi interni (€)</div>
-                    <div className={styles.th}>nFogli</div>
-                    <div className={styles.th}>Margine netto (€)</div>
-                    <div className={styles.th}>Congelato</div>
-                    <div className={styles.th}>Note / Azioni</div>
-                  </div>
+                <TextInput
+                  label="Al"
+                  type="date"
+                  value={dataFine}
+                  onChange={(e) => setDataFine(e.currentTarget.value)}
+                  styles={{
+                    label: { color: "black" },
+                    input: {
+                      background: "rgba(255,255,255,0.06)",
+                      color: "black",
+                      borderColor: "rgba(255,255,255,0.16)",
+                    },
+                  }}
+                />
 
-                  {detailA4.map((row, idx) => (
-                    <div key={idx} className={styles.tr}>
-                      <div className={styles.td} data-label="Cliente">{row.Cliente}</div>
-                      <div className={styles.td} data-label="Data">{row.Data}</div>
-                      <div className={styles.td} data-label="Metodo">{row.Metodo}</div>
-                      <div className={styles.td} data-label="Prezzo Lordo (€)">{row["Prezzo Lordo (€)"]}</div>
-                      <div className={styles.td} data-label="Variazione (€)">{row["Variazione (€)"] || ""}</div>
-                      <div className={styles.td} data-label="Lordo (effettivo) (€)">{row["Lordo (effettivo) (€)"] || row["Prezzo Lordo (€)"]}</div>
-                      <div className={styles.td} data-label="Imponibile (€)">{row["Imponibile (€)"]}</div>
-                      <div className={styles.td} data-label="IVA (€)">{row["IVA (€)"]}</div>
-                      <div className={styles.td} data-label="Fee PayPal (€)">{row["Fee PayPal (€)"]}</div>
-                      <div className={styles.td} data-label="Trasporto (€)">{row["Trasporto (€)"]}</div>
-                      <div className={styles.td} data-label="Costi interni (€)">{row["Costi interni (€)"]}</div>
-                      <div className={styles.td} data-label="nFogli">{row.nFogli}</div>
-                      <div className={styles.td} data-label="Margine netto (€)">{row["Margine netto (€)"]}</div>
-                      <div className={styles.td} data-label="Congelato">{row.Congelato || "No"}</div>
-                      <div className={styles.td} data-label="Note / Azioni">
-                        <span>{row.Note}</span>
-                        {docsA4[idx]?.ref && (
-                          <button
-                            className={styles.buttonAlt}
-                            title="Modifica variazione"
-                            onClick={() => openEdit(docsA4[idx].ref, docsA4[idx].data)}
-                          >
-                            ✏️ Modifica
-                          </button>
-                        )}
-                      </div>                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className={styles.emptyState}>
-                  Nessun risultato A4. Applica i filtri e premi “Mostra risultati”.
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+                <Box style={{ gridColumn: "span 2" }}>
+                  <TextInput
+                    label="Cerca utente"
+                    placeholder="Nome, cognome, email, telefono"
+                    value={ricercaUtente}
+                    onChange={(e) => setRicercaUtente(e.currentTarget.value)}
+                    styles={{
+                      label: { color: "black" },
+                      input: {
+                        background: "rgba(255,255,255,0.06)",
+                        color: "black",
+                        borderColor: "rgba(255,255,255,0.16)",
+                      },
+                    }}
+                  />
+                </Box>
+              </SimpleGrid>
 
-        {(filtroTipo === "Tutti" || filtroTipo === "A3") && (
-          <div className={styles.resultCard}>
-            <div className={styles.resultHeader}>
-              <h4 className={styles.resultTitle}>Dettaglio A3</h4>
-              <div className={styles.resultMeta}>
-                <span className={`${styles.badge} ${styles.badgeGold}`}>{detailA3.length}</span>
-                <span className={styles.totalChip}>Totale lordo: {totaleA3.toFixed(2)} €</span>
-              </div>
-            </div>
+              <Group justify="space-between" align="center">
+                <Group>
+                  <Button
+                    leftSection={<IconSearch size={16} />}
+                    onClick={generaAnteprima}
+                    disabled={!configsReady}
+                    title={!configsReady ? "Attendi il caricamento delle configurazioni…" : "Aggiorna risultati"}
+                  >
+                    Aggiorna risultati
+                  </Button>
 
-            <div className={styles.tableScroll}>
-              {detailA3.length ? (
-                <div className={styles.table}>
-                  <div className={`${styles.tr} ${styles.thRow}`}>
-                    <div className={styles.th}>Cliente</div>
-                    <div className={styles.th}>Data</div>
-                    <div className={styles.th}>Metodo</div>
-                    <div className={styles.th}>Prezzo Lordo (€)</div>
-                    <div className={styles.th}>Variazione (€)</div>
-                    <div className={styles.th}>Lordo (effettivo) (€)</div>
-                    <div className={styles.th}>Imponibile (€)</div>
-                    <div className={styles.th}>IVA (€)</div>
-                    <div className={styles.th}>Fee PayPal (€)</div>
-                    <div className={styles.th}>Trasporto (€)</div>
-                    <div className={styles.th}>Costi interni (€)</div>
-                    <div className={styles.th}>nFogli</div>
-                    <div className={styles.th}>Margine netto (€)</div>
-                    <div className={styles.th}>Congelato</div>
-                    <div className={styles.th}>Note / Azioni</div>
-                  </div>
+                  <Button
+                    variant="light"
+                    color="gray"
+                    leftSection={<IconRefresh size={16} />}
+                    onClick={resetFiltri}
+                  >
+                    Resetta
+                  </Button>
+                </Group>
 
-                  {detailA3.map((row, idx) => (
-                    <div key={idx} className={styles.tr}>
-                      <div className={styles.td} data-label="Cliente">{row.Cliente}</div>
-                      <div className={styles.td} data-label="Data">{row.Data}</div>
-                      <div className={styles.td} data-label="Metodo">{row.Metodo}</div>
-                      <div className={styles.td} data-label="Prezzo Lordo (€)">{row["Prezzo Lordo (€)"]}</div>
-                      <div className={styles.td} data-label="Variazione (€)">{row["Variazione (€)"] || ""}</div>
-                      <div className={styles.td} data-label="Lordo (effettivo) (€)">{row["Lordo (effettivo) (€)"] || row["Prezzo Lordo (€)"]}</div>
-                      <div className={styles.td} data-label="Imponibile (€)">{row["Imponibile (€)"]}</div>
-                      <div className={styles.td} data-label="IVA (€)">{row["IVA (€)"]}</div>
-                      <div className={styles.td} data-label="Fee PayPal (€)">{row["Fee PayPal (€)"]}</div>
-                      <div className={styles.td} data-label="Trasporto (€)">{row["Trasporto (€)"]}</div>
-                      <div className={styles.td} data-label="Costi interni (€)">{row["Costi interni (€)"]}</div>
-                      <div className={styles.td} data-label="nFogli">{row.nFogli}</div>
-                      <div className={styles.td} data-label="Margine netto (€)">{row["Margine netto (€)"]}</div>
-                      <div className={styles.td} data-label="Congelato">{row.Congelato || "No"}</div>
-                      <div className={styles.td} data-label="Note / Azioni">
-                        <span>{row.Note}</span>
-                        {docsA3[idx]?.ref && (
-                          <button
-                            className={styles.buttonAlt}
-                            title="Modifica variazione"
-                            onClick={() => openEdit(docsA3[idx].ref, docsA3[idx].data)}
-                          >
-                            ✏️ Modifica
-                          </button>
-                        )}
-                      </div>                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className={styles.emptyState}>
-                  Nessun risultato A3. Applica i filtri e premi “Mostra risultati”.
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </section>
+                <Group>
+                  <Button
+                    variant="light"
+                    color="blue"
+                    leftSection={<IconUsers size={16} />}
+                    onClick={exportUtenti}
+                  >
+                    Esporta utenti
+                  </Button>
+
+                  <Button
+                    variant="light"
+                    color="yellow"
+                    leftSection={<IconDownload size={16} />}
+                    onClick={() => exportOrdini("A4")}
+                  >
+                    Esporta A4
+                  </Button>
+
+                  <Button
+                    variant="light"
+                    color="yellow"
+                    leftSection={<IconDownload size={16} />}
+                    onClick={() => exportOrdini("A3")}
+                  >
+                    Esporta A3
+                  </Button>
+
+                  <Button
+                    variant="light"
+                    color="cyan"
+                    leftSection={<IconSnowflake size={16} />}
+                    onClick={openFreezeModal}
+                  >
+                    Congela filtrati
+                  </Button>
+
+                  <Button
+                    color="red"
+                    leftSection={<IconTrash size={16} />}
+                    onClick={openDeleteModal}
+                  >
+                    Elimina filtrati
+                  </Button>
+                </Group>
+              </Group>
+            </Stack>
+          </Paper>
+
+          {/* Risultati */}
+          <Stack gap="lg">
+            {(filtroTipo === "Tutti" || filtroTipo === "A4") &&
+              renderDetailTable("A4", detailA4, docsA4, totaleA4)}
+
+            {(filtroTipo === "Tutti" || filtroTipo === "A3") &&
+              renderDetailTable("A3", detailA3, docsA3, totaleA3)}
+          </Stack>
+        </Stack>
+      </Container>
 
       {/* Modal eliminazione */}
-      {showDeleteModal && (
-        <div className={styles.modalOverlay} onClick={() => setShowDeleteModal(false)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h3 className={styles.modalTitle}>Conferma Eliminazione</h3>
-            <p className={styles.modalText}>
-              Verranno eliminati <strong>{deleteSummary.count}</strong> documenti da <code>ArchivioOrdini</code>
-              {filtroTipo !== "Tutti" ? <> (tipo: <strong>{filtroTipo}</strong>)</> : null}
-              {dataInizio || dataFine ? <> nel periodo <strong>{dataInizio || "inizio"}</strong> — <strong>{dataFine || "fine"}</strong></> : null}
-              {ricercaUtente ? <> per utente: <strong>{ricercaUtente}</strong></> : null}.
-            </p>
-            <p className={styles.modalText}>
-              Totale economico coinvolto: <strong>{deleteSummary.total.toFixed(2)} €</strong>
-            </p>
-            <p className={styles.modalWarn}>Azione IRREVERSIBILE. Per confermare, digita "ELIMINA":</p>
-            <input
-              className={styles.modalInput}
-              placeholder='Scrivi "ELIMINA"'
-              value={confirmDeleteText}
-              onChange={(e) => setConfirmDeleteText(e.target.value)}
-            />
-            <div className={styles.modalActions}>
-              <button className={styles.buttonAlt} onClick={() => setShowDeleteModal(false)}>Annulla</button>
-              <button
-                className={styles.buttonDanger}
-                onClick={confirmDelete}
-                disabled={confirmDeleteText.trim().toUpperCase() !== "ELIMINA"}
-                title='Digita "ELIMINA" per abilitare'
-              >
-                Conferma Eliminazione
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Modal
+        opened={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Conferma eliminazione"
+        centered
+        radius="lg"
+      >
+        <Stack>
+          <Text>
+            Verranno eliminati <strong>{deleteSummary.count}</strong> documenti da{" "}
+            <code>ArchivioOrdini</code>.
+          </Text>
+
+          <Text>
+            Totale economico coinvolto: <strong>{deleteSummary.total.toFixed(2)} €</strong>
+          </Text>
+
+          <Text c="red" fw={700}>
+            Azione irreversibile. Per confermare, digita ELIMINA.
+          </Text>
+
+          <TextInput
+            placeholder='Scrivi "ELIMINA"'
+            value={confirmDeleteText}
+            onChange={(e) => setConfirmDeleteText(e.currentTarget.value)}
+          />
+
+          <Group justify="flex-end">
+            <Button variant="light" color="gray" onClick={() => setShowDeleteModal(false)}>
+              Annulla
+            </Button>
+
+            <Button
+              color="red"
+              leftSection={<IconTrash size={16} />}
+              onClick={confirmDelete}
+              disabled={confirmDeleteText.trim().toUpperCase() !== "ELIMINA"}
+            >
+              Conferma eliminazione
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
       {/* Modal congelamento */}
-      {showFreezeModal && (
-        <div className={styles.modalOverlay} onClick={() => !freezing && setShowFreezeModal(false)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h3 className={styles.modalTitle}>Conferma Congelamento</h3>
-            <p className={styles.modalText}>
-              Verranno <strong>congelati</strong> <strong>{freezeSummary.count}</strong> documenti in <code>ArchivioOrdini</code>
-              {filtroTipo !== "Tutti" ? <> (tipo: <strong>{filtroTipo}</strong>)</> : null}
-              {dataInizio || dataFine ? <> nel periodo <strong>{dataInizio || "inizio"}</strong> — <strong>{dataFine || "fine"}</strong></> : null}
-              {ricercaUtente ? <> per utente: <strong>{ricercaUtente}</strong></> : null}.
-            </p>
-            <p className={styles.modalText}>
-              Totale lordo stimato coinvolto: <strong>{freezeSummary.total.toFixed(2)} €</strong>
-            </p>
-            <p className={styles.modalWarn}>
-              L’operazione scriverà <code>pricingSnapshot</code> e <code>breakdown</code> negli ordini selezionati. L’azione è idempotente: gli ordini già congelati verranno ignorati.
-            </p>
-            <div className={styles.modalActions}>
-              <button className={styles.buttonAlt} onClick={() => !freezing && setShowFreezeModal(false)} disabled={freezing}>
-                Annulla
-              </button>
-              <button
-                className={styles.buttonDanger}
-                onClick={confirmFreeze}
-                disabled={freezing || freezeItems.length === 0}
-                title={freezeItems.length === 0 ? "Nessun ordine da congelare" : "Conferma"}
-              >
-                {freezing ? "Sto congelando..." : "Conferma Congelamento"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Modal
+        opened={showFreezeModal}
+        onClose={() => !freezing && setShowFreezeModal(false)}
+        title="Conferma congelamento"
+        centered
+        radius="lg"
+      >
+        <Stack>
+          <Text>
+            Verranno congelati <strong>{freezeSummary.count}</strong> documenti in{" "}
+            <code>ArchivioOrdini</code>.
+          </Text>
+
+          <Text>
+            Totale lordo stimato coinvolto: <strong>{freezeSummary.total.toFixed(2)} €</strong>
+          </Text>
+
+          <Text c="dimmed">
+            L’operazione scriverà <code>pricingSnapshot</code> e <code>breakdown</code>. Gli ordini già
+            congelati verranno ignorati.
+          </Text>
+
+          <Group justify="flex-end">
+            <Button
+              variant="light"
+              color="gray"
+              onClick={() => !freezing && setShowFreezeModal(false)}
+              disabled={freezing}
+            >
+              Annulla
+            </Button>
+
+            <Button
+              color="cyan"
+              leftSection={<IconSnowflake size={16} />}
+              onClick={confirmFreeze}
+              disabled={freezing || freezeItems.length === 0}
+              loading={freezing}
+            >
+              Conferma congelamento
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
       {/* Modal successo congelamento */}
-      {showFreezeSuccess && (
-        <div className={styles.modalOverlay} onClick={() => setShowFreezeSuccess(false)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h3 className={styles.modalTitle}>✅ Congelamento completato</h3>
-            <p className={styles.modalText}>
-              Sono stati congelati <strong>{freezeSuccessInfo.count}</strong> ordini.
-            </p>
-            <p className={styles.modalText}>
-              Totale lordo coinvolto: <strong>{freezeSuccessInfo.total.toFixed(2)} €</strong>
-            </p>
-            <div className={styles.modalActions}>
-              <button className={styles.button} onClick={() => setShowFreezeSuccess(false)}>
-                Ok
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Modal
+        opened={showFreezeSuccess}
+        onClose={() => setShowFreezeSuccess(false)}
+        title="Congelamento completato"
+        centered
+        radius="lg"
+      >
+        <Stack>
+          <Text>
+            Sono stati congelati <strong>{freezeSuccessInfo.count}</strong> ordini.
+          </Text>
+
+          <Text>
+            Totale lordo coinvolto: <strong>{freezeSuccessInfo.total.toFixed(2)} €</strong>
+          </Text>
+
+          <Group justify="flex-end">
+            <Button leftSection={<IconCheck size={16} />} onClick={() => setShowFreezeSuccess(false)}>
+              Ok
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
       {/* Modal successo eliminazione */}
-      {showDeleteSuccess && (
-        <div className={styles.modalOverlay} onClick={() => setShowDeleteSuccess(false)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h3 className={styles.modalTitle}>🗑️ Eliminazione completata</h3>
-            <p className={styles.modalText}>
-              Sono stati eliminati <strong>{deleteSuccessInfo.count}</strong> documenti.
-            </p>
-            <p className={styles.modalText}>
-              Totale lordo coinvolto: <strong>{deleteSuccessInfo.total.toFixed(2)} €</strong>
-            </p>
-            <div className={styles.modalActions}>
-              <button className={styles.button} onClick={() => setShowDeleteSuccess(false)}>
-                Ok
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Modal
+        opened={showDeleteSuccess}
+        onClose={() => setShowDeleteSuccess(false)}
+        title="Eliminazione completata"
+        centered
+        radius="lg"
+      >
+        <Stack>
+          <Text>
+            Sono stati eliminati <strong>{deleteSuccessInfo.count}</strong> documenti.
+          </Text>
+
+          <Text>
+            Totale lordo coinvolto: <strong>{deleteSuccessInfo.total.toFixed(2)} €</strong>
+          </Text>
+
+          <Group justify="flex-end">
+            <Button leftSection={<IconCheck size={16} />} onClick={() => setShowDeleteSuccess(false)}>
+              Ok
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
 
       {/* Modal modifica variazione */}
-      {showEditModal && (
-        <div className={styles.modalOverlay} onClick={() => setShowEditModal(false)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h3 className={styles.modalTitle}>✏️ Modifica variazione importo</h3>
-            <p className={styles.modalText}>
-              Imposta una <strong>Variazione (€)</strong> (positiva o negativa). Questa cifra viene
-              sommata al <em>Prezzo Lordo</em> per ottenere il <em>Lordo effettivo</em> e incide direttamente sul
-              margine (non ricalcola IVA/fee).
-            </p>
+      <Modal
+        opened={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        title="Modifica variazione importo"
+        centered
+        radius="lg"
+        size="lg"
+      >
+        <Stack>
+          <Text c="dimmed">
+            Imposta una variazione positiva o negativa. Verrà sommata al Prezzo Lordo per ottenere
+            il Lordo effettivo e inciderà sul margine, senza ricalcolare IVA o fee.
+          </Text>
 
-            <div style={{ display: "grid", gap: 10, gridTemplateColumns: "1fr 1fr" }}>
-              <div className={styles.filterGroup}>
-                <label className={styles.label}>Variazione (€)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  className={styles.input}
-                  value={editDelta}
-                  onChange={(e) => setEditDelta(e.target.value)}
-                  placeholder="es. -2.50 o 3.00"
-                />
-              </div>
-              <div className={styles.filterGroup}>
-                <label className={styles.label}>Motivo (opzionale)</label>
-                <input
-                  type="text"
-                  className={styles.input}
-                  value={editReason}
-                  onChange={(e) => setEditReason(e.target.value)}
-                  placeholder="sconto, integrazione, arrotondamento…"
-                />
-              </div>
-            </div>
+          <SimpleGrid cols={{ base: 1, sm: 2 }}>
+            <TextInput
+              label="Variazione (€)"
+              type="number"
+              step="0.01"
+              value={editDelta}
+              onChange={(e) => setEditDelta(e.currentTarget.value)}
+              placeholder="es. -2.50 o 3.00"
+            />
 
-            <div className={styles.modalActions}>
-              <button className={styles.buttonAlt} onClick={() => setShowEditModal(false)}>Annulla</button>
-              <button className={styles.button} onClick={saveEdit}>Salva</button>
-            </div>
-          </div>
-        </div>
-      )}
+            <TextInput
+              label="Motivo"
+              value={editReason}
+              onChange={(e) => setEditReason(e.currentTarget.value)}
+              placeholder="sconto, integrazione, arrotondamento…"
+            />
+          </SimpleGrid>
 
-    </div>
+          <Group justify="flex-end">
+            <Button variant="light" color="gray" onClick={() => setShowEditModal(false)}>
+              Annulla
+            </Button>
+
+            <Button leftSection={<IconArchive size={16} />} onClick={saveEdit}>
+              Salva
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+    </Box>
   );
 };
 

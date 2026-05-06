@@ -123,7 +123,7 @@ const TasseGestionale: React.FC = () => {
         <Stack gap="lg">
           <Group justify="space-between" align="flex-start" wrap="wrap">
             <Stack gap={4}>
-              <Title order={2}>🧮 Gestionale Tasse</Title>
+              <Title order={2} c="white">🧮 Gestione Tasse</Title>
               <Text c="dimmed">
                 Configura IVA, trasporto e commissioni PayPal. I valori percentuali vengono salvati in forma decimale.
               </Text>

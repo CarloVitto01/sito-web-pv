@@ -361,7 +361,7 @@ const ScontiGestionale: React.FC = () => {
       <Container size="md" py="xl">
         <Group justify="space-between" align="flex-start" wrap="wrap" mb="lg">
           <Box>
-            <Title order={2}>🏷️ Gestione Sconti / Promo</Title>
+            <Title order={2} c="white">🏷️ Gestione Sconti / Promo</Title>
             <Text c="dimmed">
               Configura lo sconto generale e lo sconto aggiuntivo per facoltà/corso.
             </Text>
