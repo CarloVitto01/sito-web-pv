@@ -1,7 +1,7 @@
 // Client HTTP verso il backend proprietario (sostituisce Firebase: niente Firestore/Auth/Storage SDK).
 // Gestisce base URL, header di autenticazione JWT e il refresh automatico del token scaduto.
 
-const API_BASE = (process.env.REACT_APP_API_BASE_URL || "http://localhost:8080").replace(/\/$/, "");
+const API_BASE = (import.meta.env.REACT_APP_API_BASE_URL || "http://localhost:8080").replace(/\/$/, "");
 
 const ACCESS_TOKEN_KEY = "pv_access_token";
 const REFRESH_TOKEN_KEY = "pv_refresh_token";
@@ -32,7 +32,7 @@ export function setTokens(accessToken: string | null, refreshToken: string | nul
 
 let refreshPromise: Promise<boolean> | null = null;
 
-async function tryRefresh(): Promise<boolean> {
+export async function tryRefresh(): Promise<boolean> {
   const refreshToken = getRefreshToken();
   if (!refreshToken) return false;
 
@@ -119,11 +119,12 @@ export function apiFileDownloadUrl(orderFileId: number | string): string {
  * Scarica/apre un file protetto da JWT (es. i PDF di un ordine): un semplice <a href> non funzionerebbe
  * perche' il download richiede l'header Authorization, che il browser non allega alle navigazioni dirette.
  */
-export async function openAuthedFile(path: string, filename?: string): Promise<void> {
+export async function openAuthedFile(path: string, filename?: string, isRetry = false): Promise<void> {
   const token = getAccessToken();
   const res = await fetch(`${API_BASE}${path}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
+  if (res.status === 401 && !isRetry && await tryRefresh()) return openAuthedFile(path, filename, true);
   if (!res.ok) throw new ApiError(res.status, res.statusText);
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);

@@ -1,3 +1,4 @@
+import "../../setupPdfWorker";
 // src/pages/MultiInputComponents/MultiInput.tsx
 import React from "react";
 import { Document, Page, pdfjs } from "react-pdf";
@@ -23,9 +24,6 @@ import { IconUpload, IconTrash, IconChevronLeft, IconChevronRight } from "@table
 import type { FileHandler } from "../../types/FileHandler";
 import Loading from "../LoadingComponents/Loading";
 
-// ✅ Vite worker
-pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
-
 const MAX_FILE_SIZE = 300 * 1024 * 1024; // 300MB: oltre l'upload a chunk gestisce comunque il trasferimento,
 // ma un limite esplicito evita di far scegliere per sbaglio un file enorme senza nessun avviso
 
@@ -33,7 +31,12 @@ interface PropsContainer {
   onSendData: (value: FileHandler[], totalPages: number) => void;
 }
 
-const MultiInput: React.FC<PropsContainer> = ({ onSendData }) => {
+/** Metodo esposto al genitore per aggiungere file "dall'esterno" (es. drag&drop su tutta la pagina). */
+export type MultiInputHandle = {
+  addFiles: (files: File[]) => void;
+};
+
+const MultiInput = React.forwardRef<MultiInputHandle, PropsContainer>(({ onSendData }, ref) => {
   const theme = useMantineTheme();
   const isMobile = useMediaQuery("(max-width: 520px)");
 
@@ -66,6 +69,33 @@ const MultiInput: React.FC<PropsContainer> = ({ onSendData }) => {
   const onReject = () => {
     setRejectMessage("Uno o più file superano i 300MB oppure non sono PDF validi.");
   };
+
+  // stessa validazione della Dropzone (tipo PDF + dimensione), per i file aggiunti da fuori
+  // (es. drop ovunque sulla pagina): così anche quel percorso scarta ciò che non è un PDF valido
+  const addFiles = React.useCallback((incoming: File[]) => {
+    if (!incoming?.length) return;
+    const accepted: File[] = [];
+    let hasRejected = false;
+
+    for (const f of incoming) {
+      const isPdf = f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf");
+      if (isPdf && f.size <= MAX_FILE_SIZE) {
+        accepted.push(f);
+      } else {
+        hasRejected = true;
+      }
+    }
+
+    if (accepted.length) {
+      setRejectMessage("");
+      setFiles((prev) => [...prev, ...accepted]);
+    }
+    if (hasRejected) {
+      setRejectMessage("Uno o più file superano i 300MB oppure non sono PDF validi.");
+    }
+  }, []);
+
+  React.useImperativeHandle(ref, () => ({ addFiles }), [addFiles]);
 
   const onDocLoad = (index: number, pages: number) => {
     setNumPages((prev) => {
@@ -313,6 +343,6 @@ const MultiInput: React.FC<PropsContainer> = ({ onSendData }) => {
       </Modal>
     </Card>
   );
-};
+});
 
 export default React.memo(MultiInput);

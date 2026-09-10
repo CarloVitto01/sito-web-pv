@@ -1,0 +1,23 @@
+# Profilo di sviluppo/test locale: PostgreSQL (stesso motore usato in produzione).
+# Va installato e avviato un server Postgres locale (vedi README per le istruzioni), con un database e un
+# utente dedicati: di seguito i valori di default per un setup locale minimo (sovrascrivibili con le stesse
+# variabili d'ambiente usate dal profilo prod: DB_URL, DB_USERNAME, DB_PASSWORD).
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://192.168.1.201:55440/pvstampe_db}
+    driver-class-name: org.postgresql.Driver
+    username: ${DB_USERNAME:pv_stampe_user}
+    password: ${DB_PASSWORD}
+
+logging:
+  level:
+    it.pv.payments: DEBUG
+
+# ==== Storage PDF: salva sul NAS anche in locale, cosi' il quadro e' lo stesso della produzione ====
+# (il temp-dir dei chunk in upload resta locale: sono file transitori cancellati subito dopo l'assemblaggio)
+# NOTA: qui il backend gira "nudo" (mvn spring-boot:run, senza Docker), quindi serve il percorso reale del
+# NAS cosi' come visto da questa macchina. In produzione (dentro un container, come per ct-store) si usa invece
+# /app/pv-stampe montato come volume Docker sul NAS: vedi application-prod.yml.
+app:
+  storage:
+    base-dir: ${STORAGE_BASE_DIR:/mnt/nas/pv-stampe}

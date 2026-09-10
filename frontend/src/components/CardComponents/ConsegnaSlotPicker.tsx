@@ -124,7 +124,7 @@ export default function ConsegnaSlotPicker({
                       <Button
                         key={slot.id}
                         variant={selected ? "light" : "default"}
-                        color={selected ? "yellow" : "gray"}
+                        color={selected ? "gold" : "gray"}
                         onClick={() => onChange(slot.id)}
                         disabled={disabled}
                         styles={{ inner: { justifyContent: "space-between" } }}

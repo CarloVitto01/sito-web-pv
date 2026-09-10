@@ -1,0 +1,25 @@
+services:
+  sito-web-pv-frontend:
+    container_name: sito-web-pv-frontend
+    build:
+      context: ./frontend
+      args:
+        REACT_APP_API_BASE_URL: https://api.photoandvision.it
+    ports:
+      - "8099:80"
+    restart: unless-stopped
+  sito-web-pv-backend:
+    container_name: sito-web-pv-backend
+    build:
+      context: ./backend
+    ports:
+      - "8098:8098"
+    env_file:
+      - ./backend/.env
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: 8098
+      STORAGE_BASE_DIR: /app/pv-stampe
+    restart: unless-stopped
+    volumes:
+      - /mnt/web/pv-stampe:/app/pv-stampe

@@ -11,9 +11,12 @@ import {
 
 interface PropsContainer {
   onSendData: (value: number) => void;
+  hideTitle?: boolean;
+  /** Se true, non disegna la Card esterna (bordo/ombra): per essere annidato in un pannello padre. */
+  bare?: boolean;
 }
 
-const NumeroCopie: React.FC<PropsContainer> = ({ onSendData }) => {
+const NumeroCopie: React.FC<PropsContainer> = ({ onSendData, hideTitle = false, bare = false }) => {
   const theme = useMantineTheme();
   const [copies, setCopies] = React.useState<number>(1);
 
@@ -22,6 +25,27 @@ const NumeroCopie: React.FC<PropsContainer> = ({ onSendData }) => {
     setCopies(next);
     onSendData(next);
   };
+
+  const input = (
+    <NumberInput
+      value={copies}
+      onChange={handleChange}
+      min={1}
+      step={1}
+      allowDecimal={false}
+      clampBehavior="strict"
+      size="md"
+      styles={{
+        input: {
+          fontWeight: 800,
+          textAlign: "center",
+          fontSize: 16,
+        },
+      }}
+    />
+  );
+
+  if (bare) return input;
 
   return (
     <Card
@@ -34,42 +58,27 @@ const NumeroCopie: React.FC<PropsContainer> = ({ onSendData }) => {
         boxShadow: theme.shadows.sm,
       }}
     >
-      <Group justify="space-between" align="baseline" mb="sm">
-        <Text
-          fw={900}
-          tt="uppercase"
-          style={{
-            letterSpacing: 0.3,
-            fontSize: 13,
-            color: theme.colors.dark[7],
-          }}
-        >
-          Numero copie
-        </Text>
+      {!hideTitle && (
+        <Group justify="space-between" align="baseline" mb="sm">
+          <Text
+            fw={900}
+            tt="uppercase"
+            style={{
+              letterSpacing: 0.3,
+              fontSize: 13,
+              color: theme.colors.dark[7],
+            }}
+          >
+            Numero copie
+          </Text>
 
-        <Text size="xs" fw={700} c="dimmed">
-          minimo 1
-        </Text>
-      </Group>
+          <Text size="xs" fw={700} c="dimmed">
+            minimo 1
+          </Text>
+        </Group>
+      )}
 
-      <Stack gap="xs">
-        <NumberInput
-          value={copies}
-          onChange={handleChange}
-          min={1}
-          step={1}
-          allowDecimal={false}
-          clampBehavior="strict"
-          size="md"
-          styles={{
-            input: {
-              fontWeight: 800,
-              textAlign: "center",
-              fontSize: 16,
-            },
-          }}
-        />
-      </Stack>
+      <Stack gap="xs">{input}</Stack>
     </Card>
   );
 };

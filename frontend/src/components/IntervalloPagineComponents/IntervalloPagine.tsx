@@ -18,13 +18,16 @@ type Props = {
   maxValue: number;
   disable: boolean;
   errorMessage: string;
+  hideTitle?: boolean;
+  /** Se true, non disegna la Card esterna (bordo/ombra): per essere annidato in un pannello padre. */
+  bare?: boolean;
 };
 
 type Mode = "ALL" | "CUSTOM";
 
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
 
-const IntervalloPagine: React.FC<Props> = ({ onSendData, maxValue, disable, errorMessage }) => {
+const IntervalloPagine: React.FC<Props> = ({ onSendData, maxValue, disable, errorMessage, hideTitle = false, bare = false }) => {
   const theme = useMantineTheme();
 
   const max = React.useMemo(() => (maxValue && maxValue >= 1 ? maxValue : 1), [maxValue]);
@@ -88,27 +91,19 @@ const IntervalloPagine: React.FC<Props> = ({ onSendData, maxValue, disable, erro
   const surfaceBg = theme.white;
   const borderBase = theme.colors.gray[3];
 
-  return (
-    <Card
-      withBorder
-      radius="lg"
-      p="md"
-      style={{
-        background: surfaceBg,
-        borderColor: borderBase,
-        boxShadow: theme.shadows.sm,
-        opacity: disable ? 0.6 : 1,
-      }}
-    >
-      <Group justify="space-between" align="baseline" mb="sm">
-        <Text fw={900} style={{ letterSpacing: 0.2 }}>
-          Intervallo pagine
-        </Text>
+  const body = (
+    <>
+      {!hideTitle && (
+        <Group justify="space-between" align="baseline" mb="sm">
+          <Text fw={900} style={{ letterSpacing: 0.2 }}>
+            Intervallo pagine
+          </Text>
 
-        <Badge variant="light" color="gray">
-          max {max}
-        </Badge>
-      </Group>
+          <Badge variant="light" color="gray">
+            max {max}
+          </Badge>
+        </Group>
+      )}
 
       {disable ? (
         <Alert icon={<IconAlertTriangle size={16} />} color="gray" variant="light">
@@ -133,10 +128,10 @@ const IntervalloPagine: React.FC<Props> = ({ onSendData, maxValue, disable, erro
             },
             indicator: {
               background: theme.white,
-              border: `1px solid ${theme.colors.yellow[6]}`,
+              border: `1px solid ${theme.colors.gold[6]}`,
               boxShadow: theme.shadows.xs,
             },
-            label: { paddingTop: 10, paddingBottom: 10, fontWeight: 800 },
+            label: { paddingTop: 8, paddingBottom: 8, fontWeight: 800, fontSize: 13 },
           }}
         />
 
@@ -182,6 +177,24 @@ const IntervalloPagine: React.FC<Props> = ({ onSendData, maxValue, disable, erro
           </Group>
         ) : null}
       </Stack>
+    </>
+  );
+
+  if (bare) return body;
+
+  return (
+    <Card
+      withBorder
+      radius="lg"
+      p="md"
+      style={{
+        background: surfaceBg,
+        borderColor: borderBase,
+        boxShadow: theme.shadows.sm,
+        opacity: disable ? 0.6 : 1,
+      }}
+    >
+      {body}
     </Card>
   );
 };

@@ -1,4 +1,4 @@
-import { api } from "../backend/apiClient";
+import { api, ApiError } from "../backend/apiClient";
 
 const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB: un chunk che fallisce si ripete da solo, non l'intero file
 const MAX_RETRIES_PER_CHUNK = 3;
@@ -32,7 +32,9 @@ async function uploadChunkWithRetry(sessionId: string, index: number, chunk: Blo
   try {
     await api.putRaw(`/api/files/upload/${sessionId}/chunk/${index}`, chunk);
   } catch (err) {
-    if (attempt < MAX_RETRIES_PER_CHUNK) {
+    const transient = !(err instanceof ApiError) || err.status >= 500 || err.status === 429;
+    if (transient && attempt < MAX_RETRIES_PER_CHUNK) {
+      await new Promise(resolve => setTimeout(resolve, 500 * 2 ** attempt));
       await uploadChunkWithRetry(sessionId, index, chunk, attempt + 1);
       return;
     }

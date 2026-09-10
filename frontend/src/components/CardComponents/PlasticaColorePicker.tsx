@@ -38,6 +38,8 @@ type Props = {
   disabled?: boolean;
   /** ✅ nuovo: testo mostrato quando disabilitato */
   disabledHint?: string;
+  /** Se true, non disegna la Card esterna (bordo/ombra): per essere annidato in un pannello padre. */
+  bare?: boolean;
 };
 
 export default function PlasticaColorePicker({
@@ -53,6 +55,7 @@ export default function PlasticaColorePicker({
 
   disabled = false,
   disabledHint = "Opzione non disponibile con la rilegatura selezionata.",
+  bare = false,
 }: Props) {
   const isMobile = useMediaQuery("(max-width: 640px)");
 
@@ -89,17 +92,8 @@ export default function PlasticaColorePicker({
 
   const hasColors = Array.isArray(colors) && colors.length > 0;
 
-  return (
-    <Card
-      withBorder
-      radius="md"
-      p={isMobile ? "sm" : "md"}
-      style={{
-        opacity: disabled ? 0.6 : 1,
-        pointerEvents: disabled ? "none" : "auto",
-      }}
-    >
-      <Stack gap="sm">
+  const body = (
+      <Stack gap="sm" style={{ opacity: disabled ? 0.6 : 1, pointerEvents: disabled ? "none" : "auto" }}>
         <Group justify="space-between" align="center" wrap="wrap">
           <Text fw={700}>{label}</Text>
 
@@ -145,22 +139,22 @@ export default function PlasticaColorePicker({
                   }}
                 >
                   <Box
-                    p="sm"
+                    p={8}
                     style={{
-                      borderRadius: 12,
+                      borderRadius: 10,
                       border: active
-                        ? "2px solid rgba(209,171,99,0.9)"
-                        : "1px solid rgba(255,255,255,0.12)",
-                      background: "rgba(255,255,255,0.02)",
+                        ? "2px solid rgba(212,175,106,0.9)"
+                        : "1px solid rgba(16,20,28,0.10)",
+                      background: active ? "rgba(212,175,106,0.06)" : "transparent",
                       transition: "transform .15s ease, border-color .15s ease",
                     }}
                   >
-                    <Group justify="space-between" align="center" gap="xs" wrap="nowrap">
-                      <Group gap="xs" wrap="nowrap" style={{ minWidth: 0 }}>
+                    <Group justify="space-between" align="center" gap={6} wrap="nowrap">
+                      <Group gap={6} wrap="nowrap" style={{ minWidth: 0 }}>
                         <Box
                           style={{
-                            width: 22,
-                            height: 22,
+                            width: 16,
+                            height: 16,
                             borderRadius: 999,
                             background: c.hex,
                             border: "1px solid rgba(0,0,0,0.25)",
@@ -169,7 +163,7 @@ export default function PlasticaColorePicker({
                         />
 
                         <Box style={{ minWidth: 0 }}>
-                          <Text size="sm" fw={600} lineClamp={1}>
+                          <Text size="xs" fw={600} lineClamp={1}>
                             {c.name}
                           </Text>
 
@@ -178,7 +172,7 @@ export default function PlasticaColorePicker({
                               size="xs"
                               c="dimmed"
                               lineClamp={isMobile ? 3 : 1}
-                              style={{ lineHeight: 1.35 }}
+                              style={{ lineHeight: 1.3, fontSize: 10.5 }}
                             >
                               {c.description}
                             </Text>
@@ -189,20 +183,20 @@ export default function PlasticaColorePicker({
                       {active ? (
                         <Box
                           style={{
-                            width: 22,
-                            height: 22,
+                            width: 16,
+                            height: 16,
                             borderRadius: 999,
                             display: "grid",
                             placeItems: "center",
-                            background: "rgba(209,171,99,0.18)",
-                            border: "1px solid rgba(209,171,99,0.55)",
+                            background: "rgba(212,175,106,0.18)",
+                            border: "1px solid rgba(212,175,106,0.55)",
                             flex: "0 0 auto",
                           }}
                         >
-                          <IconCheck size={14} />
+                          <IconCheck size={10} />
                         </Box>
                       ) : (
-                        <Box style={{ width: 22, height: 22, flex: "0 0 auto" }} />
+                        <Box style={{ width: 16, height: 16, flex: "0 0 auto" }} />
                       )}
                     </Group>
                   </Box>
@@ -233,30 +227,30 @@ export default function PlasticaColorePicker({
                 gap: isMobile ? 12 : 14,
               }}
             >
-              <Group gap="sm" wrap="nowrap" align="flex-start" style={{ minWidth: 0, flex: 1 }}>
+              <Group gap={8} wrap="nowrap" align="flex-start" style={{ minWidth: 0, flex: 1 }}>
                 <Box
                   style={{
-                    width: isMobile ? 38 : 44,
-                    height: isMobile ? 38 : 44,
-                    borderRadius: 14,
-                    background: selected?.hex ?? "rgba(255,255,255,0.06)",
-                    border: "1px solid rgba(255,255,255,0.12)",
+                    width: isMobile ? 26 : 30,
+                    height: isMobile ? 26 : 30,
+                    borderRadius: 10,
+                    background: selected?.hex ?? "rgba(16,20,28,0.06)",
+                    border: "1px solid rgba(16,20,28,0.12)",
                     flex: "0 0 auto",
                     marginTop: 2,
                   }}
                 />
 
                 <Box style={{ minWidth: 0, flex: 1 }}>
-                  <Stack gap={2}>
-                    <Text size="sm" fw={700} style={{ lineHeight: 1.25 }}>
+                  <Stack gap={1}>
+                    <Text size="xs" fw={700} style={{ lineHeight: 1.25 }}>
                       {selected ? selected.name : "Plastica trasparente"}
                     </Text>
 
                     <Text
-                      size="sm"
+                      size="xs"
                       c="dimmed"
                       style={{
-                        lineHeight: 1.45,
+                        lineHeight: 1.4,
                         whiteSpace: "normal",
                         overflowWrap: "break-word",
                       }}
@@ -271,9 +265,9 @@ export default function PlasticaColorePicker({
                 onClick={() => setSelected(null)}
                 disabled={!selectedId || disabled}
                 style={{
-                  padding: "9px 12px",
-                  borderRadius: 10,
-                  border: "1px solid rgba(255,255,255,0.12)",
+                  padding: "6px 10px",
+                  borderRadius: 8,
+                  border: "1px solid rgba(16,20,28,0.12)",
                   opacity: selectedId && !disabled ? 1 : 0.5,
                   cursor: selectedId && !disabled ? "pointer" : "not-allowed",
                   flex: "0 0 auto",
@@ -281,12 +275,23 @@ export default function PlasticaColorePicker({
                   textAlign: "center",
                 }}
               >
-                <Text size="sm">{resetLabel}</Text>
+                <Text size="xs">{resetLabel}</Text>
               </UnstyledButton>
             </Box>
           </>
         )}
       </Stack>
+  );
+
+  if (bare) return body;
+
+  return (
+    <Card
+      withBorder
+      radius="md"
+      p={isMobile ? "sm" : "md"}
+    >
+      {body}
     </Card>
   );
 }

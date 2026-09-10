@@ -1,0 +1,14 @@
+services:
+  # Local frontend container, wired to the online backend (api.photoandvision.it) so there's
+  # no need to run a full local backend + NAS mount just to work on the UI. For plain local dev
+  # `npm run dev` (port 3000, hot reload) is simpler than this — use this compose file only when
+  # you specifically want to test the production-style nginx build locally.
+  sito-web-pv-frontend:
+    container_name: sito-web-pv-frontend-dev
+    build:
+      context: ./frontend
+      args:
+        REACT_APP_API_BASE_URL: https://api.photoandvision.it
+    ports:
+      - "8097:80"
+    restart: unless-stopped

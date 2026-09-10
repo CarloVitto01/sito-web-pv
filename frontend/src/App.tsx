@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { lazy, Suspense, useEffect, useState } from "react";
 import {
   BrowserRouter as Router,
   Route,
@@ -9,30 +9,30 @@ import {
 } from "react-router-dom";
 
 import "./App.css";
-import Login from "./components/Login/pages/Login";
-import Register from "./components/Login/pages/Register";
-import AccountPage from "./components/Login/pages/AccountPage";
-import RecoverPassword from "./components/Login/pages/RecoverPassword";
-import ResetPassword from "./components/Login/pages/ResetPassword";
-import RecoverEmail from "./components/Login/pages/RecoverEmail";
-import Privacy from "./components/Privacy/Privacy";
-import Cookie from "./components/Privacy/Cookie";
-import Terms from "./components/Privacy/Terms";
+const Login = lazy(() => import("./components/Login/pages/Login"));
+const Register = lazy(() => import("./components/Login/pages/Register"));
+const AccountPage = lazy(() => import("./components/Login/pages/AccountPage"));
+const RecoverPassword = lazy(() => import("./components/Login/pages/RecoverPassword"));
+const ResetPassword = lazy(() => import("./components/Login/pages/ResetPassword"));
+const RecoverEmail = lazy(() => import("./components/Login/pages/RecoverEmail"));
+const Privacy = lazy(() => import("./components/Privacy/Privacy"));
+const Cookie = lazy(() => import("./components/Privacy/Cookie"));
+const Terms = lazy(() => import("./components/Privacy/Terms"));
 import CookieInfoBar from "./components/Privacy/CookieInfoBar";
-import PdfPrintPage from "./components/StampaPdf/PdfPrintPage";
-import A4Gestionale from "./gestionale/GestionaleA4/A4Gestionale";
-import A3Gestionale from "./gestionale/GestionaleA3/A3Gestionale";
-import UtentiGestionale from "./gestionale/GestionaleUtenti/UtentiGestionale";
-import StoricoDati from "./gestionale/GestionaleDati/StoricoDati";
-import GestioneAccessi from "./gestionale/GestionaleAccessi/GestioneAccessi";
-import QRCodeGenerator from "./gestionale/GestionaleQR/QRCodeGenerator";
-import TasseGestionale from "./gestionale/GestionaleTasse/TasseGestionale";
-import BannerGestionale from "./gestionale/GestionaleBanner/BannerGestionale";
-import ConsegneGestionale from "./gestionale/GestionaleConsegne/ConsegneGestionale";
-import ScontiGestionale from "./gestionale/GestioneFestivita/ScontiGestionale";
+const PdfPrintPage = lazy(() => import("./components/StampaPdf/PdfPrintPage"));
+const A4Gestionale = lazy(() => import("./gestionale/GestionaleA4/A4Gestionale"));
+const A3Gestionale = lazy(() => import("./gestionale/GestionaleA3/A3Gestionale"));
+const UtentiGestionale = lazy(() => import("./gestionale/GestionaleUtenti/UtentiGestionale"));
+const StoricoDati = lazy(() => import("./gestionale/GestionaleDati/StoricoDati"));
+const GestioneAccessi = lazy(() => import("./gestionale/GestionaleAccessi/GestioneAccessi"));
+const QRCodeGenerator = lazy(() => import("./gestionale/GestionaleQR/QRCodeGenerator"));
+const TasseGestionale = lazy(() => import("./gestionale/GestionaleTasse/TasseGestionale"));
+const BannerGestionale = lazy(() => import("./gestionale/GestionaleBanner/BannerGestionale"));
+const ConsegneGestionale = lazy(() => import("./gestionale/GestionaleConsegne/ConsegneGestionale"));
+const ScontiGestionale = lazy(() => import("./gestionale/GestioneFestivita/ScontiGestionale"));
 
 import { auth, refreshCurrentUser } from "./backend/auth";
-import PlasticheGestionale from "./gestionale/GestionalePlastiche/PlasticheGestionale";
+const PlasticheGestionale = lazy(() => import("./gestionale/GestionalePlastiche/PlasticheGestionale"));
 
 
 const ScrollToTop: React.FC = () => {
@@ -87,6 +87,7 @@ const App: React.FC = () => {
       {/* <Header /> */}
 
       <PageBackground>
+        <Suspense fallback={<div role="status">Caricamento...</div>}>
         <Routes>
           <Route path="/" element={<PdfPrintPage />} />
 
@@ -129,7 +130,9 @@ const App: React.FC = () => {
           <Route path="/banner" element={<ProtectedRoute page="banner" element={<BannerGestionale />} />} />
           <Route path="/consegna" element={<ProtectedRoute page="consegna" element={<ConsegneGestionale />} />} />
           <Route path="/sconti" element={<ProtectedRoute page="sconti" element={<ScontiGestionale />} />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </Suspense>
       </PageBackground>
 
       {/* Footer FUORI dal wrapper */}

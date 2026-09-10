@@ -12,10 +12,61 @@ type Props = {
   value: "A4" | "A3";
   onChange: (v: "A4" | "A3") => void;
   hint?: string;
+  hideTitle?: boolean;
+  /** Se true, non disegna la Card esterna (bordo/ombra): per essere annidato in un pannello padre. */
+  bare?: boolean;
 };
 
-export default function FormatoPicker({ value, onChange, hint = "Seleziona un’opzione" }: Props) {
+export default function FormatoPicker({ value, onChange, hint = "Seleziona un’opzione", hideTitle = false, bare = false }: Props) {
   const theme = useMantineTheme();
+
+  const control = (
+    <SegmentedControl
+        value={value}
+        onChange={(v) => onChange(v as "A4" | "A3")}
+        fullWidth
+        radius="md"
+        data={[
+          {
+            value: "A4",
+            label: (
+              <Group gap={8} justify="center" wrap="nowrap">
+                <IconFileText size={16} />
+                <Text fw={800}>A4</Text>
+                {value === "A4" ? <IconCheck size={16} color={theme.colors.gold[6]} /> : null}
+              </Group>
+            ),
+          },
+          {
+            value: "A3",
+            label: (
+              <Group gap={8} justify="center" wrap="nowrap">
+                <IconDimensions size={16} />
+                <Text fw={800}>A3</Text>
+                {value === "A3" ? <IconCheck size={16} color={theme.colors.gold[6]} /> : null}
+              </Group>
+            ),
+          },
+        ]}
+      styles={{
+        root: {
+          background: theme.colors.gray[0],
+          border: `1px solid ${theme.colors.gray[3]}`,
+        },
+        indicator: {
+          background: theme.white,
+          border: `1px solid ${theme.colors.gold[6]}`,
+          boxShadow: theme.shadows.xs,
+        },
+        label: {
+          paddingTop: 8,
+          paddingBottom: 8,
+        },
+      }}
+    />
+  );
+
+  if (bare) return control;
 
   return (
     <Card
@@ -28,59 +79,19 @@ export default function FormatoPicker({ value, onChange, hint = "Seleziona un’
         boxShadow: theme.shadows.sm,
       }}
     >
-      <Group justify="space-between" align="baseline" mb="sm">
-        <Text fw={900} tt="uppercase" style={{ letterSpacing: 0.3, fontSize: 13, color: theme.colors.dark[7] }}>
-          FORMATO:
-        </Text>
+      {!hideTitle && (
+        <Group justify="space-between" align="baseline" mb="sm">
+          <Text fw={900} tt="uppercase" style={{ letterSpacing: 0.3, fontSize: 13, color: theme.colors.dark[7] }}>
+            FORMATO:
+          </Text>
 
-        <Text size="xs" fw={700} style={{ letterSpacing: 0.2, color: theme.colors.gray[6] }}>
-          {hint}
-        </Text>
-      </Group>
+          <Text size="xs" fw={700} style={{ letterSpacing: 0.2, color: theme.colors.gray[6] }}>
+            {hint}
+          </Text>
+        </Group>
+      )}
 
-      <SegmentedControl
-        value={value}
-        onChange={(v) => onChange(v as "A4" | "A3")}
-        fullWidth
-        radius="md"
-        data={[
-          {
-            value: "A4",
-            label: (
-              <Group gap={8} justify="center" wrap="nowrap">
-                <IconFileText size={16} />
-                <Text fw={800}>A4</Text>
-                {value === "A4" ? <IconCheck size={16} color={theme.colors.yellow[6]} /> : null}
-              </Group>
-            ),
-          },
-          {
-            value: "A3",
-            label: (
-              <Group gap={8} justify="center" wrap="nowrap">
-                <IconDimensions size={16} />
-                <Text fw={800}>A3</Text>
-                {value === "A3" ? <IconCheck size={16} color={theme.colors.yellow[6]} /> : null}
-              </Group>
-            ),
-          },
-        ]}
-        styles={{
-          root: {
-            background: theme.colors.gray[0],
-            border: `1px solid ${theme.colors.gray[3]}`,
-          },
-          indicator: {
-            background: theme.white,
-            border: `1px solid ${theme.colors.yellow[6]}`,
-            boxShadow: theme.shadows.xs,
-          },
-          label: {
-            paddingTop: 12,
-            paddingBottom: 12,
-          },
-        }}
-      />
+      {control}
     </Card>
   );
 }

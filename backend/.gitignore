@@ -1,2 +1,6 @@
 target/
-target/
+config/secrets.yml
+config/secrets.properties
+data/
+storage/
+.env

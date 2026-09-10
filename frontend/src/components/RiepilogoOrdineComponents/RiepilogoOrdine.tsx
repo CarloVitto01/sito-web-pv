@@ -8,7 +8,6 @@ import {
   Box,
   Button,
   Card,
-  Divider,
   Group,
   Loader,
   Progress,
@@ -65,7 +64,7 @@ type RiepilogoProps = {
   numeroPDF: number;
   prezzo: string;
 
-  onConfirmOrder: (payment: PaymentPayload) => Promise<void>;
+  onConfirmOrder: (payment: PaymentPayload) => Promise<{ id: string; totaleFinale: number } | undefined>;
   disabled?: boolean;
   submitted?: boolean;
   loading?: boolean;
@@ -89,9 +88,7 @@ type RiepilogoProps = {
 
 type PayPalApproveData = { orderID: string };
 
-const PAYPAL_CLIENT_ID = process.env.REACT_APP_PAYPAL_CLIENT_ID as string;
-const API_BASE = process.env.REACT_APP_API_BASE_URL || "";
-const API = (API_BASE || "").replace(/\/+$/, "");
+const PAYPAL_CLIENT_ID = import.meta.env.REACT_APP_PAYPAL_CLIENT_ID as string;
 
 function parseEuro(prezzo: string): number {
   const normalized = prezzo.replace(",", ".").replace(/[^\d.]/g, "");
@@ -385,6 +382,20 @@ function KeyValueRow({ label, value }: { label: string; value: React.ReactNode }
   );
 }
 
+/** Stessa riga label/valore di KeyValueRow, ma leggibile sulla card scura del riepilogo. */
+function KeyValueRowDark({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <Group justify="space-between" align="baseline" wrap="nowrap">
+      <Text size="sm" style={{ color: "rgba(255,255,255,.55)" }}>
+        {label}
+      </Text>
+      <Text size="sm" fw={600} style={{ textAlign: "right", color: "#fff" }}>
+        {value}
+      </Text>
+    </Group>
+  );
+}
+
 const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
   tipo = "A4",
 
@@ -613,20 +624,7 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
     document.body.appendChild(script);
   }, [paymentMethod]);
 
-  const fetchJSON = useCallback(
-    async <T,>(url: string, body: unknown): Promise<T> => {
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
-      if (authToken) headers.Authorization = `Bearer ${authToken}`;
-      if (csrfToken) headers["X-CSRF-Token"] = csrfToken;
-
-      const res = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
-      const text = await res.text();
-
-      if (!res.ok) throw new Error(`Request failed (${res.status})`);
-      return JSON.parse(text) as T;
-    },
-    [authToken, csrfToken]
-  );
+  const localOrderIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (paymentMethod !== "paypal" || !paypalButtonsContainerRef.current || submitted) return;
@@ -645,25 +643,26 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
       style: { layout: "vertical" },
 
       createOrder: async () => {
-        const data = await fetchJSON<{ orderId: string }>(`${API}/api/paypal/create-order`, {
-          amount: totals.totaleDaAddebitare.toFixed(2),
-          currency: "EUR",
+        const prepared = await onConfirmOrder({
+          method: "PAYPAL", confirmed: false, delivery: selectedSlot || undefined,
         });
-
-        if (!data?.orderId) throw new Error("Risposta backend priva di orderId");
-
+        if (!prepared) throw new Error("Completa i dati dell'ordine prima di pagare");
+        localOrderIdRef.current = prepared.id;
+        const data = await api.post<{ orderId: string }>("/api/paypal/create-order", {
+          localOrderId: prepared.id,
+        });
         return data.orderId;
       },
 
       onApprove: async (data: PayPalApproveData) => {
         try {
-          const cap = await fetchJSON<{
+          const cap = await api.post<{
             status: string;
             orderId?: string;
             captureId?: string;
             payerEmail?: string;
             amount?: string | number;
-          }>(`${API}/api/paypal/capture-order`, { orderId: data.orderID });
+          }>("/api/paypal/capture-order", { localOrderId: localOrderIdRef.current, orderId: data.orderID });
 
           if (cap.status === "COMPLETED") {
             await onConfirmOrder({
@@ -719,7 +718,6 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
     submitted,
     totals,
     onConfirmOrder,
-    fetchJSON,
     selectedSlot,
     isStudent,
   ]);
@@ -794,17 +792,25 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
 
   return (
     <Box style={wrapperStyle}>
-      <Card withBorder radius="lg" p="md">
+      <Card
+        radius={24}
+        p="lg"
+        style={{
+          background: "linear-gradient(165deg, #161311 0%, #0c1119 60%)",
+          border: "1px solid rgba(212,175,106,.25)",
+          boxShadow: "0 30px 60px -24px rgba(0,0,0,.7)",
+        }}
+      >
         <Stack gap="md">
           <Group justify="space-between" align="center">
-            <Title order={3} size="h4">
-              📋 Riepilogo Ordine {tipo}
+            <Title order={3} size="h4" tt="uppercase" style={{ color: "#fff", letterSpacing: ".02em", fontFamily: "'Oswald', sans-serif" }}>
+              Riepilogo ordine {tipo}
             </Title>
 
             {(totals.generalPromoAttiva || totals.studentPromoAttiva) && (
               <Group gap="xs">
                 {totals.generalPromoAttiva && (
-                  <Badge variant="light" color="yellow">
+                  <Badge variant="light" color="gold">
                     Generale -{totals.scontoGeneralePercent.toFixed(0)}%
                   </Badge>
                 )}
@@ -819,7 +825,7 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
           </Group>
 
           {totals.generalPromoAttiva && (
-            <Alert icon={<IconInfoCircle size={18} />} color="yellow" variant="light">
+            <Alert icon={<IconInfoCircle size={18} />} color="gold" variant="light">
               {promoCfg.generalPromo.description
                 ? promoCfg.generalPromo.description
                 : `${promoCfg.generalPromo.name ?? "Promo generale"}: -${totals.scontoGeneralePercent.toFixed(
@@ -838,26 +844,21 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
             </Alert>
           )}
 
-          <Card withBorder radius="md" p="md">
-            <Stack gap="xs">
-              <Text fw={800}>Dettagli ordine</Text>
-              <Divider />
+          <Stack gap={11} pb="sm" style={{ borderBottom: "1px solid rgba(255,255,255,.10)" }}>
+            <KeyValueRowDark label="Numero PDF" value={numeroPDF} />
+            <KeyValueRowDark label="Inchiostro" value={inchiostro} />
+            <KeyValueRowDark label="Layout" value={layout} />
+            <KeyValueRowDark label="Gestione pagina" value={pagina} />
+            <KeyValueRowDark label="Rilegatura" value={rilegatura} />
+            <KeyValueRowDark label="Rilegatura unica" value={rilegaturaUnica} />
 
-              <KeyValueRow label="Numero PDF" value={numeroPDF} />
-              <KeyValueRow label="Inchiostro" value={inchiostro} />
-              <KeyValueRow label="Layout" value={layout} />
-              <KeyValueRow label="Gestione pagina" value={pagina} />
-              <KeyValueRow label="Rilegatura" value={rilegatura} />
-              <KeyValueRow label="Rilegatura unica" value={rilegaturaUnica} />
+            {showPlastiche && (
+              <KeyValueRowDark label="Plastica copertina" value={plasticheLabelClean} />
+            )}
 
-              {showPlastiche && (
-                <KeyValueRow label="Plastica copertina" value={plasticheLabelClean} />
-              )}
-
-              <KeyValueRow label="Intervallo pagine" value={intervalloPagine} />
-              <KeyValueRow label="Numero copie" value={numeroCopie} />
-            </Stack>
-          </Card>
+            <KeyValueRowDark label="Intervallo pagine" value={intervalloPagine} />
+            <KeyValueRowDark label="Numero copie" value={numeroCopie} />
+          </Stack>
 
           <ConsegnaSlotPicker
             slots={deliverySlots}
@@ -867,57 +868,66 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
             hint="Seleziona uno slot per procedere al pagamento."
           />
 
-          <Card withBorder radius="md" p="md">
-            <Stack gap="xs">
-              {(totals.scontoGenerale > 0 || totals.scontoStudenti > 0) && (
-                <KeyValueRow label="Subtotale" value={`${euro(totals.baseLordo)} €`} />
-              )}
+          <Stack gap={11} py="sm" style={{ borderTop: "1px solid rgba(255,255,255,.10)", borderBottom: "1px solid rgba(255,255,255,.10)" }}>
+            {(totals.scontoGenerale > 0 || totals.scontoStudenti > 0) && (
+              <KeyValueRowDark label="Subtotale" value={`${euro(totals.baseLordo)} €`} />
+            )}
 
-              {totals.scontoGenerale > 0 && (
-                <Group justify="space-between" align="baseline">
-                  <Text size="sm" c="green">
-                    {promoCfg.generalPromo.name || "Promo generale"} (-
-                    {totals.scontoGeneralePercent.toFixed(0)}%)
-                  </Text>
-                  <Text size="sm" c="green" fw={700}>
-                    - {euro(totals.scontoGenerale)} €
-                  </Text>
-                </Group>
-              )}
-
-              {totals.scontoStudenti > 0 && (
-                <Group justify="space-between" align="baseline">
-                  <Text size="sm" c="green">
-                    {promoCfg.studentPromo.name || "Promo studenti"} (-
-                    {totals.scontoStudentiPercent.toFixed(0)}%)
-                  </Text>
-                  <Text size="sm" c="green" fw={700}>
-                    - {euro(totals.scontoStudenti)} €
-                  </Text>
-                </Group>
-              )}
-
-              {(totals.scontoGenerale > 0 || totals.scontoStudenti > 0) && (
-                <KeyValueRow label="Imponibile scontato" value={`${euro(totals.base)} €`} />
-              )}
-
-              {paymentMethod === "paypal" && (
-                <KeyValueRow
-                  label={`Fee PayPal (${(fees.paypalPercent * 100).toFixed(2)}% + ${euro(
-                    fees.paypalFixed
-                  )} €)`}
-                  value={`${euro(totals.feePP)} €`}
-                />
-              )}
-
+            {totals.scontoGenerale > 0 && (
               <Group justify="space-between" align="baseline">
-                <Text fw={900}>Totale</Text>
-                <Text fw={900} size="lg">
-                  {euro(totals.totaleDaAddebitare)} €
+                <Text size="sm" c="green">
+                  {promoCfg.generalPromo.name || "Promo generale"} (-
+                  {totals.scontoGeneralePercent.toFixed(0)}%)
+                </Text>
+                <Text size="sm" c="green" fw={700}>
+                  - {euro(totals.scontoGenerale)} €
                 </Text>
               </Group>
-            </Stack>
-          </Card>
+            )}
+
+            {totals.scontoStudenti > 0 && (
+              <Group justify="space-between" align="baseline">
+                <Text size="sm" c="green">
+                  {promoCfg.studentPromo.name || "Promo studenti"} (-
+                  {totals.scontoStudentiPercent.toFixed(0)}%)
+                </Text>
+                <Text size="sm" c="green" fw={700}>
+                  - {euro(totals.scontoStudenti)} €
+                </Text>
+              </Group>
+            )}
+
+            {(totals.scontoGenerale > 0 || totals.scontoStudenti > 0) && (
+              <KeyValueRowDark label="Imponibile scontato" value={`${euro(totals.base)} €`} />
+            )}
+
+            {paymentMethod === "paypal" && (
+              <KeyValueRowDark
+                label={`Fee PayPal (${(fees.paypalPercent * 100).toFixed(2)}% + ${euro(
+                  fees.paypalFixed
+                )} €)`}
+                value={`${euro(totals.feePP)} €`}
+              />
+            )}
+
+            <Group justify="space-between" align="baseline" pt={4}>
+              <Text fw={700} tt="uppercase" style={{ color: "#fff", fontFamily: "'Oswald', sans-serif", fontSize: 14, letterSpacing: ".02em" }}>
+                Totale
+              </Text>
+              <Text
+                fw={700}
+                style={{
+                  fontFamily: "'Oswald', sans-serif",
+                  fontSize: 30,
+                  background: "linear-gradient(180deg,#f2c94c,#c9962f)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >
+                {euro(totals.totaleDaAddebitare)} €
+              </Text>
+            </Group>
+          </Stack>
 
           <MetodoPagamentoPicker value={paymentMethod} onChange={setPaymentMethod} />
 
@@ -930,11 +940,11 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
                 </Text>
 
                 {isStudent === null ? (
-                  <Alert color="yellow" variant="light" icon={<IconInfoCircle size={18} />}>
+                  <Alert color="gold" variant="light" icon={<IconInfoCircle size={18} />}>
                     Seleziona “Sì” oppure “No” per abilitare il pagamento.
                   </Alert>
                 ) : isStudent === true && !selectedSlot ? (
-                  <Alert color="yellow" variant="light" icon={<IconInfoCircle size={18} />}>
+                  <Alert color="gold" variant="light" icon={<IconInfoCircle size={18} />}>
                     Seleziona prima uno slot di consegna per abilitare il pagamento PayPal.
                   </Alert>
                 ) : (
@@ -959,24 +969,33 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
             <Button
               fullWidth
               size="md"
+              radius="xl"
               onClick={handleConfirmOrderCash}
               disabled={disabled || loading || submitted || !canProceedPay}
+              styles={{
+                root: {
+                  background: "linear-gradient(180deg,#f2c94c,#c9962f)",
+                  boxShadow: "0 16px 32px -10px rgba(242,201,76,.5)",
+                  height: 50,
+                },
+                label: { color: "#10141c", fontWeight: 700, fontSize: 15 },
+              }}
             >
-              ✅ Conferma Ordine
+              Conferma ordine
             </Button>
           )}
 
           {loading && (
             <Stack gap="xs">
-              <Text size="sm" c="dimmed">
+              <Text size="sm" style={{ color: "rgba(255,255,255,.55)" }}>
                 Invio in corso: attendere il completamento della barra.
               </Text>
-              <Progress value={progress} />
+              <Progress value={progress} color="gold" />
             </Stack>
           )}
 
           {submitted && (
-            <Alert color="yellow" variant="light" icon={<IconCheck size={18} />}>
+            <Alert color="gold" variant="light" icon={<IconCheck size={18} />}>
               🎉 Ordine inviato con successo!
             </Alert>
           )}

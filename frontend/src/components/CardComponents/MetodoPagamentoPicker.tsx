@@ -52,7 +52,7 @@ export default function PaymentMethodPicker({
               <Group gap={8} justify="center" wrap="nowrap">
                 <IconCash size={16} />
                 <Text fw={800}>Contanti</Text>
-                {value === "cash" ? <IconCheck size={16} color={theme.colors.yellow[6]} /> : null}
+                {value === "cash" ? <IconCheck size={16} color={theme.colors.gold[6]} /> : null}
               </Group>
             ),
           },
@@ -62,7 +62,7 @@ export default function PaymentMethodPicker({
               <Group gap={8} justify="center" wrap="nowrap">
                 <IconBrandPaypal size={16} />
                 <Text fw={800}>PayPal</Text>
-                {value === "paypal" ? <IconCheck size={16} color={theme.colors.yellow[6]} /> : null}
+                {value === "paypal" ? <IconCheck size={16} color={theme.colors.gold[6]} /> : null}
               </Group>
             ),
           },
@@ -74,12 +74,12 @@ export default function PaymentMethodPicker({
           },
           indicator: {
             background: theme.white,
-            border: `1px solid ${theme.colors.yellow[6]}`,
+            border: `1px solid ${theme.colors.gold[6]}`,
             boxShadow: theme.shadows.xs,
           },
           label: {
-            paddingTop: 12,
-            paddingBottom: 12,
+            paddingTop: 8,
+            paddingBottom: 8,
           },
         }}
       />

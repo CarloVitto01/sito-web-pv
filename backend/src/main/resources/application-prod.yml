@@ -1,0 +1,21 @@
+# Profilo di produzione: PostgreSQL sul server/NAS. Tutti i valori vanno forniti da variabili d'ambiente,
+# non committare credenziali reali in questo file.
+spring:
+  datasource:
+    url: ${DB_URL}
+    driver-class-name: org.postgresql.Driver
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    # Applicare backend/migration/sql/001_checkout_sessions.sql prima del rilascio.
+    hibernate:
+      ddl-auto: validate
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+  # Percorso visto DENTRO il container Docker: monta il NAS come volume su questo path
+  # (stessa convenzione di ct-store/PRODUCT_IMAGES_ROOT), es.:
+  #   docker run -v /mnt/nas/pv-site/pv-stampe-storage:/app/pv-stampe ...
+  storage:
+    base-dir: ${STORAGE_BASE_DIR:/app/pv-stampe}

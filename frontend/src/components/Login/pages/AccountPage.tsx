@@ -135,7 +135,9 @@ const AccountPage: React.FC = () => {
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [isStudente, setIsStudente] = useState(false);
-  const [totalSpent, setTotalSpent] = useState<number>(0);
+  const totalSpent = useMemo(() => orders
+    .filter(order => order.metodoPagamento !== "PayPal" || order.statoPagamento === "Pagato")
+    .reduce((sum, order) => sum + parsePrice(order.totaleFinale ?? order.prezzo), 0), [orders]);
 
   const [page, setPage] = useState<number>(1);
 
@@ -163,14 +165,8 @@ const AccountPage: React.FC = () => {
 
         userOrders.sort((a, b) => (b._tsMillis ?? 0) - (a._tsMillis ?? 0));
 
-        const total = userOrders.reduce((sum, o) => {
-          const v = o.totaleFinale ?? o.prezzo;
-          return sum + parsePrice(v);
-        }, 0);
-
         if (alive) {
           setOrders(userOrders);
-          setTotalSpent(total);
           setUserData({ ...user });
           setIsStudente(!!user.corsoLaurea || !!user.annoAccademico);
         }
@@ -344,7 +340,7 @@ const AccountPage: React.FC = () => {
                     <div>
                       <Text fw={700}>€{fmtEuro(totalSpent)}</Text>
                       <Text size="sm" c="dimmed">
-                        Totale speso
+                        Totale ordini confermati
                       </Text>
                     </div>
                   </Group>
@@ -509,6 +505,17 @@ const AccountPage: React.FC = () => {
                                     </div>
                                   </Group>
 
+                                  <Text size="sm">{order.statoPagamento}</Text>
+                                  {order.metodoPagamento === "PayPal" && order.statoPagamento !== "Pagato" && (
+                                    <Button size="xs" variant="light" onClick={async () => {
+                                      try {
+                                        const result = await api.post<{ status: string }>(`/api/paypal/reconcile/${order.id}`);
+                                        if (result.status === "COMPLETED") {
+                                          setOrders(previous => previous.map(item => item.id === order.id ? { ...item, statoPagamento: "Pagato" } : item));
+                                        } else window.alert("Il pagamento non risulta ancora completato.");
+                                      } catch { window.alert("Verifica momentaneamente non disponibile. Riprova tra poco."); }
+                                    }}>Verifica pagamento</Button>
+                                  )}
                                   <Text fw={800} style={{ whiteSpace: "nowrap" }}>
                                     €{total}
                                   </Text>

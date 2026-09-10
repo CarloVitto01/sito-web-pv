@@ -48,6 +48,12 @@ type OrderFile = {
   downloadUrl: string;
   plasticaId: number | null;
   plasticaName: string | null;
+  rilegatura: string | null;
+  inchiostro: string | null;
+  pagina: string | null;
+  layout: string | null;
+  pagineLabel: string | null;
+  numeroCopie: number | null;
 };
 
 type OrderResponse = {

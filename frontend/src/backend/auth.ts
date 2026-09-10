@@ -3,7 +3,7 @@
 // e propagato agli ascoltatori tramite onAuthStateChanged, cosi' i componenti che leggevano `auth.currentUser`
 // in modo sincrono continuano a funzionare allo stesso modo.
 
-import { api, setTokens, getAccessToken } from "./apiClient";
+import { api, ApiError, API_BASE, setTokens, getAccessToken } from "./apiClient";
 
 export interface CurrentUser {
   uid: string;
@@ -106,6 +106,14 @@ export async function register(payload: {
 }
 
 export function logout(): void {
+  const token = getAccessToken();
+  if (token) void fetch(`${API_BASE}/api/auth/logout`, {
+    method: "POST", headers: { Authorization: `Bearer ${token}` }, keepalive: true,
+  }).catch(() => {});
+  clearSession();
+}
+
+function clearSession(): void {
   setTokens(null, null);
   setCurrentUser(null);
 }
@@ -118,8 +126,8 @@ export async function refreshCurrentUser(): Promise<CurrentUser | null> {
     const user = toCurrentUser(dto);
     setCurrentUser(user);
     return user;
-  } catch {
-    logout();
+  } catch (err) {
+    if (err instanceof ApiError && (err.status === 401 || err.status === 403)) clearSession();
     return null;
   }
 }
@@ -135,6 +143,7 @@ export async function updateProfile(payload: Partial<{
 
 export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
   await api.post("/api/auth/change-password", { currentPassword, newPassword });
+  clearSession();
 }
 
 export async function recoverPassword(telefono: string, email: string): Promise<void> {
