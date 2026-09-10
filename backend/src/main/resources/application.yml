@@ -58,8 +58,8 @@ app:
   # ==== Notifiche Telegram (opzionali: se assenti, la notifica viene solo loggata) ====
   telegram:
     a4:
-      token: ${TELEGRAM_A4_TOKEN:}
-      chat-id: ${TELEGRAM_A4_CHAT_ID:}
+      token: ${TELEGRAM_A4_TOKEN:"6627906863:AAHKxcu5wZD5anFVhRUn7_hTBRvhpyJa24k"}
+      chat-id: ${TELEGRAM_A4_CHAT_ID:""-1001877391096"}
     a3:
-      token: ${TELEGRAM_A3_TOKEN:}
-      chat-id: ${TELEGRAM_A3_CHAT_ID:}
+      token: ${TELEGRAM_A3_TOKEN:"7958253697:AAH9CDyOpCML2XWAB-k5WS8DafA0dtruync"}
+      chat-id: ${TELEGRAM_A3_CHAT_ID:"-1002762822730"}
