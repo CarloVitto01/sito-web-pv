@@ -58,13 +58,13 @@ public class TelegramNotifier {
             return;
         }
 
-        // Testo semplice, senza parse_mode: nomi/cognomi/nomi-file/token possono contenere caratteri
-        // (_ * ` [) che il parser Markdown "legacy" di Telegram interpreta come formattazione, arrivando
-        // anche a far rifiutare l'intero messaggio con 400. Telegram trasforma comunque in automatico
-        // un URL testuale in link cliccabile, quindi non serve alcuna sintassi markdown per i link.
+        // HTML come parse_mode: a differenza del Markdown "legacy" di Telegram, non tratta come
+        // formattazione i caratteri (_ * ` [) che possono comparire in nomi/cognomi/nomi-file, quindi
+        // basta escapare & < > nei valori dinamici (fatto in nz/esc) per evitare messaggi rifiutati (400)
+        // o markup rotto. Serve anche per rendere cliccabile il link di download come testo "File".
         StringBuilder sb = new StringBuilder();
         sb.append("=====================\n");
-        sb.append("  NUOVO ORDINE ").append(order.getTipo()).append("\n");
+        sb.append("  NUOVO ORDINE ").append(esc(order.getTipo())).append("\n");
         sb.append("=====================\n\n");
 
         sb.append("📝 Dettagli Ordine:\n");
@@ -73,10 +73,10 @@ public class TelegramNotifier {
         sb.append("Email: ").append(nz(order.getEmail())).append("\n");
         sb.append("Telefono: ").append(nz(order.getTelefono())).append("\n");
         if (order.getCorsoLaurea() != null && !order.getCorsoLaurea().isBlank()) {
-            sb.append("Corso Laurea: ").append(order.getCorsoLaurea()).append("\n");
+            sb.append("Corso Laurea: ").append(esc(order.getCorsoLaurea())).append("\n");
         }
         if (order.getAnnoAccademico() != null && !order.getAnnoAccademico().isBlank()) {
-            sb.append("Anno Accademico: ").append(order.getAnnoAccademico()).append("\n");
+            sb.append("Anno Accademico: ").append(esc(order.getAnnoAccademico())).append("\n");
         }
         sb.append("\n");
 
@@ -87,9 +87,9 @@ public class TelegramNotifier {
         int i = 1;
         for (OrderFile f : order.getFiles()) {
             String downloadToken = jwtService.generateFileDownloadToken(f.getId());
+            String downloadUrl = downloadBaseUrl + "/api/files/download/" + f.getId() + "?token=" + downloadToken;
             sb.append("- File ").append(i++).append(" - ").append(f.getPages()).append(" pagine: ")
-              .append(downloadBaseUrl).append("/api/files/download/").append(f.getId())
-              .append("?token=").append(downloadToken).append("\n");
+              .append("<a href=\"").append(esc(downloadUrl)).append("\">File</a>").append("\n");
 
             // con rilegatura separata ogni file ha impostazioni proprie: le mostro qui sotto al file,
             // le righe globali equivalenti piu' in basso vengono nascoste perche' ridondanti/fuorvianti
@@ -98,7 +98,7 @@ public class TelegramNotifier {
                   .append(" · Pagina: ").append(nz(f.getPagina()))
                   .append(" · Layout: ").append(nz(f.getLayout()))
                   .append(" · Rilegatura: ").append(nz(f.getRilegatura()))
-                  .append(" · Plastica: ").append(f.getPlasticaName() != null ? f.getPlasticaName() : "-")
+                  .append(" · Plastica: ").append(f.getPlasticaName() != null ? esc(f.getPlasticaName()) : "-")
                   .append(" · Pagine: ").append(nz(f.getPagineLabel()))
                   .append(" · Copie: ").append(f.getNumeroCopie() != null ? f.getNumeroCopie() : "-")
                   .append("\n");
@@ -113,7 +113,7 @@ public class TelegramNotifier {
             sb.append("📄 Pagina: ").append(nz(order.getPagina())).append("\n");
             sb.append("📐 Layout: ").append(nz(order.getLayout())).append("\n");
             sb.append("📒 Rilegatura: ").append(nz(order.getRilegatura())).append("\n");
-            sb.append("🧱 Plastica: ").append(order.getPlasticaName() != null ? order.getPlasticaName() : "-").append("\n");
+            sb.append("🧱 Plastica: ").append(order.getPlasticaName() != null ? esc(order.getPlasticaName()) : "-").append("\n");
             sb.append("Pagine: ").append(nz(order.getPagine())).append("\n");
             sb.append("🔢 Copie: ").append(order.getNumeroCopie()).append("\n\n");
         } else {
@@ -137,6 +137,7 @@ public class TelegramNotifier {
             Map<String, Object> body = new LinkedHashMap<>();
             body.put("chat_id", chatId);
             body.put("text", text);
+            body.put("parse_mode", "HTML");
             var response = http.postForEntity("https://api.telegram.org/bot" + token + "/sendMessage",
                     new HttpEntity<>(body, headers), String.class);
             log.info("Notifica Telegram inviata per ordine {}: {}", order.getId(), response.getStatusCode());
@@ -146,7 +147,12 @@ public class TelegramNotifier {
     }
 
     private static String nz(String value) {
-        return value == null || value.isBlank() ? "-" : value;
+        return value == null || value.isBlank() ? "-" : esc(value);
+    }
+
+    private static String esc(String value) {
+        if (value == null) return "-";
+        return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
     }
 
     private static String coloreLabel(String inchiostro) {
