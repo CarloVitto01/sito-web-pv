@@ -38,6 +38,7 @@ public class FileStorageService {
     private final UploadSessionRepository uploadSessionRepository;
     private final OrderFileRepository orderFileRepository;
     private final it.pv.payments.repository.UserRepository users;
+    private final PdfPageCounter pdfPageCounter;
     @Value("${app.storage.daily-user-quota-bytes:2147483648}")
     private long dailyUserQuota = 2147483648L;
 
@@ -46,7 +47,8 @@ public class FileStorageService {
             @Value("${app.storage.temp-dir}") String tempDir,
             UploadSessionRepository uploadSessionRepository,
             OrderFileRepository orderFileRepository,
-            it.pv.payments.repository.UserRepository users
+            it.pv.payments.repository.UserRepository users,
+            PdfPageCounter pdfPageCounter
     ) throws IOException {
         this.baseDir = Path.of(baseDir).toAbsolutePath().normalize();
         this.tempDir = Path.of(tempDir).toAbsolutePath().normalize();
@@ -55,6 +57,7 @@ public class FileStorageService {
         this.uploadSessionRepository = uploadSessionRepository;
         this.orderFileRepository = orderFileRepository;
         this.users = users;
+        this.pdfPageCounter = pdfPageCounter;
     }
 
     @org.springframework.transaction.annotation.Transactional
@@ -62,7 +65,7 @@ public class FileStorageService {
         if (originalFileName == null || originalFileName.length() > 200
                 || !originalFileName.toLowerCase(java.util.Locale.ROOT).endsWith(".pdf")
                 || totalSize <= 0 || totalSize > 300L * 1024 * 1024
-                || chunkSize <= 0 || chunkSize > 5 * 1024 * 1024) {
+                || chunkSize <= 0 || chunkSize > 20 * 1024 * 1024) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "PDF o dimensioni upload non validi (massimo 300 MB)");
         }
         users.findLockedById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
@@ -165,7 +168,9 @@ public class FileStorageService {
             if (Files.size(finalFile) != session.getTotalSize()) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Dimensione PDF errata");
             }
-            new PdfPageCounter().countPages(finalFile);
+            // Unica lettura completa del PDF con PDFBox: il conteggio pagine viene salvato qui e riusato
+            // alla creazione dell'ordine (OrderService), cosi' un file grande non va riparsato una seconda volta.
+            session.setPageCount(pdfPageCounter.countPages(finalFile));
             session.setCompleted(true);
             session.setFinalStoragePath(relativePath);
             uploadSessionRepository.save(session);
@@ -186,11 +191,12 @@ public class FileStorageService {
         }
     }
 
-    public void requireOwnedFile(String storagePath, String userId) {
-        if (storagePath == null || uploadSessionRepository
-                .findByFinalStoragePathAndUserIdAndCompletedTrue(storagePath, userId).isEmpty()) {
+    public UploadSession requireOwnedFile(String storagePath, String userId) {
+        if (storagePath == null) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "File non accessibile o upload incompleto");
         }
+        return uploadSessionRepository.findByFinalStoragePathAndUserIdAndCompletedTrue(storagePath, userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "File non accessibile o upload incompleto"));
     }
 
     public Path resolve(String relativePath) {

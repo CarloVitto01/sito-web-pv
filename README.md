@@ -59,8 +59,9 @@ non richiedono database, PayPal, SMTP o Telegram reali.
 
 Leggere [le note di rilascio e le limitazioni](docs/RELEASE_HARDENING.md).
 Questa versione modifica il contratto di checkout: distribuire frontend e backend insieme.
-Prima di aggiornare un database esistente applicare
-[`001_checkout_sessions.sql`](backend/migration/sql/001_checkout_sessions.sql).
+Prima di aggiornare un database esistente applicare, in ordine,
+[`001_checkout_sessions.sql`](backend/migration/sql/001_checkout_sessions.sql) e
+[`002_upload_session_page_count.sql`](backend/migration/sql/002_upload_session_page_count.sql).
 Il profilo `prod` verifica lo schema (`ddl-auto: validate`) e non lo modifica automaticamente.
 Lo script è incrementale e richiede le tabelle del backend già presenti; non inizializza un database vuoto.
 

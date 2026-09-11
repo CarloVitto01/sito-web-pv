@@ -1,6 +1,6 @@
 import { api, ApiError } from "../backend/apiClient";
 
-const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB: un chunk che fallisce si ripete da solo, non l'intero file
+const CHUNK_SIZE = 20 * 1024 * 1024; // 20MB: un chunk che fallisce si ripete da solo, non l'intero file
 const MAX_RETRIES_PER_CHUNK = 3;
 
 /**

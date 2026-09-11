@@ -23,19 +23,17 @@ public class OrderService {
     private final PlasticaColorRepository plasticaColorRepository;
     private final PricingService pricingService;
     private final FileStorageService fileStorageService;
-    private final PdfPageCounter pdfPageCounter;
     private final org.springframework.context.ApplicationEventPublisher events;
 
     public OrderService(OrderRepository orderRepository, UserRepository userRepository,
                          PlasticaColorRepository plasticaColorRepository, PricingService pricingService,
-                         FileStorageService fileStorageService, PdfPageCounter pdfPageCounter,
+                         FileStorageService fileStorageService,
                          org.springframework.context.ApplicationEventPublisher events) {
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
         this.plasticaColorRepository = plasticaColorRepository;
         this.pricingService = pricingService;
         this.fileStorageService = fileStorageService;
-        this.pdfPageCounter = pdfPageCounter;
         this.events = events;
     }
 
@@ -65,11 +63,16 @@ public class OrderService {
         if (req.files().stream().map(FileInput::storagePath).distinct().count() != req.files().size()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File duplicati");
         }
-        req.files().forEach(f -> fileStorageService.requireOwnedFile(f.storagePath(), userId));
-
-        // pagine reali contate server-side dal PDF effettivamente salvato: il client non puo' piu' dichiararle
+        // pagine reali contate server-side alla fine dell'upload (FileStorageService.completeUpload) e
+        // salvate sulla UploadSession: il client non puo' dichiararle, e non serve riparsare qui il PDF.
         List<Integer> pagesPerFile = req.files().stream()
-                .map(f -> pdfPageCounter.countPages(fileStorageService.resolve(f.storagePath())))
+                .map(f -> {
+                    Integer pages = fileStorageService.requireOwnedFile(f.storagePath(), userId).getPageCount();
+                    if (pages == null) {
+                        throw new ResponseStatusException(HttpStatus.CONFLICT, "Upload non completo, ricarica il file");
+                    }
+                    return pages;
+                })
                 .toList();
         long pageCount = pagesPerFile.stream().mapToLong(Integer::longValue).sum();
         if (pageCount <= 0 || pageCount * req.numeroCopie() > 10_000_000L) {

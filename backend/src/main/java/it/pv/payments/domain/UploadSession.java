@@ -32,6 +32,7 @@ public class UploadSession {
     private Instant createdAt;
     private boolean completed;
     private String finalStoragePath;
+    private Integer pageCount;
 
     @PrePersist
     public void prePersist() {
@@ -61,4 +62,6 @@ public class UploadSession {
     public void setCompleted(boolean completed) { this.completed = completed; }
     public String getFinalStoragePath() { return finalStoragePath; }
     public void setFinalStoragePath(String finalStoragePath) { this.finalStoragePath = finalStoragePath; }
+    public Integer getPageCount() { return pageCount; }
+    public void setPageCount(Integer pageCount) { this.pageCount = pageCount; }
 }

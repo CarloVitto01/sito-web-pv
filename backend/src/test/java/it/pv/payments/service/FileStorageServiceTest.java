@@ -19,7 +19,7 @@ class FileStorageServiceTest {
     UploadSession session;
     @BeforeEach void setup() throws Exception {
         sessions = mock(UploadSessionRepository.class);
-        storage = new FileStorageService(dir.resolve("files").toString(), dir.resolve("tmp").toString(), sessions, mock(OrderFileRepository.class), mock(UserRepository.class));
+        storage = new FileStorageService(dir.resolve("files").toString(), dir.resolve("tmp").toString(), sessions, mock(OrderFileRepository.class), mock(UserRepository.class), mock(PdfPageCounter.class));
         session = new UploadSession(); session.setId("session"); session.setUserId("owner");
         session.setCreatedAt(Instant.now()); session.setTempDir("session");
         session.setTotalSize(4L); session.setChunkSize(4); session.setTotalChunks(1);

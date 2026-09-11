@@ -17,7 +17,7 @@ class OrderServiceTest {
     UserRepository users = mock(UserRepository.class);
     FileStorageService storage = mock(FileStorageService.class);
     OrderService service = new OrderService(orders, users, mock(PlasticaColorRepository.class),
-            mock(PricingService.class), storage, mock(PdfPageCounter.class), mock(ApplicationEventPublisher.class));
+            mock(PricingService.class), storage, mock(ApplicationEventPublisher.class));
     User owner() { User user = new User(); user.setId("owner"); when(users.findLockedById("owner")).thenReturn(Optional.of(user)); return user; }
     @Test void clientCannotMarkAnOrderPaid() throws Exception {
         owner();
