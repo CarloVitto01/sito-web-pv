@@ -16,6 +16,15 @@ export default defineConfig({
         target: "https://api.photoandvision.it",
         changeOrigin: true,
         secure: true,
+        // Il backend valida rigidamente l'header Origin (whitelist CORS di produzione, non
+        // include localhost). Lo rimuoviamo dalla richiesta inoltrata: senza Origin, Spring
+        // non la considera nemmeno una richiesta cross-origin e la lascia passare.
+        configure: (proxy) => {
+          proxy.on("proxyReq", (proxyReq) => {
+            proxyReq.removeHeader("origin");
+            proxyReq.removeHeader("referer");
+          });
+        },
       },
     },
   },
