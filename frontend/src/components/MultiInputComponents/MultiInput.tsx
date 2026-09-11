@@ -24,7 +24,7 @@ import { IconUpload, IconTrash, IconChevronLeft, IconChevronRight } from "@table
 import type { FileHandler } from "../../types/FileHandler";
 import Loading from "../LoadingComponents/Loading";
 
-const MAX_FILE_SIZE = 300 * 1024 * 1024; // 300MB: oltre l'upload a chunk gestisce comunque il trasferimento,
+const MAX_FILE_SIZE = 1024 * 1024 * 1024; // 1GB: oltre l'upload a chunk gestisce comunque il trasferimento,
 // ma un limite esplicito evita di far scegliere per sbaglio un file enorme senza nessun avviso
 
 interface PropsContainer {
@@ -67,7 +67,7 @@ const MultiInput = React.forwardRef<MultiInputHandle, PropsContainer>(({ onSendD
   };
 
   const onReject = () => {
-    setRejectMessage("Uno o più file superano i 300MB oppure non sono PDF validi.");
+    setRejectMessage("Uno o più file superano 1GB oppure non sono PDF validi.");
   };
 
   // stessa validazione della Dropzone (tipo PDF + dimensione), per i file aggiunti da fuori
@@ -91,7 +91,7 @@ const MultiInput = React.forwardRef<MultiInputHandle, PropsContainer>(({ onSendD
       setFiles((prev) => [...prev, ...accepted]);
     }
     if (hasRejected) {
-      setRejectMessage("Uno o più file superano i 300MB oppure non sono PDF validi.");
+      setRejectMessage("Uno o più file superano 1GB oppure non sono PDF validi.");
     }
   }, []);
 
@@ -179,7 +179,7 @@ const MultiInput = React.forwardRef<MultiInputHandle, PropsContainer>(({ onSendD
           <Stack gap={2} align="center">
             <Text fw={800}>Trascina qui i PDF</Text>
             <Text size="sm" c="dimmed">
-              oppure clicca per selezionare (max 300MB per file)
+              oppure clicca per selezionare (max 1GB per file)
             </Text>
           </Stack>
         </Group>

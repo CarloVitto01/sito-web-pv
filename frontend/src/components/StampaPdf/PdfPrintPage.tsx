@@ -10,6 +10,7 @@ import NumeroCopie from "../NumeroCopieComponents/NumeroCopie";
 import IntervalloPagine from "../IntervalloPagineComponents/IntervalloPagine";
 import RiepilogoOrdine from "../RiepilogoOrdineComponents/RiepilogoOrdine";
 import RiepilogoOrdineA3 from "../RiepilogoOrdineComponents/RiepilogoOrdineA3";
+import { type UploadProgressState } from "../RiepilogoOrdineComponents/UploadProgressBar";
 import Banner from "../Banner/Banner";
 
 import { auth, onAuthStateChanged } from "../../backend/auth";
@@ -392,6 +393,7 @@ const PdfPrintPage = () => {
   const [formSubmitting, setFormSubmitting] = useState<boolean>(false);
   const [formError, setFormError] = useState<boolean>(false);
   const [formErrorMessage, setFormErrorMessage] = useState<string>("");
+  const [uploadProgress, setUploadProgress] = useState<UploadProgressState | null>(null);
   const [, setIsLoggedIn] = useState(false);
 
   // --- opzioni comuni (inchiostro/pagina) ---
@@ -1174,6 +1176,7 @@ const PdfPrintPage = () => {
       if (!auth.currentUser) {
         setLoginModalOpen(true);
         setFormSubmitting(false);
+        setUploadProgress(null);
         return;
       }
 
@@ -1184,10 +1187,12 @@ const PdfPrintPage = () => {
       }
       if (payment?.method === "PAYPAL" && payment.confirmed) {
         setFormSubmitting(false);
+        setUploadProgress(null);
         setFormSubmitted(true);
         return;
       }
       setFormSubmitting(true);
+      setUploadProgress(null);
 
       const isValidA4 =
         formato === formatoEnum.A4
@@ -1205,11 +1210,27 @@ const PdfPrintPage = () => {
         // ---- upload a chunk, un file alla volta: piu' robusto su rete lenta di un upload unico ----
         const uploadedFiles: { storagePath: string; originalFileName: string }[] = [];
         try {
+          const totalBytes = fileData.reduce((sum, f) => sum + f.file.size, 0);
+          const alreadyUploadedBytes = fileData
+            .filter((f) => uploadedPaths.current.has(f.file))
+            .reduce((sum, f) => sum + f.file.size, 0);
+          let bytesDoneBeforeCurrentFile = alreadyUploadedBytes;
+          setUploadProgress({ loadedBytes: alreadyUploadedBytes, totalBytes, startedAt: Date.now() });
+
           for (const f of fileData) {
-            const storagePath = uploadedPaths.current.get(f.file) ?? await uploadFileInChunks(f.file);
-            uploadedPaths.current.set(f.file, storagePath);
+            let storagePath = uploadedPaths.current.get(f.file);
+            if (!storagePath) {
+              storagePath = await uploadFileInChunks(f.file, (loadedBytes) => {
+                setUploadProgress((prev) =>
+                  prev ? { ...prev, loadedBytes: bytesDoneBeforeCurrentFile + loadedBytes } : prev
+                );
+              });
+              uploadedPaths.current.set(f.file, storagePath);
+              bytesDoneBeforeCurrentFile += f.file.size;
+            }
             uploadedFiles.push({ storagePath, originalFileName: f.file.name });
           }
+          setUploadProgress(null);
         } catch (uploadErr) {
           console.error("Upload fallito:", uploadErr);
           throw new Error(
@@ -1322,6 +1343,7 @@ const PdfPrintPage = () => {
         setFormErrorMessage(e instanceof Error ? e.message : "Si è verificato un errore imprevisto. Riprova.");
         setFormError(true);
         setFormSubmitting(false);
+        setUploadProgress(null);
         if (payment?.method === "PAYPAL") throw e;
       }
     },
@@ -1866,6 +1888,7 @@ const PdfPrintPage = () => {
                     disabled={fileData.length === 0 || !canConfirmA4 || formSubmitting}
                     loading={formSubmitting}
                     submitted={formSubmitted}
+                    uploadProgress={uploadProgress}
                   />
                 ) : (
                   <RiepilogoOrdineA3
@@ -1882,6 +1905,7 @@ const PdfPrintPage = () => {
                     disabled={fileData.length === 0 || formSubmitting}
                     loading={formSubmitting}
                     submitted={formSubmitted}
+                    uploadProgress={uploadProgress}
                   />
                 )}
               </Box>

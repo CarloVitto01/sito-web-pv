@@ -10,7 +10,6 @@ import {
   Card,
   Group,
   Loader,
-  Progress,
   Stack,
   Text,
   Title,
@@ -19,6 +18,7 @@ import { IconCheck, IconInfoCircle } from "@tabler/icons-react";
 
 import MetodoPagamentoPicker from "../CardComponents/MetodoPagamentoPicker";
 import ConsegnaSlotPicker, { type DeliverySlot } from "../CardComponents/ConsegnaSlotPicker";
+import UploadProgressBar, { type UploadProgressState } from "./UploadProgressBar";
 
 type PaymentPayload = {
   method: "CASH" | "PAYPAL";
@@ -68,6 +68,7 @@ type RiepilogoProps = {
   disabled?: boolean;
   submitted?: boolean;
   loading?: boolean;
+  uploadProgress?: UploadProgressState | null;
 
   ivaRate?: number;
   transportFeeEuro?: number;
@@ -416,6 +417,7 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
   disabled = false,
   submitted = false,
   loading = false,
+  uploadProgress = null,
 
   ivaRate = 0.22,
   transportFeeEuro = 1,
@@ -429,8 +431,6 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
   desktopStickiness = false,
   stickyTopPx = 92,
 }) => {
-  const [progress, setProgress] = useState(0);
-
   // ✅ default cash
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "paypal">("cash");
 
@@ -757,25 +757,6 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
     });
   };
 
-  useEffect(() => {
-    if (!loading) return;
-
-    let current = 0;
-
-    const interval = setInterval(() => {
-      current += Math.floor(Math.random() * 10) + 5;
-
-      if (current >= 90) clearInterval(interval);
-      else setProgress(current);
-    }, 300);
-
-    return () => clearInterval(interval);
-  }, [loading]);
-
-  useEffect(() => {
-    if (submitted) setProgress(100);
-  }, [submitted]);
-
   const plasticheLabelClean = (plasticheLabel ?? "").trim();
   const showPlastiche = tipo === "A4" && plasticheLabelClean.length > 0;
 
@@ -985,14 +966,7 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
             </Button>
           )}
 
-          {loading && (
-            <Stack gap="xs">
-              <Text size="sm" style={{ color: "rgba(255,255,255,.55)" }}>
-                Invio in corso: attendere il completamento della barra.
-              </Text>
-              <Progress value={progress} color="gold" />
-            </Stack>
-          )}
+          {loading && <UploadProgressBar uploadProgress={uploadProgress} />}
 
           {submitted && (
             <Alert color="gold" variant="light" icon={<IconCheck size={18} />}>

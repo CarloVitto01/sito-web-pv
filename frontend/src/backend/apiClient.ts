@@ -111,6 +111,44 @@ export const api = {
     request<T>(path, { ...opts, method: "PUT", rawBody: body }),
 };
 
+/**
+ * PUT di un blob con avanzamento reale in byte (xhr.upload.onprogress): "fetch" non espone alcun evento
+ * di progresso in upload, quindi per una barra di caricamento veritiera serve XMLHttpRequest.
+ */
+export function uploadRawWithProgress(
+  path: string,
+  body: Blob,
+  onProgress?: (loadedBytes: number, totalBytes: number) => void,
+  isRetry = false
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", `${API_BASE}${path}`);
+    const token = getAccessToken();
+    if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress?.(e.loaded, e.total);
+    };
+
+    xhr.onload = () => {
+      if (xhr.status === 401 && !isRetry) {
+        tryRefresh().then((refreshed) => {
+          if (refreshed) uploadRawWithProgress(path, body, onProgress, true).then(resolve, reject);
+          else reject(new ApiError(401, "Non autenticato"));
+        });
+        return;
+      }
+      if (xhr.status >= 200 && xhr.status < 300) resolve();
+      else reject(new ApiError(xhr.status, xhr.statusText || "Errore di upload"));
+    };
+
+    xhr.onerror = () => reject(new ApiError(0, "Errore di rete durante l'upload"));
+
+    xhr.send(body);
+  });
+}
+
 export function apiFileDownloadUrl(orderFileId: number | string): string {
   return `${API_BASE}/api/files/download/${orderFileId}`;
 }

@@ -39,8 +39,6 @@ public class FileStorageService {
     private final OrderFileRepository orderFileRepository;
     private final it.pv.payments.repository.UserRepository users;
     private final PdfPageCounter pdfPageCounter;
-    @Value("${app.storage.daily-user-quota-bytes:2147483648}")
-    private long dailyUserQuota = 2147483648L;
 
     public FileStorageService(
             @Value("${app.storage.base-dir}") String baseDir,
@@ -64,14 +62,15 @@ public class FileStorageService {
     public UploadSession initUpload(String userId, String originalFileName, long totalSize, int chunkSize) {
         if (originalFileName == null || originalFileName.length() > 200
                 || !originalFileName.toLowerCase(java.util.Locale.ROOT).endsWith(".pdf")
-                || totalSize <= 0 || totalSize > 300L * 1024 * 1024
-                || chunkSize <= 0 || chunkSize > 20 * 1024 * 1024) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "PDF o dimensioni upload non validi (massimo 300 MB)");
+                || totalSize <= 0 || totalSize > 1024L * 1024 * 1024
+                || chunkSize <= 0 || chunkSize > 80 * 1024 * 1024) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "PDF o dimensioni upload non validi (massimo 1 GB)");
         }
         users.findLockedById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+        // Nessuna quota di volume giornaliera: solo un tetto anti-abuso sul numero di sessioni create
+        // in 24h (non sui MB caricati), per evitare che uno script spammi init-upload senza limiti.
         Instant since = Instant.now().minus(24, ChronoUnit.HOURS);
-        if (uploadSessionRepository.bytesUploadedSince(userId, since) + totalSize > dailyUserQuota
-                || uploadSessionRepository.countByUserIdAndCreatedAtGreaterThanEqual(userId, since) >= 1000) {
+        if (uploadSessionRepository.countByUserIdAndCreatedAtGreaterThanEqual(userId, since) >= 1000) {
             throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Limite upload giornaliero raggiunto");
         }
         try {
