@@ -1,7 +1,7 @@
 // Client HTTP verso il backend proprietario (sostituisce Firebase: niente Firestore/Auth/Storage SDK).
 // Gestisce base URL, header di autenticazione JWT e il refresh automatico del token scaduto.
 
-const API_BASE = (import.meta.env.REACT_APP_API_BASE_URL || "http://localhost:8080").replace(/\/$/, "");
+const API_BASE = (import.meta.env.REACT_APP_API_BASE_URL ?? "http://localhost:8080").replace(/\/$/, "");
 
 const ACCESS_TOKEN_KEY = "pv_access_token";
 const REFRESH_TOKEN_KEY = "pv_refresh_token";

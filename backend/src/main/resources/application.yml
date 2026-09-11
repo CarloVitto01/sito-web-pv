@@ -31,8 +31,8 @@ server:
 
 paypal:
   base-url: ${PAYPAL_BASE_URL:https://api-m.sandbox.paypal.com}
-  clientId: ${PAYPAL_CLIENT_ID:}
-  clientSecret: ${PAYPAL_CLIENT_SECRET:}
+  clientId: ${PAYPAL_CLIENT_ID:AUl4T93BPBjSUm2840NDGmSkKz4I2f0mQy5R0nsHUtn0pRkvc6UOMOiXOOEudfRaODYy9WTpEx64OETY}
+  clientSecret: ${PAYPAL_CLIENT_SECRET:EFvH1IfjIAGYtVY4ocFB0KQvHY89YgPhgPK36T_2YakOw4vubZ80rBI1_xB3ZZ42-7HbtSzMzkVH1ygL}
 
 app:
   # ==== Autenticazione ====
@@ -45,8 +45,8 @@ app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:https://stampe.photoandvision.it}
   # ==== URL base (usate per link email/telegram) ====
-  frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:3000}
-  public-base-url: ${PUBLIC_BASE_URL:http://localhost:8080}
+  frontend-base-url: ${FRONTEND_BASE_URL:http://stampe.photoandvision.it}
+  public-base-url: ${PUBLIC_BASE_URL:https://api.photoandvision.it}
   # ==== Storage file (in produzione puntare al mount del NAS con STORAGE_BASE_DIR) ====
   storage:
     base-dir: ${STORAGE_BASE_DIR:./storage/local}
