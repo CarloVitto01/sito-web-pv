@@ -1,17 +1,6 @@
 import React from "react";
-import { RangePagesData } from "../../types/RangePagesData";
-import {
-  Alert,
-  Badge,
-  Card,
-  Group,
-  NumberInput,
-  SegmentedControl,
-  Stack,
-  Text,
-  useMantineTheme,
-} from "@mantine/core";
-import { IconAlertTriangle } from "@tabler/icons-react";
+import type { RangePagesData } from "../../types/RangePagesData";
+import { ControlFrame } from "../CardComponents/PrintControls";
 
 type Props = {
   onSendData: (value: RangePagesData) => void;
@@ -19,183 +8,168 @@ type Props = {
   disable: boolean;
   errorMessage: string;
   hideTitle?: boolean;
-  /** Se true, non disegna la Card esterna (bordo/ombra): per essere annidato in un pannello padre. */
   bare?: boolean;
 };
 
 type Mode = "ALL" | "CUSTOM";
 
-const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
+function clamp(value: number, max: number): number {
+  return Math.max(
+    1,
+    Math.min(
+      max,
+      Number.isFinite(value) ? Math.floor(value) : 1
+    )
+  );
+}
 
-const IntervalloPagine: React.FC<Props> = ({ onSendData, maxValue, disable, errorMessage, hideTitle = false, bare = false }) => {
-  const theme = useMantineTheme();
-
-  const max = React.useMemo(() => (maxValue && maxValue >= 1 ? maxValue : 1), [maxValue]);
+const IntervalloPagine: React.FC<Props> = ({
+  onSendData,
+  maxValue,
+  disable,
+  errorMessage,
+  hideTitle = false,
+  bare = false,
+}) => {
+  const max = Math.max(1, Math.floor(maxValue || 1));
 
   const [mode, setMode] = React.useState<Mode>("ALL");
-  const [from, setFrom] = React.useState<number>(1);
-  const [to, setTo] = React.useState<number>(max);
+  const [range, setRange] = React.useState({
+    from: 1,
+    to: max,
+  });
 
-  // riallinea quando cambia max (es. carico un PDF diverso)
+  const inputId = React.useId();
+
+  const from = clamp(range.from, max);
+  const to = Math.max(from, clamp(range.to, max));
+
+  // Mantiene aggiornata la callback senza reinviare i dati
+  // soltanto perché il genitore crea una nuova funzione.
+  const callback = React.useRef(onSendData);
+
   React.useEffect(() => {
-    if (mode === "ALL") {
-      setFrom(1);
-      setTo(max);
-      onSendData({ from: 1, to: max, all: true, isValid: true });
-      return;
-    }
+    callback.current = onSendData;
+  }, [onSendData]);
 
-    // CUSTOM: clamp
-    setFrom((prev) => clamp(prev || 1, 1, max));
-    setTo((prev) => clamp(prev || 1, 1, max));
-  }, [max]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // quando cambia mode
   React.useEffect(() => {
-    if (mode === "ALL") {
-      setFrom(1);
-      setTo(max);
-      onSendData({ from: 1, to: max, all: true, isValid: true });
-      return;
-    }
-
-    // CUSTOM: inizializza sensato se venivo da ALL
-    setFrom((prev) => clamp(prev || 1, 1, max));
-    setTo((prev) => clamp(prev || 1, 1, max));
-  }, [mode]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // invio dati in modalità CUSTOM (validazione + normalizzazione)
-  React.useEffect(() => {
-    if (mode !== "CUSTOM") return;
-
-    const f0 = Number.isFinite(from) ? from : 1;
-    const t0 = Number.isFinite(to) ? to : 1;
-
-    const f = clamp(f0, 1, max);
-    const t = clamp(t0, 1, max);
-
-    const normalizedFrom = Math.min(f, t);
-    const normalizedTo = Math.max(f, t);
-
-    const isValid =
-      normalizedFrom >= 1 && normalizedTo >= 1 && normalizedFrom <= normalizedTo && normalizedTo <= max;
-
-    onSendData({
-      from: normalizedFrom,
-      to: normalizedTo,
-      all: false,
-      isValid,
+    callback.current({
+      from: mode === "ALL" ? 1 : from,
+      to: mode === "ALL" ? max : to,
+      all: mode === "ALL",
+      isValid: true,
     });
-  }, [mode, from, to, max, onSendData]);
+  }, [mode, from, to, max]);
 
-  const surfaceBg = theme.white;
-  const borderBase = theme.colors.gray[3];
+  const selectCustom = () => {
+    if (mode === "ALL") {
+      setRange({ from: 1, to: max });
+    }
 
-  const body = (
-    <>
-      {!hideTitle && (
-        <Group justify="space-between" align="baseline" mb="sm">
-          <Text fw={900} style={{ letterSpacing: 0.2 }}>
-            Intervallo pagine
-          </Text>
+    setMode("CUSTOM");
+  };
 
-          <Badge variant="light" color="gray">
-            max {max}
-          </Badge>
-        </Group>
-      )}
-
-      {disable ? (
-        <Alert icon={<IconAlertTriangle size={16} />} color="gray" variant="light">
-          {errorMessage}
-        </Alert>
-      ) : null}
-
-      <Stack gap="sm" mt={disable ? "sm" : 0} style={{ pointerEvents: disable ? "none" : "auto" }}>
-        <SegmentedControl
-          fullWidth
-          radius="md"
-          value={mode}
-          onChange={(v) => setMode(v as Mode)}
-          data={[
-            { value: "ALL", label: "Tutte" },
-            { value: "CUSTOM", label: "Personalizzato" },
-          ]}
-          styles={{
-            root: {
-              background: theme.colors.gray[0],
-              border: `1px solid ${theme.colors.gray[3]}`,
-            },
-            indicator: {
-              background: theme.white,
-              border: `1px solid ${theme.colors.gold[6]}`,
-              boxShadow: theme.shadows.xs,
-            },
-            label: { paddingTop: 8, paddingBottom: 8, fontWeight: 800, fontSize: 13 },
-          }}
-        />
-
-        {mode === "CUSTOM" ? (
-          <Group grow gap="sm">
-            <NumberInput
-              label="Da"
-              value={from}
-              onChange={(v) => {
-                const next = typeof v === "number" ? v : 1;
-                const clamped = clamp(next, 1, max);
-                setFrom(clamped);
-                // se supero "to", sposto anche to
-                setTo((prevTo) => {
-                  const pt = clamp(typeof prevTo === "number" ? prevTo : 1, 1, max);
-                  return clamped > pt ? clamped : pt;
-                });
-              }}
-              min={1}
-              max={max}
-              allowDecimal={false}
-              clampBehavior="strict"
-            />
-
-            <NumberInput
-              label="A"
-              value={to}
-              onChange={(v) => {
-                const next = typeof v === "number" ? v : 1;
-                const clamped = clamp(next, 1, max);
-                setTo(clamped);
-                // se scendo sotto "from", sposto anche from
-                setFrom((prevFrom) => {
-                  const pf = clamp(typeof prevFrom === "number" ? prevFrom : 1, 1, max);
-                  return clamped < pf ? clamped : pf;
-                });
-              }}
-              min={1}
-              max={max}
-              allowDecimal={false}
-              clampBehavior="strict"
-            />
-          </Group>
-        ) : null}
-      </Stack>
-    </>
-  );
-
-  if (bare) return body;
+  const helperText = disable
+    ? errorMessage
+    : maxValue < 1
+      ? "Carica un PDF per rilevare le pagine."
+      : mode === "ALL"
+        ? `Tutte le ${max} pagine del PDF`
+        : `${to - from + 1} pagine selezionate su ${max}`;
 
   return (
-    <Card
-      withBorder
-      radius="lg"
-      p="md"
-      style={{
-        background: surfaceBg,
-        borderColor: borderBase,
-        boxShadow: theme.shadows.sm,
-        opacity: disable ? 0.6 : 1,
-      }}
+    <ControlFrame
+      title="Intervallo pagine"
+      hideTitle={hideTitle}
+      bare={bare}
     >
-      {body}
-    </Card>
+      <fieldset
+        className="pc-fieldset"
+        disabled={disable}
+      >
+        <legend className="pc-sr-only">
+          Pagine da stampare
+        </legend>
+
+        <div
+          className="pc-segment"
+          role="group"
+          aria-label="Intervallo pagine"
+        >
+          <button
+            type="button"
+            aria-pressed={mode === "ALL"}
+            onClick={() => setMode("ALL")}
+          >
+            Tutte le pagine
+          </button>
+
+          <button
+            type="button"
+            aria-pressed={mode === "CUSTOM"}
+            onClick={selectCustom}
+          >
+            Scegli intervallo
+          </button>
+        </div>
+
+        {mode === "CUSTOM" && (
+          <div className="pc-range">
+            <label htmlFor={`${inputId}-from`}>
+              Da pagina
+
+              <input
+                id={`${inputId}-from`}
+                type="number"
+                min={1}
+                max={max}
+                step={1}
+                value={from}
+                onChange={(event) => {
+                  const next = clamp(
+                    Number(event.target.value),
+                    max
+                  );
+
+                  setRange({
+                    from: next,
+                    to: Math.max(next, to),
+                  });
+                }}
+              />
+            </label>
+
+            <span aria-hidden="true">→</span>
+
+            <label htmlFor={`${inputId}-to`}>
+              A pagina
+
+              <input
+                id={`${inputId}-to`}
+                type="number"
+                min={1}
+                max={max}
+                step={1}
+                value={to}
+                onChange={(event) => {
+                  const next = clamp(
+                    Number(event.target.value),
+                    max
+                  );
+
+                  setRange({
+                    from: Math.min(next, from),
+                    to: next,
+                  });
+                }}
+              />
+            </label>
+          </div>
+        )}
+      </fieldset>
+
+      <p className="pc-helper">{helperText}</p>
+    </ControlFrame>
   );
 };
 

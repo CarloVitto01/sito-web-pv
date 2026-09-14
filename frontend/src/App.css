@@ -1,4 +1,6 @@
-html, body, #root {
+html,
+body,
+#root {
   min-height: 100%;
 }
 
@@ -9,47 +11,47 @@ body {
   color: var(--color-text-primary);
 }
 
-/* root sempre trasparente */
-#root, .App {
-  background: transparent !important;
+#root,
+.App {
+  background: transparent;
 }
 
-/* wrapper principale */
 .pageBg {
   position: relative;
   min-height: 100dvh;
-  overflow: hidden;
+  overflow-x: clip;
+}
 
-  /* NUOVO SFONDO FOTO */
-  background-image: url("./assets/images/sfondo.jpeg"); /* cambia path */
+.pageContent {
+  position: relative;
+  z-index: 1;
+  min-height: 100dvh;
+}
+
+/* Home del configuratore PDF */
+.pageBg--home {
+  background: #f5f1e9;
+}
+
+/* Nessun overlay sulla nuova Home */
+.pageBg--home::before {
+  display: none;
+}
+
+/* Sfondo mantenuto sulle altre pagine */
+.pageBg--default {
+  background-image: url("./assets/images/sfondo.jpeg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  background-attachment: fixed; /* effetto leggero parallax desktop */
+  background-attachment: fixed;
 }
 
-/* contenuto sopra allo sfondo */
-.pageContent {
-  position: relative;
-  z-index: 1;
-}
-
-/* Mantine: superfici pulite */
-.mantine-Card-root,
-.mantine-Paper-root {
-  background-color: #ffffff !important;
-}
-
-/* opzionale: overlay scuro per leggibilità */
-.pageBg::before {
+.pageBg--default::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.35); /* regola intensità */
   z-index: 0;
-}
-
-.pageContent {
-  position: relative;
-  z-index: 1;
+  background: rgba(0, 0, 0, 0.35);
+  pointer-events: none;
 }

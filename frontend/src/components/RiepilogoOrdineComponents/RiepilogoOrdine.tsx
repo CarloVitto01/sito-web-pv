@@ -428,8 +428,8 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
   csrfToken,
 
   // ✅ default: su desktop NON sticky (segue scroll)
-  desktopStickiness = false,
-  stickyTopPx = 92,
+  desktopStickiness = true,
+  stickyTopPx = 24,
 }) => {
   // ✅ default cash
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "paypal">("cash");
@@ -761,221 +761,331 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
   const showPlastiche = tipo === "A4" && plasticheLabelClean.length > 0;
 
   // ✅ wrapper: sticky SOLO se desktopStickiness=true
-  const wrapperStyle = useMemo<React.CSSProperties>(() => {
-    if (!desktopStickiness) return { position: "static" };
-
-    return {
-      position: "sticky",
-      top: stickyTopPx,
-      alignSelf: "flex-start",
-    };
-  }, [desktopStickiness, stickyTopPx]);
+  const wrapperStyle = {
+    "--pv-order-top": `${stickyTopPx}px`,
+  } as React.CSSProperties;
 
   return (
-    <Box style={wrapperStyle}>
-      <Card
-        radius={24}
-        p="lg"
-        style={{
-          background: "linear-gradient(165deg, #161311 0%, #0c1119 60%)",
-          border: "1px solid rgba(212,175,106,.25)",
-          boxShadow: "0 30px 60px -24px rgba(0,0,0,.7)",
-        }}
+    <aside
+      className="pv-order"
+      data-sticky={desktopStickiness ? "true" : "false"}
+      style={wrapperStyle}
+      aria-label={`Riepilogo ordine ${tipo}`}
+      aria-busy={loading}
+    >
+      <header className="pv-order-header">
+        <div>
+          <span className="pv-order-eyebrow">LA TUA STAMPA</span>
+          <h2>Riepilogo ordine</h2>
+          <p>Controlla le tue scelte e completa l’ordine.</p>
+        </div>
+
+        <span className="pv-order-format">{tipo}</span>
+      </header>
+
+      <div
+        className="pv-order-body"
+        tabIndex={0}
+        role="region"
+        aria-label="Dettagli e opzioni dell’ordine"
       >
-        <Stack gap="md">
-          <Group justify="space-between" align="center">
-            <Title order={3} size="h4" tt="uppercase" style={{ color: "#fff", letterSpacing: ".02em", fontFamily: "'Oswald', sans-serif" }}>
-              Riepilogo ordine {tipo}
-            </Title>
+        <div className="pv-order-stats">
+          <div>
+            <strong>{numeroPDF}</strong>
+            <span>PDF caricati</span>
+          </div>
 
-            {(totals.generalPromoAttiva || totals.studentPromoAttiva) && (
-              <Group gap="xs">
-                {totals.generalPromoAttiva && (
-                  <Badge variant="light" color="gold">
-                    Generale -{totals.scontoGeneralePercent.toFixed(0)}%
-                  </Badge>
-                )}
+          <div>
+            <strong>{numeroCopie}</strong>
+            <span>Copie</span>
+          </div>
 
-                {totals.studentPromoAttiva && (
-                  <Badge variant="light" color="green">
-                    Studenti -{totals.scontoStudentiPercent.toFixed(0)}%
-                  </Badge>
-                )}
-              </Group>
-            )}
-          </Group>
+          <div>
+            <strong>{tipo}</strong>
+            <span>Formato</span>
+          </div>
+        </div>
 
-          {totals.generalPromoAttiva && (
-            <Alert icon={<IconInfoCircle size={18} />} color="gold" variant="light">
-              {promoCfg.generalPromo.description
-                ? promoCfg.generalPromo.description
-                : `${promoCfg.generalPromo.name ?? "Promo generale"}: -${totals.scontoGeneralePercent.toFixed(
-                  0
-                )}% sulle stampe PDF`}
-            </Alert>
-          )}
+        <details className="pv-order-details" open>
+          <summary>
+            <span>Configurazione di stampa</span>
+            <span className="pv-order-chevron" aria-hidden="true">
+              ⌄
+            </span>
+          </summary>
 
-          {totals.studentPromoAttiva && (
-            <Alert icon={<IconInfoCircle size={18} />} color="green" variant="light">
-              {promoCfg.studentPromo.description
-                ? promoCfg.studentPromo.description
-                : `${promoCfg.studentPromo.name ?? "Promo studenti"}: -${totals.scontoStudentiPercent.toFixed(
-                  0
-                )}% aggiuntivo sulle stampe PDF`}
-            </Alert>
-          )}
+          <dl className="pv-order-list">
+            <div>
+              <dt>Colore</dt>
+              <dd>{inchiostro}</dd>
+            </div>
 
-          <Stack gap={11} pb="sm" style={{ borderBottom: "1px solid rgba(255,255,255,.10)" }}>
-            <KeyValueRowDark label="Numero PDF" value={numeroPDF} />
-            <KeyValueRowDark label="Inchiostro" value={inchiostro} />
-            <KeyValueRowDark label="Layout" value={layout} />
-            <KeyValueRowDark label="Gestione pagina" value={pagina} />
-            <KeyValueRowDark label="Rilegatura" value={rilegatura} />
-            <KeyValueRowDark label="Rilegatura unica" value={rilegaturaUnica} />
+            <div>
+              <dt>Layout</dt>
+              <dd>{layout}</dd>
+            </div>
+
+            <div>
+              <dt>Gestione pagina</dt>
+              <dd>{pagina}</dd>
+            </div>
+
+            <div>
+              <dt>Rilegatura</dt>
+              <dd>{rilegatura}</dd>
+            </div>
+
+            <div>
+              <dt>Rilegatura unica</dt>
+              <dd>{rilegaturaUnica}</dd>
+            </div>
 
             {showPlastiche && (
-              <KeyValueRowDark label="Plastica copertina" value={plasticheLabelClean} />
+              <div>
+                <dt>Copertina</dt>
+                <dd>{plasticheLabelClean}</dd>
+              </div>
             )}
 
-            <KeyValueRowDark label="Intervallo pagine" value={intervalloPagine} />
-            <KeyValueRowDark label="Numero copie" value={numeroCopie} />
-          </Stack>
+            <div>
+              <dt>Pagine</dt>
+              <dd>{intervalloPagine}</dd>
+            </div>
+          </dl>
+        </details>
+
+        {(totals.generalPromoAttiva || totals.studentPromoAttiva) && (
+          <div className="pv-order-promos">
+            {totals.generalPromoAttiva && (
+              <div className="pv-order-promo">
+                <IconCheck size={17} aria-hidden="true" />
+
+                <div>
+                  <strong>
+                    {promoCfg.generalPromo.name || "Promo generale"}
+                    {" "}−{totals.scontoGeneralePercent.toFixed(0)}%
+                  </strong>
+
+                  {promoCfg.generalPromo.description && (
+                    <p>{promoCfg.generalPromo.description}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {totals.studentPromoAttiva && (
+              <div className="pv-order-promo">
+                <IconCheck size={17} aria-hidden="true" />
+
+                <div>
+                  <strong>
+                    {promoCfg.studentPromo.name || "Promo studenti"}
+                    {" "}−{totals.scontoStudentiPercent.toFixed(0)}%
+                  </strong>
+
+                  {promoCfg.studentPromo.description && (
+                    <p>{promoCfg.studentPromo.description}</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        <section className="pv-order-section">
+          <h3>
+            <span className="pv-order-step">01</span>
+            Ritiro e consegna
+          </h3>
 
           <ConsegnaSlotPicker
             slots={deliverySlots}
             selectedId={selectedSlotId}
             onChange={setSelectedSlotId}
             onStudentChange={setIsStudent}
+            disabled={loading || submitted}
             hint="Seleziona uno slot per procedere al pagamento."
           />
+        </section>
 
-          <Stack gap={11} py="sm" style={{ borderTop: "1px solid rgba(255,255,255,.10)", borderBottom: "1px solid rgba(255,255,255,.10)" }}>
-            {(totals.scontoGenerale > 0 || totals.scontoStudenti > 0) && (
-              <KeyValueRowDark label="Subtotale" value={`${euro(totals.baseLordo)} €`} />
-            )}
+        <section className="pv-order-section">
+          <h3>
+            <span className="pv-order-step">02</span>
+            Metodo di pagamento
+          </h3>
+
+          <fieldset
+            className="pv-order-payment"
+            disabled={loading || submitted}
+          >
+            <legend className="pv-order-sr-only">
+              Metodo di pagamento
+            </legend>
+
+            <MetodoPagamentoPicker
+              value={paymentMethod}
+              onChange={setPaymentMethod}
+            />
+          </fieldset>
+        </section>
+
+        <section className="pv-order-section">
+          <h3>Dettaglio importi</h3>
+
+          <dl className="pv-order-list pv-order-prices">
+            <div>
+              <dt>Stampa e finiture</dt>
+              <dd>{euro(totals.baseLordo)} €</dd>
+            </div>
 
             {totals.scontoGenerale > 0 && (
-              <Group justify="space-between" align="baseline">
-                <Text size="sm" c="green">
-                  {promoCfg.generalPromo.name || "Promo generale"} (-
-                  {totals.scontoGeneralePercent.toFixed(0)}%)
-                </Text>
-                <Text size="sm" c="green" fw={700}>
-                  - {euro(totals.scontoGenerale)} €
-                </Text>
-              </Group>
+              <div className="pv-order-discount">
+                <dt>{promoCfg.generalPromo.name || "Promo generale"}</dt>
+                <dd>−{euro(totals.scontoGenerale)} €</dd>
+              </div>
             )}
 
             {totals.scontoStudenti > 0 && (
-              <Group justify="space-between" align="baseline">
-                <Text size="sm" c="green">
-                  {promoCfg.studentPromo.name || "Promo studenti"} (-
-                  {totals.scontoStudentiPercent.toFixed(0)}%)
-                </Text>
-                <Text size="sm" c="green" fw={700}>
-                  - {euro(totals.scontoStudenti)} €
-                </Text>
-              </Group>
+              <div className="pv-order-discount">
+                <dt>{promoCfg.studentPromo.name || "Promo studenti"}</dt>
+                <dd>−{euro(totals.scontoStudenti)} €</dd>
+              </div>
             )}
 
             {(totals.scontoGenerale > 0 || totals.scontoStudenti > 0) && (
-              <KeyValueRowDark label="Imponibile scontato" value={`${euro(totals.base)} €`} />
+              <div>
+                <dt>Imponibile scontato</dt>
+                <dd>{euro(totals.base)} €</dd>
+              </div>
+            )}
+
+            <div>
+              <dt>IVA ({Number((fees.ivaRate * 100).toFixed(2))}%)</dt>
+              <dd>{euro(totals.iva)} €</dd>
+            </div>
+
+            {isStudent === true && (
+              <div>
+                <dt>Consegna</dt>
+                <dd>{euro(totals.trasporto)} €</dd>
+              </div>
             )}
 
             {paymentMethod === "paypal" && (
-              <KeyValueRowDark
-                label={`Fee PayPal (${(fees.paypalPercent * 100).toFixed(2)}% + ${euro(
-                  fees.paypalFixed
-                )} €)`}
-                value={`${euro(totals.feePP)} €`}
-              />
+              <div>
+                <dt>
+                  Commissione PayPal
+                  <small>
+                    {(fees.paypalPercent * 100).toFixed(2)}%
+                    {" + "}
+                    {euro(fees.paypalFixed)} €
+                  </small>
+                </dt>
+                <dd>{euro(totals.feePP)} €</dd>
+              </div>
             )}
+          </dl>
+        </section>
 
-            <Group justify="space-between" align="baseline" pt={4}>
-              <Text fw={700} tt="uppercase" style={{ color: "#fff", fontFamily: "'Oswald', sans-serif", fontSize: 14, letterSpacing: ".02em" }}>
-                Totale
-              </Text>
-              <Text
-                fw={700}
-                style={{
-                  fontFamily: "'Oswald', sans-serif",
-                  fontSize: 30,
-                  background: "linear-gradient(180deg,#f2c94c,#c9962f)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
+        {paymentMethod === "paypal" && !submitted && (
+          <section className="pv-order-paypal">
+            <p>
+              Completa il pagamento di{" "}
+              <strong>{euro(totals.totaleDaAddebitare)} €</strong>
+              {" "}con PayPal.
+            </p>
+
+            {isStudent === null ? (
+              <Alert
+                color="gold"
+                variant="light"
+                icon={<IconInfoCircle size={18} />}
               >
-                {euro(totals.totaleDaAddebitare)} €
-              </Text>
-            </Group>
-          </Stack>
-
-          <MetodoPagamentoPicker value={paymentMethod} onChange={setPaymentMethod} />
-
-          {paymentMethod === "paypal" && (
-            <Card withBorder radius="md" p="md">
-              <Stack gap="xs">
-                <Text size="sm" c="dimmed">
-                  Completa il pagamento di <strong>{euro(totals.totaleDaAddebitare)} €</strong>{" "}
-                  con PayPal. Al termine l’ordine partirà automaticamente.
-                </Text>
-
-                {isStudent === null ? (
-                  <Alert color="gold" variant="light" icon={<IconInfoCircle size={18} />}>
-                    Seleziona “Sì” oppure “No” per abilitare il pagamento.
-                  </Alert>
-                ) : isStudent === true && !selectedSlot ? (
-                  <Alert color="gold" variant="light" icon={<IconInfoCircle size={18} />}>
-                    Seleziona prima uno slot di consegna per abilitare il pagamento PayPal.
-                  </Alert>
-                ) : (
-                  <Box>
-                    {!paypalReady && (
-                      <Group gap="sm">
-                        <Loader size="sm" />
-                        <Text size="sm" c="dimmed">
-                          Caricamento PayPal…
-                        </Text>
-                      </Group>
-                    )}
-
-                    <Box ref={paypalButtonsContainerRef} mt="sm" />
-                  </Box>
+                Seleziona “Sì” oppure “No” nella sezione consegna.
+              </Alert>
+            ) : isStudent === true && !selectedSlot ? (
+              <Alert
+                color="gold"
+                variant="light"
+                icon={<IconInfoCircle size={18} />}
+              >
+                Seleziona uno slot di consegna per abilitare PayPal.
+              </Alert>
+            ) : (
+              <Box>
+                {!paypalReady && (
+                  <Group gap="sm">
+                    <Loader size="sm" color="gold" />
+                    <Text size="sm" c="dimmed">
+                      Caricamento PayPal…
+                    </Text>
+                  </Group>
                 )}
-              </Stack>
-            </Card>
-          )}
 
-          {!loading && !submitted && paymentMethod === "cash" && (
-            <Button
-              fullWidth
-              size="md"
-              radius="xl"
+                <Box ref={paypalButtonsContainerRef} mt="sm" />
+              </Box>
+            )}
+          </section>
+        )}
+      </div>
+
+      <footer className="pv-order-footer">
+        <div className="pv-order-total">
+          <div>
+            <span>Totale ordine</span>
+            <small>IVA inclusa</small>
+          </div>
+
+          <strong aria-live="polite" aria-atomic="true">
+            {euro(totals.totaleDaAddebitare)}
+            <span> €</span>
+          </strong>
+        </div>
+
+        {!loading && !submitted && paymentMethod === "cash" && (
+          <>
+            <button
+              type="button"
+              className="pv-order-confirm"
               onClick={handleConfirmOrderCash}
-              disabled={disabled || loading || submitted || !canProceedPay}
-              styles={{
-                root: {
-                  background: "linear-gradient(180deg,#f2c94c,#c9962f)",
-                  boxShadow: "0 16px 32px -10px rgba(242,201,76,.5)",
-                  height: 50,
-                },
-                label: { color: "#10141c", fontWeight: 700, fontSize: 15 },
-              }}
+              disabled={disabled || !canProceedPay}
             >
-              Conferma ordine
-            </Button>
-          )}
+              <span>Conferma ordine</span>
+              <span aria-hidden="true">→</span>
+            </button>
 
-          {loading && <UploadProgressBar uploadProgress={uploadProgress} />}
+            <p className="pv-order-footnote">
+              {numeroPDF === 0
+                ? "Carica almeno un PDF per iniziare."
+                : isStudent === null
+                  ? "Completa la scelta nella sezione consegna."
+                  : isStudent === true && !selectedSlot
+                    ? "Scegli uno slot di consegna."
+                    : disabled
+                      ? "Completa le impostazioni dei PDF per continuare."
+                      : "Pagamento in contanti."}
+            </p>
+          </>
+        )}
 
-          {submitted && (
-            <Alert color="gold" variant="light" icon={<IconCheck size={18} />}>
-              🎉 Ordine inviato con successo!
-            </Alert>
-          )}
-        </Stack>
-      </Card>
-    </Box>
+        {!loading && !submitted && paymentMethod === "paypal" && (
+          <p className="pv-order-footnote">
+            Usa il pulsante PayPal nel riepilogo per completare il pagamento.
+          </p>
+        )}
+
+        {loading && (
+          <UploadProgressBar uploadProgress={uploadProgress} />
+        )}
+
+        {submitted && (
+          <div className="pv-order-success" role="status">
+            <IconCheck size={20} aria-hidden="true" />
+            Ordine inviato con successo!
+          </div>
+        )}
+      </footer>
+    </aside>
   );
 };
 

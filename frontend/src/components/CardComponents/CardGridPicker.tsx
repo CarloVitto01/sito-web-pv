@@ -1,184 +1,136 @@
 import React from "react";
-import {
-  Card,
-  Group,
-  SimpleGrid,
-  Text,
-  Tooltip,
-  UnstyledButton,
-  useMantineTheme,
-  useMantineColorScheme,
-} from "@mantine/core";
-import { IconCheck } from "@tabler/icons-react";
+import { CheckMark, ControlFrame } from "./PrintControls";
 
 export type GridOption = {
-  title: string; // valore/label (es. "Fronte-retro")
+  title: string;
   icon: React.ReactNode;
   disabled?: boolean;
   errorMessage?: string;
 };
 
 type Props = {
-  title: string;               // es. "Colore:"
-  hint?: string;               // es. "Seleziona un’opzione"
-  value: string;               // valore selezionato
-  onChange: (v: string) => void;
+  title: string;
+  hint?: string;
+  value: string;
+  onChange: (value: string) => void;
   options: GridOption[];
-  cols?: { base: number; md?: number; xl?: number };
+
+  // Compatibilità con le chiamate esistenti.
+  // La griglia si adatta automaticamente allo spazio disponibile.
+  cols?: {
+    base: number;
+    md?: number;
+    xl?: number;
+  };
+
   hideTitle?: boolean;
-  /** Se true, non disegna la Card esterna (bordo/ombra): per essere annidato in un pannello padre. */
   bare?: boolean;
 };
 
+const captions: Record<string, string> = {
+  "Bianco e nero": "Essenziale e nitido",
+  Colore: "Tutti i tuoi colori",
+  "Fronte-retro": "Entrambi i lati",
+  Fronte: "Un solo lato",
+  "Verticale (A4)": "Una pagina per foglio",
+  "Orizzontale (A4)": "Una pagina per foglio",
+  "2 in 1 orizzontale": "Due pagine affiancate",
+  "2 in 1 verticale": "Due pagine sovrapposte",
+};
+
+function displayLabel(value: string): string {
+  if (value === "Colore") return "A colori";
+  if (value === "Fronte") return "Solo fronte";
+  return value;
+}
+
 export default function CardGridPicker({
   title,
-  hint = "Seleziona un’opzione",
+  hint,
   value,
   onChange,
   options,
-  cols = { base: 2, md: 3, xl: 4 },
   hideTitle = false,
   bare = false,
 }: Props) {
-  const theme = useMantineTheme();
-  const { colorScheme } = useMantineColorScheme();
-  const isDark = colorScheme === "dark";
+  const helperId = React.useId();
 
-  const surfaceBg = isDark ? theme.colors.dark[6] : theme.white;
-  const borderBase = isDark ? theme.colors.dark[4] : theme.colors.gray[3];
-
-  const tileBg = isDark ? theme.colors.dark[7] : theme.colors.gray[0];
-  const tileBgSelected = isDark ? theme.colors.dark[5] : theme.white;
-
-  const titleColor = isDark ? theme.colors.gray[2] : theme.colors.dark[7];
-  const hintColor = isDark ? theme.colors.gray[4] : theme.colors.gray[6];
-
-  const grid = (
-      <SimpleGrid cols={cols} spacing={6} verticalSpacing={6}>
-        {options.map((o) => {
-          const selected = value === o.title;
-          const disabled = !!o.disabled;
-
-          const content = (
-            <UnstyledButton
-              key={o.title}
-              onClick={disabled ? undefined : () => onChange(o.title)}
-              aria-pressed={selected}
-              aria-disabled={disabled}
-              style={{ width: "100%", textAlign: "left", cursor: disabled ? "not-allowed" : "pointer" }}
-            >
-              <Card
-                withBorder
-                radius="md"
-                p={6}
-                style={{
-                  position: "relative",
-                  height: 60,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 4,
-                  background: selected ? tileBgSelected : tileBg,
-                  borderColor: selected ? theme.colors.gold[6] : borderBase,
-                  boxShadow: selected ? theme.shadows.md : theme.shadows.xs,
-                  opacity: disabled ? 0.55 : 1,
-                  transition: "transform 140ms ease, box-shadow 180ms ease, border-color 180ms ease",
-                }}
-              >
-                {/* check elegante in alto a destra */}
-                {selected ? (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: 4,
-                      right: 4,
-                      width: 15,
-                      height: 15,
-                      borderRadius: 999,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      background: theme.white,
-                      border: `1px solid ${theme.colors.gold[6]}`,
-                    }}
-                  >
-                    <IconCheck size={10} color={theme.colors.gold[6]} />
-                  </div>
-                ) : null}
-
-                {/* icona */}
-                <div
-                  style={{
-                    width: 30,
-                    height: 22,
-                    borderRadius: 7,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "hidden",
-                    border: `1px solid ${borderBase}`,
-                    background: "#10141c",
-                  }}
-                >
-                  <div style={{ transform: "scale(0.65)" }}>{o.icon}</div>
-                </div>
-
-                {/* label (prima non si vedeva: qui è sempre visibile) */}
-                <Text
-                  fw={800}
-                  size="xs"
-                  ta="center"
-                  lineClamp={1}
-                  style={{
-                    width: "100%",
-                    fontSize: 11,
-                    paddingInline: 4,
-                    color: isDark ? theme.colors.gray[0] : theme.colors.dark[7],
-                  }}
-                >
-                  {o.title}
-                </Text>
-              </Card>
-            </UnstyledButton>
-          );
-
-          return disabled ? (
-            <Tooltip key={o.title} label={o.errorMessage || "Opzione non disponibile"} withArrow position="top" openDelay={250}>
-              {content}
-            </Tooltip>
-          ) : (
-            <React.Fragment key={o.title}>{content}</React.Fragment>
-          );
-        })}
-      </SimpleGrid>
+  const isBinding = /^(?:tipo di\s+)?rilegatura\s*:?$/i.test(
+    title.trim()
   );
 
-  if (bare) return grid;
+  const selectedOption = options.find(
+    (option) => option.title === value
+  );
 
   return (
-    <Card
-      withBorder
-      radius="lg"
-      p="md"
-      style={{
-        background: surfaceBg,
-        borderColor: borderBase,
-        boxShadow: theme.shadows.sm,
-      }}
+    <ControlFrame
+      title={title.replace(/:\s*$/, "")}
+      hint={hint}
+      bare={bare}
+      hideTitle={hideTitle}
     >
-      {!hideTitle && (
-        <Group justify="space-between" align="baseline" mb="sm">
-          <Text fw={900} tt="uppercase" style={{ letterSpacing: 0.3, fontSize: 13, color: titleColor }}>
-            {title}
-          </Text>
-          <Text size="xs" fw={700} style={{ letterSpacing: 0.2, color: hintColor }}>
-            {hint}
-          </Text>
-        </Group>
-      )}
+      <div
+        className={
+          isBinding
+            ? "pc-choice-grid pc-choice-grid--binding"
+            : "pc-choice-grid"
+        }
+        role="group"
+        aria-label={title}
+        aria-describedby={isBinding ? helperId : undefined}
+      >
+        {options.map((option) => {
+          const selected = value === option.title;
+          const disabled = Boolean(option.disabled);
 
-      {grid}
-    </Card>
+          return (
+            <button
+              key={option.title}
+              type="button"
+              className="pc-choice"
+              aria-pressed={selected}
+              disabled={disabled}
+              title={
+                disabled
+                  ? option.errorMessage || "Opzione non disponibile"
+                  : undefined
+              }
+              onClick={() => onChange(option.title)}
+            >
+              {selected && <CheckMark />}
+
+              <span className="pc-choice-icon" aria-hidden="true">
+                {option.icon}
+              </span>
+
+              <span className="pc-choice-title">
+                {displayLabel(option.title)}
+              </span>
+
+              {captions[option.title] && (
+                <span className="pc-choice-caption">
+                  {captions[option.title]}
+                </span>
+              )}
+
+              {disabled && (
+                <span className="pc-unavailable">
+                  {option.errorMessage || "Non disponibile"}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {isBinding && (
+        <p id={helperId} className="pc-helper">
+          {selectedOption?.disabled
+            ? selectedOption.errorMessage || "Opzione non disponibile."
+            : "Le finiture disponibili dipendono dal numero di pagine."}
+        </p>
+      )}
+    </ControlFrame>
   );
 }

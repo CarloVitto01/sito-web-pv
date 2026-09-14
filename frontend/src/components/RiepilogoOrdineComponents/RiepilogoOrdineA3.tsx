@@ -1,34 +1,26 @@
-// ✅ src/components/RiepilogoOrdineComponents/RiepilogoOrdineA3.tsx
-// Aggiornato per usare:
-// - ConsegnaSlotPicker ✅ (con scelta Studente Sì/No obbligatoria; slot obbligatorio solo se Sì)
-// - MetodoPagamentoPicker ✅
-// - Promo generale + promo facoltà/corso ✅
-// Senza rimuovere nulla: il vecchio UI resta ma viene "nascosto" (render condizionale)
-
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { onAuthStateChanged } from "../../backend/auth";
-import { api } from "../../backend/apiClient";
-import {
-  Alert,
-  Badge,
-  Box,
-  Button,
-  Card,
-  Divider,
-  Group,
-  Loader,
-  SimpleGrid,
-  Stack,
-  Text,
-  ThemeIcon,
-  Title,
-} from "@mantine/core";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Alert, Box, Group, Loader, Text } from "@mantine/core";
 import { IconCheck, IconInfoCircle } from "@tabler/icons-react";
 
-import ConsegnaSlotPicker from "../CardComponents/ConsegnaSlotPicker";
-import MetodoPagamentoPicker from "../CardComponents/MetodoPagamentoPicker";
-import type { PaymentMethodUI } from "../CardComponents/MetodoPagamentoPicker";
-import UploadProgressBar, { type UploadProgressState } from "./UploadProgressBar";
+import { onAuthStateChanged } from "../../backend/auth";
+import { api } from "../../backend/apiClient";
+
+import ConsegnaSlotPicker, {
+  type DeliverySlot,
+  type Weekday,
+} from "../CardComponents/ConsegnaSlotPicker";
+
+import MetodoPagamentoPicker, {
+  type PaymentMethodUI,
+} from "../CardComponents/MetodoPagamentoPicker";
+
+import UploadProgressBar, {
+  type UploadProgressState,
+} from "./UploadProgressBar";
+
+/* -------------------------------------------------------------------------- */
+/* Tipi                                                                       */
+/* -------------------------------------------------------------------------- */
 
 type PaymentPayload = {
   method: "CASH" | "PAYPAL";
@@ -42,8 +34,6 @@ type PaymentPayload = {
     iva: number;
     trasporto: number;
     feePayPal: number;
-
-    // ✅ opzionali: non rompono la logica esistente
     scontoGenerale?: number;
     scontoStudenti?: number;
     subtotaleLordo?: number;
@@ -52,7 +42,7 @@ type PaymentPayload = {
     dateISO: string;
     dayLabel: string;
     timeRange: string;
-    weekday: 1 | 2 | 3 | 4 | 5 | 6 | 7;
+    weekday: Weekday;
   };
 };
 
@@ -66,7 +56,11 @@ type RiepilogoA3Props = {
   numeroPDF: number;
   numeroPagine: number;
   prezzo: string;
-  onConfirmOrder: (payment: PaymentPayload) => Promise<{ id: string; totaleFinale: number } | undefined>;
+
+  onConfirmOrder: (
+    payment: PaymentPayload
+  ) => Promise<{ id: string; totaleFinale: number } | undefined>;
+
   disabled?: boolean;
   loading?: boolean;
   submitted?: boolean;
@@ -77,30 +71,14 @@ type RiepilogoA3Props = {
   paypalPercent?: number;
   paypalFixed?: number;
 
+  // Compatibilità con le chiamate esistenti.
   authToken?: string;
   csrfToken?: string;
 };
 
-type PayPalApproveData = { orderID: string };
-
-const PAYPAL_CLIENT_ID = import.meta.env.REACT_APP_PAYPAL_CLIENT_ID as string;
-
-function parseEuro(prezzo: string): number {
-  const normalized = prezzo.replace(",", ".").replace(/[^\d.]/g, "");
-  const val = parseFloat(normalized);
-  return isNaN(val) ? 0 : val;
-}
-
-const round2 = (n: number) => Math.round(n * 100) / 100;
-
-const euro = (n: number) =>
-  n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-declare global {
-  interface Window {
-    paypal?: any;
-  }
-}
+type PayPalApproveData = {
+  orderID: string;
+};
 
 type Fees = {
   ivaRate: number;
@@ -109,8 +87,15 @@ type Fees = {
   paypalFixed: number;
 };
 
-type TimeRange = { start: string; end: string };
-type BlacklistRange = { from: string; to: string };
+type TimeRange = {
+  start: string;
+  end: string;
+};
+
+type BlacklistRange = {
+  from: string;
+  to: string;
+};
 
 type DeliveryConfig = {
   weekdays: number[];
@@ -122,17 +107,6 @@ type DeliveryConfig = {
   minLeadDays?: number;
 };
 
-type Weekday = 1 | 2 | 3 | 4 | 5 | 6 | 7;
-
-type DeliverySlot = {
-  id: string;
-  weekday: Weekday;
-  dateISO: string;
-  dayLabel: string;
-  timeRange: string;
-};
-
-/** ======= Config promo nuova struttura ======= */
 type BasePromo = {
   enabled: boolean;
   name?: string;
@@ -145,7 +119,7 @@ type BasePromo = {
 
 type StudentPromo = BasePromo & {
   targetCourse?: string;
-  targetEnrollmentYear?: number | null; // in realtà ora è anno di corso: 1,2,3...
+  targetEnrollmentYear?: number | null;
 };
 
 type PromoConfig = {
@@ -157,6 +131,19 @@ type UserProfilePromo = {
   course: string;
   academicYear: number | null;
 };
+
+declare global {
+  interface Window {
+    paypal?: any;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Configurazioni predefinite                                                 */
+/* -------------------------------------------------------------------------- */
+
+const PAYPAL_CLIENT_ID = import.meta.env
+  .REACT_APP_PAYPAL_CLIENT_ID as string;
 
 const DEFAULT_GENERAL_PROMO: BasePromo = {
   enabled: false,
@@ -185,6 +172,16 @@ const DEFAULT_PROMO_CONFIG: PromoConfig = {
   studentPromo: DEFAULT_STUDENT_PROMO,
 };
 
+const DEFAULT_DELIVERY_CONFIG: DeliveryConfig = {
+  weekdays: [1, 3, 5],
+  timeRanges: [{ start: "12:00", end: "13:00" }],
+  slotsAhead: 6,
+  timezone: "Europe/Rome",
+  blacklistDates: [],
+  blacklistRanges: [],
+  minLeadDays: 1,
+};
+
 const DAY_FULL_IT: Record<Weekday, string> = {
   1: "Lunedì",
   2: "Martedì",
@@ -195,48 +192,86 @@ const DAY_FULL_IT: Record<Weekday, string> = {
   7: "Domenica",
 };
 
-function pad2(n: number) {
-  return String(n).padStart(2, "0");
+/* -------------------------------------------------------------------------- */
+/* Formattazione                                                              */
+/* -------------------------------------------------------------------------- */
+
+function parseEuro(prezzo: string): number {
+  const normalized = prezzo.replace(",", ".").replace(/[^\d.]/g, "");
+  const value = parseFloat(normalized);
+  return isNaN(value) ? 0 : value;
 }
 
-function itShortMonth(d: Date): string {
-  return d.toLocaleDateString("it-IT", { month: "short" }).replace(".", "");
+const round2 = (value: number) => Math.round(value * 100) / 100;
+
+const euro = (value: number) =>
+  value.toLocaleString("it-IT", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+function pad2(value: number): string {
+  return String(value).padStart(2, "0");
 }
 
-function toTZDateISO(date: Date, hour: number, minute: number): string {
-  const d = new Date(date);
-  d.setHours(hour, minute, 0, 0);
-  const tzOffsetMin = -d.getTimezoneOffset();
-  const sign = tzOffsetMin >= 0 ? "+" : "-";
-  const abs = Math.abs(tzOffsetMin);
-  const HHoff = pad2(Math.floor(abs / 60));
-  const MMoff = pad2(abs % 60);
-  const yyyy = d.getFullYear();
-  const MM = pad2(d.getMonth() + 1);
-  const DD = pad2(d.getDate());
-  const HH = pad2(d.getHours());
-  const mi = pad2(d.getMinutes());
-  const ss = pad2(d.getSeconds());
-  return `${yyyy}-${MM}-${DD}T${HH}:${mi}:${ss}${sign}${HHoff}:${MMoff}`;
+function itShortMonth(date: Date): string {
+  return date
+    .toLocaleDateString("it-IT", { month: "short" })
+    .replace(".", "");
 }
 
-function ymdLocal(d: Date): string {
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+function ymdLocal(date: Date): string {
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(
+    date.getDate()
+  )}`;
+}
+
+function toTZDateISO(
+  date: Date,
+  hour: number,
+  minute: number
+): string {
+  const result = new Date(date);
+  result.setHours(hour, minute, 0, 0);
+
+  const offsetMinutes = -result.getTimezoneOffset();
+  const sign = offsetMinutes >= 0 ? "+" : "-";
+  const absoluteOffset = Math.abs(offsetMinutes);
+
+  const offsetHours = pad2(Math.floor(absoluteOffset / 60));
+  const offsetRemainder = pad2(absoluteOffset % 60);
+
+  return (
+    `${ymdLocal(result)}T` +
+    `${pad2(result.getHours())}:` +
+    `${pad2(result.getMinutes())}:` +
+    `${pad2(result.getSeconds())}` +
+    `${sign}${offsetHours}:${offsetRemainder}`
+  );
 }
 
 function weekdayToJs(weekday: Weekday): number {
   return weekday === 7 ? 0 : weekday;
 }
 
-const normalizeText = (value?: string | null) => (value || "").trim().toLowerCase();
+const normalizeText = (value?: string | null) =>
+  (value || "").trim().toLowerCase();
 
-function isBasePromoActiveToday(promo: BasePromo, numeroPDF: number): boolean {
+/* -------------------------------------------------------------------------- */
+/* Promozioni                                                                 */
+/* -------------------------------------------------------------------------- */
+
+function isBasePromoActiveToday(
+  promo: BasePromo,
+  numeroPDF: number
+): boolean {
   if (!promo.enabled) return false;
   if (numeroPDF < (promo.minPdf ?? 1)) return false;
   if (!Number.isFinite(promo.percent) || promo.percent <= 0) return false;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+
   const todayYmd = ymdLocal(today);
 
   if (promo.startsAt && todayYmd < promo.startsAt) return false;
@@ -265,19 +300,42 @@ function isStudentPromoActiveToday(
 
   if (!courseMatches) return false;
 
-  return Number(userProfile.academicYear) === Number(promo.targetEnrollmentYear);
+  return (
+    Number(userProfile.academicYear) ===
+    Number(promo.targetEnrollmentYear)
+  );
 }
 
-function normalizeBasePromo(data: Partial<BasePromo> | undefined, fallback: BasePromo): BasePromo {
+function normalizeBasePromo(
+  data: Partial<BasePromo> | undefined,
+  fallback: BasePromo
+): BasePromo {
   return {
-    enabled: typeof data?.enabled === "boolean" ? data.enabled : fallback.enabled,
+    enabled:
+      typeof data?.enabled === "boolean"
+        ? data.enabled
+        : fallback.enabled,
     name: typeof data?.name === "string" ? data.name : fallback.name,
     description:
-      typeof data?.description === "string" ? data.description : fallback.description,
-    percent: typeof data?.percent === "number" ? data.percent : fallback.percent,
-    minPdf: typeof data?.minPdf === "number" ? data.minPdf : fallback.minPdf,
-    startsAt: typeof data?.startsAt === "string" ? data.startsAt : fallback.startsAt,
-    endsAt: typeof data?.endsAt === "string" ? data.endsAt : fallback.endsAt,
+      typeof data?.description === "string"
+        ? data.description
+        : fallback.description,
+    percent:
+      typeof data?.percent === "number"
+        ? data.percent
+        : fallback.percent,
+    minPdf:
+      typeof data?.minPdf === "number"
+        ? data.minPdf
+        : fallback.minPdf,
+    startsAt:
+      typeof data?.startsAt === "string"
+        ? data.startsAt
+        : fallback.startsAt,
+    endsAt:
+      typeof data?.endsAt === "string"
+        ? data.endsAt
+        : fallback.endsAt,
   };
 }
 
@@ -288,7 +346,9 @@ function normalizeStudentPromo(
   return {
     ...normalizeBasePromo(data, fallback),
     targetCourse:
-      typeof data?.targetCourse === "string" ? data.targetCourse : fallback.targetCourse,
+      typeof data?.targetCourse === "string"
+        ? data.targetCourse
+        : fallback.targetCourse,
     targetEnrollmentYear:
       typeof data?.targetEnrollmentYear === "number"
         ? data.targetEnrollmentYear
@@ -296,11 +356,18 @@ function normalizeStudentPromo(
   };
 }
 
+/* -------------------------------------------------------------------------- */
+/* Slot di consegna                                                           */
+/* -------------------------------------------------------------------------- */
+
 function buildSlotsFromConfig(cfg: DeliveryConfig): DeliverySlot[] {
-  const weekdays = (Array.isArray(cfg.weekdays) && cfg.weekdays.length
-    ? cfg.weekdays
-    : [1, 3, 5]
-  ).map((w) => Math.min(7, Math.max(1, Number(w)))) as Weekday[];
+  const weekdays = (
+    Array.isArray(cfg.weekdays) && cfg.weekdays.length
+      ? cfg.weekdays
+      : [1, 3, 5]
+  ).map((value) =>
+    Math.min(7, Math.max(1, Number(value)))
+  ) as Weekday[];
 
   const timeRanges =
     Array.isArray(cfg.timeRanges) && cfg.timeRanges.length
@@ -313,10 +380,10 @@ function buildSlotsFromConfig(cfg: DeliveryConfig): DeliverySlot[] {
   const singles = new Set(cfg.blacklistDates || []);
   const ranges = (cfg.blacklistRanges || []).slice();
 
-  const isBlacklisted = (d: Date) => {
-    const ymd = ymdLocal(d);
+  const isBlacklisted = (date: Date): boolean => {
+    const ymd = ymdLocal(date);
     if (singles.has(ymd)) return true;
-    return ranges.some((r) => r.from <= ymd && ymd <= r.to);
+    return ranges.some((range) => range.from <= ymd && ymd <= range.to);
   };
 
   const slots: DeliverySlot[] = [];
@@ -326,38 +393,47 @@ function buildSlotsFromConfig(cfg: DeliveryConfig): DeliverySlot[] {
   const earliest = new Date(now);
   earliest.setDate(now.getDate() + minLeadDays);
 
-  const horizonDays = 120;
-
-  for (let i = 0; i < horizonDays && slots.length < slotsAhead; i++) {
+  for (let index = 0; index < 120 && slots.length < slotsAhead; index++) {
     const day = new Date(now);
-    day.setDate(now.getDate() + i);
+    day.setDate(now.getDate() + index);
 
     if (day < earliest) continue;
 
     const jsDay = day.getDay();
-    const weekday: Weekday = (jsDay === 0 ? 7 : (jsDay as 1 | 2 | 3 | 4 | 5 | 6)) as Weekday;
+    const weekday = (jsDay === 0 ? 7 : jsDay) as Weekday;
 
-    if (!weekdays.some((w) => weekdayToJs(w) === jsDay)) continue;
+    if (!weekdays.some((value) => weekdayToJs(value) === jsDay)) {
+      continue;
+    }
+
     if (isBlacklisted(day)) continue;
 
-    for (const tr of timeRanges) {
-      const [sh, sm] = String(tr.start || "12:00").split(":").map(Number);
-      const [eh, em] = String(tr.end || "13:00").split(":").map(Number);
-      const startH = Number.isFinite(sh) ? sh : 12;
-      const startM = Number.isFinite(sm) ? sm : 0;
-      const endH = Number.isFinite(eh) ? eh : 13;
-      const endM = Number.isFinite(em) ? em : 0;
+    for (const timeRange of timeRanges) {
+      const [sh, sm] = String(timeRange.start || "12:00")
+        .split(":")
+        .map(Number);
 
-      const dateISO = toTZDateISO(day, startH, startM);
-      const label = `${DAY_FULL_IT[weekday]} ${day.getDate()} ${itShortMonth(day)}`;
-      const id = `${weekday}-${ymdLocal(day)}-${pad2(startH)}${pad2(startM)}`;
+      const [eh, em] = String(timeRange.end || "13:00")
+        .split(":")
+        .map(Number);
+
+      const startHour = Number.isFinite(sh) ? sh : 12;
+      const startMinute = Number.isFinite(sm) ? sm : 0;
+      const endHour = Number.isFinite(eh) ? eh : 13;
+      const endMinute = Number.isFinite(em) ? em : 0;
 
       slots.push({
-        id,
+        id: `${weekday}-${ymdLocal(day)}-${pad2(startHour)}${pad2(
+          startMinute
+        )}`,
         weekday,
-        dateISO,
-        dayLabel: label,
-        timeRange: `${pad2(startH)}:${pad2(startM)}–${pad2(endH)}:${pad2(endM)}`,
+        dateISO: toTZDateISO(day, startHour, startMinute),
+        dayLabel: `${DAY_FULL_IT[weekday]} ${day.getDate()} ${itShortMonth(
+          day
+        )}`,
+        timeRange:
+          `${pad2(startHour)}:${pad2(startMinute)}–` +
+          `${pad2(endHour)}:${pad2(endMinute)}`,
       });
 
       if (slots.length >= slotsAhead) break;
@@ -367,73 +443,27 @@ function buildSlotsFromConfig(cfg: DeliveryConfig): DeliverySlot[] {
   return slots.slice(0, slotsAhead);
 }
 
-const SLOT_START = { hour: 12, minute: 0 };
-const SLOT_END = { hour: 13, minute: 0 };
-
-function buildUpcomingSlotsStatic(n: number, minLeadDays: number = 1): DeliverySlot[] {
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-
-  const earliest = new Date(now);
-  earliest.setDate(now.getDate() + Math.max(1, minLeadDays));
-
-  const slots: DeliverySlot[] = [];
-  const horizonDays = 120;
-
-  for (let i = 0; i < horizonDays && slots.length < n; i++) {
-    const day = new Date(now);
-    day.setDate(now.getDate() + i);
-
-    if (day < earliest) continue;
-
-    const jsDay = day.getDay();
-    const weekday: Weekday = (jsDay === 0 ? 7 : (jsDay as 1 | 2 | 3 | 4 | 5 | 6)) as Weekday;
-
-    if (![1, 3, 5].includes(weekday)) continue;
-
-    const dateISO = toTZDateISO(day, SLOT_START.hour, SLOT_START.minute);
-    const label = `${DAY_FULL_IT[weekday]} ${day.getDate()} ${itShortMonth(day)}`;
-
-    slots.push({
-      id: `${weekday}-${ymdLocal(day)}`,
-      weekday,
-      dateISO,
-      dayLabel: label,
-      timeRange: `${pad2(SLOT_START.hour)}:${pad2(SLOT_START.minute)}–${pad2(
-        SLOT_END.hour
-      )}:${pad2(SLOT_END.minute)}`,
-    });
-  }
-
-  return slots.slice(0, n);
+// Mantiene il fallback statico già presente nel componente A3.
+function buildUpcomingSlotsStatic(
+  count: number,
+  minLeadDays = 1
+): DeliverySlot[] {
+  return buildSlotsFromConfig({
+    weekdays: [1, 3, 5],
+    timeRanges: [{ start: "12:00", end: "13:00" }],
+    slotsAhead: count,
+    minLeadDays,
+    blacklistDates: [],
+    blacklistRanges: [],
+  }).map((slot) => ({
+    ...slot,
+    id: slot.id.replace(/-\d{4}$/, ""),
+  }));
 }
 
-function KeyValueRow({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <Group justify="space-between" align="baseline" wrap="nowrap">
-      <Text size="sm" c="dimmed">
-        {label}
-      </Text>
-      <Text size="sm" fw={600} style={{ textAlign: "right" }}>
-        {value}
-      </Text>
-    </Group>
-  );
-}
-
-/** Stessa riga label/valore di KeyValueRow, ma leggibile sulla card scura del riepilogo. */
-function KeyValueRowDark({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <Group justify="space-between" align="baseline" wrap="nowrap">
-      <Text size="sm" style={{ color: "rgba(255,255,255,.55)" }}>
-        {label}
-      </Text>
-      <Text size="sm" fw={600} style={{ textAlign: "right", color: "#fff" }}>
-        {value}
-      </Text>
-    </Group>
-  );
-}
+/* -------------------------------------------------------------------------- */
+/* Componente                                                                 */
+/* -------------------------------------------------------------------------- */
 
 const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
   inchiostro,
@@ -450,20 +480,22 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
   loading = false,
   submitted = false,
   uploadProgress = null,
-
   ivaRate = 0.22,
   transportFeeEuro = 1,
   paypalPercent = 0.0349,
   paypalFixed = 0.35,
-
-  authToken,
-  csrfToken,
 }) => {
-  // ✅ adesso usa il type del picker
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodUI>(null);
+  // Mantiene la scelta iniziale del componente A3 originale.
+  const [paymentMethod, setPaymentMethod] =
+    useState<PaymentMethodUI>(null);
 
   const [paypalReady, setPaypalReady] = useState(false);
+  const [paypalLoadError, setPaypalLoadError] = useState<string | null>(
+    null
+  );
+
   const paypalButtonsContainerRef = useRef<HTMLDivElement | null>(null);
+  const localOrderIdRef = useRef<string | null>(null);
 
   const [fees, setFees] = useState<Fees>({
     ivaRate,
@@ -472,136 +504,223 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
     paypalFixed,
   });
 
-  const [deliveryCfg, setDeliveryCfg] = useState<DeliveryConfig>({
-    weekdays: [1, 3, 5],
-    timeRanges: [{ start: "12:00", end: "13:00" }],
-    slotsAhead: 6,
-    timezone: "Europe/Rome",
-    blacklistDates: [],
-    blacklistRanges: [],
-    minLeadDays: 1,
-  });
+  const [deliveryCfg, setDeliveryCfg] = useState<DeliveryConfig>(
+    DEFAULT_DELIVERY_CONFIG
+  );
 
+  const [promoCfg, setPromoCfg] =
+    useState<PromoConfig>(DEFAULT_PROMO_CONFIG);
+
+  const [userProfilePromo, setUserProfilePromo] =
+    useState<UserProfilePromo | null>(null);
+
+  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(
+    null
+  );
+
+  const [isStudent, setIsStudent] = useState<boolean | null>(null);
+
+  /* Configurazione consegne */
   useEffect(() => {
     let alive = true;
-    api.get<Partial<DeliveryConfig>>("/api/public/delivery-config", { auth: false })
-      .then((d) => {
+
+    api
+      .get<Partial<DeliveryConfig>>("/api/public/delivery-config", {
+        auth: false,
+      })
+      .then((data) => {
         if (!alive) return;
+
         setDeliveryCfg({
-          weekdays: Array.isArray(d.weekdays) && d.weekdays.length ? (d.weekdays as number[]) : [1, 3, 5],
+          weekdays:
+            Array.isArray(data.weekdays) && data.weekdays.length
+              ? data.weekdays
+              : [1, 3, 5],
           timeRanges:
-            Array.isArray(d.timeRanges) && d.timeRanges.length
-              ? (d.timeRanges as TimeRange[])
+            Array.isArray(data.timeRanges) && data.timeRanges.length
+              ? data.timeRanges
               : [{ start: "12:00", end: "13:00" }],
-          slotsAhead: typeof d.slotsAhead === "number" ? d.slotsAhead : 6,
-          timezone: typeof d.timezone === "string" && d.timezone ? d.timezone : "Europe/Rome",
-          blacklistDates: Array.isArray(d.blacklistDates) ? (d.blacklistDates as string[]) : [],
-          blacklistRanges: Array.isArray(d.blacklistRanges) ? (d.blacklistRanges as BlacklistRange[]) : [],
-          minLeadDays: typeof d.minLeadDays === "number" ? d.minLeadDays : 1,
+          slotsAhead:
+            typeof data.slotsAhead === "number" ? data.slotsAhead : 6,
+          timezone:
+            typeof data.timezone === "string" && data.timezone
+              ? data.timezone
+              : "Europe/Rome",
+          blacklistDates: Array.isArray(data.blacklistDates)
+            ? data.blacklistDates
+            : [],
+          blacklistRanges: Array.isArray(data.blacklistRanges)
+            ? data.blacklistRanges
+            : [],
+          minLeadDays:
+            typeof data.minLeadDays === "number" ? data.minLeadDays : 1,
         });
       })
-      .catch((err) => console.error("Errore lettura config consegne:", err));
-    return () => { alive = false; };
+      .catch((error) => {
+        console.error("Errore lettura config consegne:", error);
+      });
+
+    return () => {
+      alive = false;
+    };
   }, []);
 
-  const [promoCfg, setPromoCfg] = useState<PromoConfig>(DEFAULT_PROMO_CONFIG);
-  const [userProfilePromo, setUserProfilePromo] = useState<UserProfilePromo | null>(null);
-
+  /* Configurazione promozioni */
   useEffect(() => {
     let alive = true;
-    api.get<Partial<PromoConfig>>("/api/public/promo-config", { auth: false })
-      .then((d) => {
+
+    api
+      .get<Partial<PromoConfig>>("/api/public/promo-config", {
+        auth: false,
+      })
+      .then((data) => {
         if (!alive) return;
+
         setPromoCfg({
-          generalPromo: normalizeBasePromo(d.generalPromo, DEFAULT_GENERAL_PROMO),
-          studentPromo: normalizeStudentPromo(d.studentPromo, DEFAULT_STUDENT_PROMO),
+          generalPromo: normalizeBasePromo(
+            data.generalPromo,
+            DEFAULT_GENERAL_PROMO
+          ),
+          studentPromo: normalizeStudentPromo(
+            data.studentPromo,
+            DEFAULT_STUDENT_PROMO
+          ),
         });
       })
-      .catch((err) => console.error("Errore lettura promo:", err));
-    return () => { alive = false; };
+      .catch((error) => {
+        console.error("Errore lettura promo:", error);
+      });
+
+    return () => {
+      alive = false;
+    };
   }, []);
 
+  /* Profilo per le promozioni studenti */
   useEffect(() => {
-    const unsub = onAuthStateChanged((user) => {
+    const unsubscribe = onAuthStateChanged((user) => {
       setUserProfilePromo(
-        user ? { course: user.corsoLaurea || "", academicYear: user.annoAccademico ? Number(user.annoAccademico) : null } : null
+        user
+          ? {
+            course: user.corsoLaurea || "",
+            academicYear: user.annoAccademico
+              ? Number(user.annoAccademico)
+              : null,
+          }
+          : null
       );
     });
-    return () => unsub();
+
+    return () => unsubscribe();
   }, []);
 
-  const deliverySlotsFromCfg = useMemo(() => buildSlotsFromConfig(deliveryCfg), [deliveryCfg]);
+  /* Configurazione costi */
+  useEffect(() => {
+    let alive = true;
+
+    api
+      .get<Partial<Fees>>("/api/public/fees-config", {
+        auth: false,
+      })
+      .then((data) => {
+        if (!alive) return;
+
+        setFees({
+          ivaRate:
+            typeof data.ivaRate === "number" ? data.ivaRate : ivaRate,
+          transportFeeEuro:
+            typeof data.transportFeeEuro === "number"
+              ? data.transportFeeEuro
+              : transportFeeEuro,
+          paypalPercent:
+            typeof data.paypalPercent === "number"
+              ? data.paypalPercent
+              : paypalPercent,
+          paypalFixed:
+            typeof data.paypalFixed === "number"
+              ? data.paypalFixed
+              : paypalFixed,
+        });
+      })
+      .catch(() => {
+        if (!alive) return;
+
+        setFees({
+          ivaRate,
+          transportFeeEuro,
+          paypalPercent,
+          paypalFixed,
+        });
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [ivaRate, transportFeeEuro, paypalPercent, paypalFixed]);
+
+  /* Slot disponibili */
+  const deliverySlotsFromCfg = useMemo(
+    () => buildSlotsFromConfig(deliveryCfg),
+    [deliveryCfg]
+  );
 
   const deliverySlots = useMemo(
     () =>
       deliverySlotsFromCfg.length
         ? deliverySlotsFromCfg
-        : buildUpcomingSlotsStatic(6, deliveryCfg?.minLeadDays ?? 1),
-    [deliverySlotsFromCfg, deliveryCfg?.minLeadDays]
+        : buildUpcomingSlotsStatic(6, deliveryCfg.minLeadDays ?? 1),
+    [deliverySlotsFromCfg, deliveryCfg.minLeadDays]
   );
 
-  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
-
   const selectedSlot = useMemo(
-    () => deliverySlots.find((s) => s.id === selectedSlotId) || null,
+    () =>
+      deliverySlots.find((slot) => slot.id === selectedSlotId) || null,
     [deliverySlots, selectedSlotId]
   );
 
-  // ✅ obbligatorio: Sì/No (slot obbligatorio solo se Sì)
-  const [isStudent, setIsStudent] = useState<boolean | null>(null);
+  const canProceedPay =
+    isStudent !== null && (isStudent === false || !!selectedSlot);
 
-  const canProceedPay = useMemo(() => {
-    return isStudent !== null && (isStudent === false || (isStudent === true && !!selectedSlot));
-  }, [isStudent, selectedSlot]);
-
-  useEffect(() => {
-    let alive = true;
-    api.get<Partial<Fees>>("/api/public/fees-config", { auth: false })
-      .then((d) => {
-        if (!alive) return;
-        setFees({
-          ivaRate: typeof d.ivaRate === "number" ? d.ivaRate : ivaRate,
-          transportFeeEuro: typeof d.transportFeeEuro === "number" ? d.transportFeeEuro : transportFeeEuro,
-          paypalPercent: typeof d.paypalPercent === "number" ? d.paypalPercent : paypalPercent,
-          paypalFixed: typeof d.paypalFixed === "number" ? d.paypalFixed : paypalFixed,
-        });
-      })
-      .catch(() => setFees({ ivaRate, transportFeeEuro, paypalPercent, paypalFixed }));
-    return () => { alive = false; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
+  /* Calcolo importi: stesse formule del componente originale */
   const totals = useMemo(() => {
     const baseLordo = round2(parseEuro(prezzo));
 
-    const generalPromo = promoCfg.generalPromo;
-    const studentPromo = promoCfg.studentPromo;
+    const generalPromoAttiva = isBasePromoActiveToday(
+      promoCfg.generalPromo,
+      numeroPDF
+    );
 
-    const generalPromoAttiva = isBasePromoActiveToday(generalPromo, numeroPDF);
     const studentPromoAttiva = isStudentPromoActiveToday(
-      studentPromo,
+      promoCfg.studentPromo,
       numeroPDF,
       userProfilePromo
     );
 
-    const scontoGeneralePercent = generalPromoAttiva ? generalPromo.percent : 0;
+    const scontoGeneralePercent = generalPromoAttiva
+      ? promoCfg.generalPromo.percent
+      : 0;
+
     const scontoGenerale =
-      scontoGeneralePercent > 0 ? round2(baseLordo * (scontoGeneralePercent / 100)) : 0;
+      scontoGeneralePercent > 0
+        ? round2(baseLordo * (scontoGeneralePercent / 100))
+        : 0;
 
     const baseDopoScontoGenerale = round2(baseLordo - scontoGenerale);
 
-    const scontoStudentiPercent = studentPromoAttiva ? studentPromo.percent : 0;
+    const scontoStudentiPercent = studentPromoAttiva
+      ? promoCfg.studentPromo.percent
+      : 0;
+
     const scontoStudenti =
       scontoStudentiPercent > 0
         ? round2(baseDopoScontoGenerale * (scontoStudentiPercent / 100))
         : 0;
 
     const base = round2(baseDopoScontoGenerale - scontoStudenti);
-
     const iva = round2(base * fees.ivaRate);
 
-    // ✅ trasporto solo se consegna = Sì
-    const trasporto = isStudent === true ? round2(fees.transportFeeEuro) : 0;
+    const trasporto =
+      isStudent === true ? round2(fees.transportFeeEuro) : 0;
 
     const subTotale = round2(base + iva + trasporto);
 
@@ -612,65 +731,99 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
 
     const totaleContanti = subTotale;
     const totalePayPal = round2(subTotale + feePP);
-    const totaleDaAddebitare = paymentMethod === "paypal" ? totalePayPal : totaleContanti;
 
     return {
       baseLordo,
       base,
-
       generalPromoAttiva,
       studentPromoAttiva,
-
       scontoGenerale,
       scontoGeneralePercent,
-
       scontoStudenti,
       scontoStudentiPercent,
-
       iva,
       trasporto,
       subTotale,
       feePP,
       totaleContanti,
       totalePayPal,
-      totaleDaAddebitare,
+      totaleDaAddebitare:
+        paymentMethod === "paypal" ? totalePayPal : totaleContanti,
     };
-  }, [prezzo, fees, paymentMethod, promoCfg, numeroPDF, isStudent, userProfilePromo]);
+  }, [
+    prezzo,
+    fees,
+    paymentMethod,
+    promoCfg,
+    numeroPDF,
+    isStudent,
+    userProfilePromo,
+  ]);
 
+  /* Caricamento SDK PayPal */
   useEffect(() => {
     if (paymentMethod !== "paypal") return;
 
     if (window.paypal) {
       setPaypalReady(true);
+      setPaypalLoadError(null);
       return;
     }
 
     if (!PAYPAL_CLIENT_ID) {
+      setPaypalLoadError("PayPal non è disponibile al momento.");
       console.error("PAYPAL_CLIENT_ID mancante");
       return;
     }
 
+    let alive = true;
+
+    setPaypalLoadError(null);
+
     const script = document.createElement("script");
-    script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(
-      PAYPAL_CLIENT_ID
-    )}&currency=EUR&intent=capture&components=buttons`;
+
+    script.src =
+      `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(
+        PAYPAL_CLIENT_ID
+      )}` + "&currency=EUR&intent=capture&components=buttons";
+
     script.async = true;
-    script.onload = () => setPaypalReady(true);
-    script.onerror = () => console.error("Impossibile caricare PayPal SDK");
+
+    script.onload = () => {
+      if (alive) setPaypalReady(true);
+    };
+
+    script.onerror = () => {
+      if (alive) {
+        setPaypalLoadError(
+          "Impossibile caricare PayPal. Riprova o scegli Contanti."
+        );
+      }
+    };
+
     document.body.appendChild(script);
+
+    return () => {
+      alive = false;
+      script.onload = null;
+      script.onerror = null;
+      script.remove();
+    };
   }, [paymentMethod]);
 
-  const localOrderIdRef = useRef<string | null>(null);
-
+  /* Pulsanti e pagamento PayPal */
   useEffect(() => {
-    if (paymentMethod !== "paypal" || !paypalButtonsContainerRef.current || submitted) return;
+    if (
+      paymentMethod !== "paypal" ||
+      !paypalButtonsContainerRef.current ||
+      submitted
+    ) {
+      return;
+    }
 
     paypalButtonsContainerRef.current.innerHTML = "";
 
-    // ✅ Abilitazione PayPal: obbligatorio Sì/No; slot obbligatorio solo se Sì
-    if (isStudent === null) return;
-    if (isStudent === true && !selectedSlot) return;
-    if (!paypalReady) return;
+    if (!canProceedPay || !paypalReady) return;
 
     const Buttons = window.paypal?.Buttons;
     if (!Buttons) return;
@@ -680,63 +833,76 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
 
       createOrder: async () => {
         const prepared = await onConfirmOrder({
-          method: "PAYPAL", confirmed: false, delivery: selectedSlot || undefined,
+          method: "PAYPAL",
+          confirmed: false,
+          delivery: selectedSlot || undefined,
         });
-        if (!prepared) throw new Error("Completa i dati dell'ordine prima di pagare");
+
+        if (!prepared) {
+          throw new Error("Completa i dati dell'ordine prima di pagare");
+        }
+
         localOrderIdRef.current = prepared.id;
-        const data = await api.post<{ orderId: string }>("/api/paypal/create-order", {
-          localOrderId: prepared.id,
-        });
+
+        const data = await api.post<{ orderId: string }>(
+          "/api/paypal/create-order",
+          { localOrderId: prepared.id }
+        );
+
         return data.orderId;
       },
 
       onApprove: async (data: PayPalApproveData) => {
         try {
-          const cap = await api.post<{
+          const capture = await api.post<{
             status: string;
             orderId?: string;
             captureId?: string;
             payerEmail?: string;
             amount?: string | number;
-          }>("/api/paypal/capture-order", { localOrderId: localOrderIdRef.current, orderId: data.orderID });
+          }>("/api/paypal/capture-order", {
+            localOrderId: localOrderIdRef.current,
+            orderId: data.orderID,
+          });
 
-          if (cap.status === "COMPLETED") {
-            await onConfirmOrder({
-              method: "PAYPAL",
-              confirmed: true,
-              orderId: cap.orderId,
-              captureId: cap.captureId,
-              payerEmail: cap.payerEmail,
-              amount: Number(cap.amount),
-              breakdown: {
-                imponibile: totals.base,
-                iva: totals.iva,
-                trasporto: totals.trasporto,
-                feePayPal: totals.feePP,
-                scontoGenerale: totals.scontoGenerale,
-                scontoStudenti: totals.scontoStudenti,
-                subtotaleLordo: totals.baseLordo,
-              },
-              delivery: selectedSlot
-                ? {
-                  dateISO: selectedSlot.dateISO,
-                  dayLabel: selectedSlot.dayLabel,
-                  timeRange: selectedSlot.timeRange,
-                  weekday: selectedSlot.weekday,
-                }
-                : undefined,
-            });
-          } else {
-            alert("Pagamento non completato: " + cap.status);
+          if (capture.status !== "COMPLETED") {
+            alert("Pagamento non completato: " + capture.status);
+            return;
           }
-        } catch (e) {
-          console.error(e);
+
+          await onConfirmOrder({
+            method: "PAYPAL",
+            confirmed: true,
+            orderId: capture.orderId,
+            captureId: capture.captureId,
+            payerEmail: capture.payerEmail,
+            amount: Number(capture.amount),
+            breakdown: {
+              imponibile: totals.base,
+              iva: totals.iva,
+              trasporto: totals.trasporto,
+              feePayPal: totals.feePP,
+              scontoGenerale: totals.scontoGenerale,
+              scontoStudenti: totals.scontoStudenti,
+              subtotaleLordo: totals.baseLordo,
+            },
+            delivery: selectedSlot
+              ? {
+                dateISO: selectedSlot.dateISO,
+                dayLabel: selectedSlot.dayLabel,
+                timeRange: selectedSlot.timeRange,
+                weekday: selectedSlot.weekday,
+              }
+              : undefined,
+          });
+        } catch (error) {
+          console.error(error);
           alert("Si è verificato un errore durante il pagamento.");
         }
       },
 
-      onError: (err: unknown) => {
-        console.error("PayPal error:", err);
+      onError: (error: unknown) => {
+        console.error("PayPal error:", error);
         alert("Errore PayPal. Riprova.");
       },
     });
@@ -747,14 +913,14 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
       try {
         instance.close();
       } catch {
-        /* no-op */
+        // Il pulsante potrebbe essere già stato rimosso.
       }
     };
   }, [
     paymentMethod,
     paypalReady,
     submitted,
-    totals.totaleDaAddebitare,
+    canProceedPay,
     totals.base,
     totals.iva,
     totals.trasporto,
@@ -764,17 +930,19 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
     totals.baseLordo,
     onConfirmOrder,
     selectedSlot,
-    isStudent,
   ]);
 
+  /* Conferma ordine in contanti */
   const handleConfirmOrderCash = async () => {
-    // ✅ obbligatorio Sì/No
+    if (disabled || loading || submitted || paymentMethod !== "cash") {
+      return;
+    }
+
     if (isStudent === null) {
       alert("Seleziona “Sì” oppure “No”.");
       return;
     }
 
-    // ✅ slot obbligatorio solo se Sì
     if (isStudent === true && !selectedSlot) {
       alert("Seleziona prima uno slot di consegna.");
       return;
@@ -804,302 +972,342 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
     });
   };
 
+  const footerHint =
+    numeroPDF === 0
+      ? "Carica almeno un PDF per iniziare."
+      : isStudent === null
+        ? "Completa la scelta nella sezione consegna."
+        : isStudent === true && !selectedSlot
+          ? "Scegli uno slot di consegna."
+          : paymentMethod === null
+            ? "Seleziona un metodo di pagamento."
+            : disabled
+              ? "Completa le impostazioni dei PDF per continuare."
+              : paymentMethod === "paypal"
+                ? "Usa il pulsante PayPal per completare il pagamento."
+                : "Pagamento in contanti.";
 
-  const deliveryTitleSuffix =
-    deliveryCfg.timeRanges?.length === 1
-      ? ` (${deliveryCfg.timeRanges[0].start}–${deliveryCfg.timeRanges[0].end})`
-      : "";
+  /* ------------------------------------------------------------------------ */
+  /* Interfaccia: stesse classi del riepilogo A4                                */
+  /* ------------------------------------------------------------------------ */
 
   return (
-    <Card
-      radius={24}
-      p="lg"
-      style={{
-        background: "linear-gradient(165deg, #161311 0%, #0c1119 60%)",
-        border: "1px solid rgba(212,175,106,.25)",
-        boxShadow: "0 30px 60px -24px rgba(0,0,0,.7)",
-      }}
+    <aside
+      className="pv-order"
+      aria-label="Riepilogo ordine A3"
+      aria-busy={loading}
     >
-      <Stack gap="md">
-        <Group justify="space-between" align="center">
-          <Title order={3} size="h4" tt="uppercase" style={{ color: "#fff", letterSpacing: ".02em", fontFamily: "'Oswald', sans-serif" }}>
-            Riepilogo ordine A3
-          </Title>
+      <header className="pv-order-header">
+        <div>
+          <span className="pv-order-eyebrow">LA TUA STAMPA</span>
+          <h2>Riepilogo ordine</h2>
+          <p>Controlla le tue scelte e completa l’ordine.</p>
+        </div>
 
-          {(totals.generalPromoAttiva || totals.studentPromoAttiva) && (
-            <Group gap="xs">
-              {totals.generalPromoAttiva && (
-                <Badge variant="light" color="gold">
-                  Generale -{totals.scontoGeneralePercent.toFixed(0)}%
-                </Badge>
-              )}
+        <span className="pv-order-format">A3</span>
+      </header>
 
-              {totals.studentPromoAttiva && (
-                <Badge variant="light" color="green">
-                  Studenti -{totals.scontoStudentiPercent.toFixed(0)}%
-                </Badge>
-              )}
-            </Group>
-          )}
-        </Group>
+      <div
+        className="pv-order-body"
+        tabIndex={0}
+        role="region"
+        aria-label="Dettagli e opzioni dell’ordine A3"
+      >
+        <div className="pv-order-stats">
+          <div>
+            <strong>{numeroPDF}</strong>
+            <span>PDF caricati</span>
+          </div>
 
-        {totals.generalPromoAttiva && (
-          <Alert icon={<IconInfoCircle size={18} />} color="gold" variant="light">
-            {promoCfg.generalPromo.description
-              ? promoCfg.generalPromo.description
-              : `${promoCfg.generalPromo.name ?? "Promo generale"}: -${totals.scontoGeneralePercent.toFixed(
-                0
-              )}% sulle stampe A3`}
-          </Alert>
+          <div>
+            <strong>{numeroCopie}</strong>
+            <span>Copie</span>
+          </div>
+
+          <div>
+            <strong>A3</strong>
+            <span>Formato</span>
+          </div>
+        </div>
+
+        <details className="pv-order-details" open>
+          <summary>
+            <span>Configurazione di stampa</span>
+            <span className="pv-order-chevron" aria-hidden="true">
+              ⌄
+            </span>
+          </summary>
+
+          <dl className="pv-order-list">
+            <div>
+              <dt>Pagine totali</dt>
+              <dd>{numeroPagine}</dd>
+            </div>
+
+            <div>
+              <dt>Grammatura</dt>
+              <dd>{grammatura}</dd>
+            </div>
+
+            <div>
+              <dt>Colore</dt>
+              <dd>{inchiostro}</dd>
+            </div>
+
+            <div>
+              <dt>Gestione pagina</dt>
+              <dd>{pagina === "Fronte" ? "Solo fronte" : pagina}</dd>
+            </div>
+
+            <div>
+              <dt>Layout</dt>
+              <dd>{layout}</dd>
+            </div>
+
+            <div>
+              <dt>Plastificazione</dt>
+              <dd>{plastificazione === "Si" ? "Sì" : plastificazione}</dd>
+            </div>
+          </dl>
+        </details>
+
+        {(totals.generalPromoAttiva || totals.studentPromoAttiva) && (
+          <div className="pv-order-promos">
+            {totals.generalPromoAttiva && (
+              <div className="pv-order-promo">
+                <IconCheck size={17} aria-hidden="true" />
+
+                <div>
+                  <strong>
+                    {promoCfg.generalPromo.name || "Promo generale"}
+                    {" "}−{totals.scontoGeneralePercent.toFixed(0)}%
+                  </strong>
+
+                  {promoCfg.generalPromo.description && (
+                    <p>{promoCfg.generalPromo.description}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {totals.studentPromoAttiva && (
+              <div className="pv-order-promo">
+                <IconCheck size={17} aria-hidden="true" />
+
+                <div>
+                  <strong>
+                    {promoCfg.studentPromo.name || "Promo studenti"}
+                    {" "}−{totals.scontoStudentiPercent.toFixed(0)}%
+                  </strong>
+
+                  {promoCfg.studentPromo.description && (
+                    <p>{promoCfg.studentPromo.description}</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         )}
 
-        {totals.studentPromoAttiva && (
-          <Alert icon={<IconInfoCircle size={18} />} color="green" variant="light">
-            {promoCfg.studentPromo.description
-              ? promoCfg.studentPromo.description
-              : `${promoCfg.studentPromo.name ?? "Promo studenti"}: -${totals.scontoStudentiPercent.toFixed(
-                0
-              )}% aggiuntivo sulle stampe A3`}
-          </Alert>
-        )}
+        <section className="pv-order-section">
+          <h3>
+            <span className="pv-order-step">01</span>
+            Ritiro e consegna
+          </h3>
 
-        <Stack gap={11} pb="sm" style={{ borderBottom: "1px solid rgba(255,255,255,.10)" }}>
-          <KeyValueRowDark label="Numero PDF" value={numeroPDF} />
-          <KeyValueRowDark label="Numero pagine totali" value={numeroPagine} />
-          <KeyValueRowDark label="Grammatura" value={grammatura} />
-          <KeyValueRowDark label="Colore" value={inchiostro} />
-          <KeyValueRowDark label="Gestione pagina" value={pagina} />
-          <KeyValueRowDark label="Layout" value={layout} />
-          <KeyValueRowDark label="Plastificazione" value={plastificazione} />
-          <KeyValueRowDark label="Numero copie" value={numeroCopie} />
-        </Stack>
-
-        {/* ✅ NUOVO: Picker consegna */}
-        <ConsegnaSlotPicker
-          slots={deliverySlots as DeliverySlot[]}
-          selectedId={selectedSlotId}
-          onChange={setSelectedSlotId}
-          onStudentChange={setIsStudent}
-          hint="Seleziona uno slot per procedere al pagamento."
-        />
-
-        {/* ✅ VECCHIO: Card consegna (non cancellata) - la teniamo ma la nascondiamo */}
-        {false && (
-          <Card withBorder radius="md" p="md">
-            <Stack gap="xs">
-              <Text fw={800}>Consegna{deliveryTitleSuffix}</Text>
-
-              {!selectedSlot && (
-                <Text size="sm" c="dimmed">
-                  Verrai contattato/a tramite WhatsApp per decidere il luogo della consegna.
-                </Text>
-              )}
-
-              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-                {deliverySlots.map((slot) => {
-                  const selected = slot.id === selectedSlotId;
-                  return (
-                    <Button
-                      key={slot.id}
-                      variant={selected ? "light" : "default"}
-                      color={selected ? "yellow" : "gray"}
-                      onClick={() => setSelectedSlotId(slot.id)}
-                      styles={{ inner: { justifyContent: "space-between" } }}
-                    >
-                      <Box>
-                        <Text fw={800} size="sm">
-                          {slot.dayLabel}
-                        </Text>
-                        <Text size="xs" c="dimmed">
-                          {slot.timeRange}
-                        </Text>
-                      </Box>
-                      {selected && (
-                        <ThemeIcon variant="light" color="yellow" radius="xl" size="sm">
-                          <IconCheck size={14} />
-                        </ThemeIcon>
-                      )}
-                    </Button>
-                  );
-                })}
-              </SimpleGrid>
-
-              {!selectedSlot && (
-                <Text size="sm" c="dimmed">
-                  Seleziona uno slot per procedere al pagamento.
-                </Text>
-              )}
-            </Stack>
-          </Card>
-        )}
-
-        <Stack gap={11} py="sm" style={{ borderTop: "1px solid rgba(255,255,255,.10)", borderBottom: "1px solid rgba(255,255,255,.10)" }}>
-          <Group justify="space-between">
-            <Text size="xs" fw={700} tt="uppercase" style={{ color: "rgba(255,255,255,.4)", letterSpacing: ".06em" }}>
-              Metodo
-            </Text>
-            <Badge variant="light" color={paymentMethod === "paypal" ? "blue" : "gray"}>
-              {paymentMethod === "paypal" ? "PayPal" : paymentMethod === "cash" ? "Contanti" : "—"}
-            </Badge>
-          </Group>
-
-          {(totals.scontoGenerale > 0 || totals.scontoStudenti > 0) && (
-            <KeyValueRowDark label="Subtotale" value={`${euro(totals.baseLordo)} €`} />
-          )}
-
-          {totals.scontoGenerale > 0 && (
-            <Group justify="space-between" align="baseline">
-              <Text size="sm" c="green">
-                {promoCfg.generalPromo.name || "Promo generale"} (-
-                {totals.scontoGeneralePercent.toFixed(0)}%)
-              </Text>
-              <Text size="sm" c="green" fw={700}>
-                - {euro(totals.scontoGenerale)} €
-              </Text>
-            </Group>
-          )}
-
-          {totals.scontoStudenti > 0 && (
-            <Group justify="space-between" align="baseline">
-              <Text size="sm" c="green">
-                {promoCfg.studentPromo.name || "Promo studenti"} (-
-                {totals.scontoStudentiPercent.toFixed(0)}%)
-              </Text>
-              <Text size="sm" c="green" fw={700}>
-                - {euro(totals.scontoStudenti)} €
-              </Text>
-            </Group>
-          )}
-
-          <KeyValueRowDark label="Imponibile" value={`${euro(totals.base)} €`} />
-          <KeyValueRowDark
-            label={`IVA (${(fees.ivaRate * 100).toFixed(0)}%)`}
-            value={`${euro(totals.iva)} €`}
+          <ConsegnaSlotPicker
+            slots={deliverySlots}
+            selectedId={selectedSlotId}
+            onChange={setSelectedSlotId}
+            onStudentChange={setIsStudent}
+            disabled={loading || submitted}
+            hint="Seleziona uno slot per procedere al pagamento."
           />
-          <KeyValueRowDark label="Trasporto" value={`${euro(totals.trasporto)} €`} />
+        </section>
 
-          {paymentMethod === "paypal" && (
-            <KeyValueRowDark
-              label={`Fee PayPal (${(fees.paypalPercent * 100).toFixed(2)}% + ${euro(
-                fees.paypalFixed
-              )} €)`}
-              value={`${euro(totals.feePP)} €`}
+        <section className="pv-order-section">
+          <h3>
+            <span className="pv-order-step">02</span>
+            Metodo di pagamento
+          </h3>
+
+          <fieldset
+            className="pv-order-payment"
+            disabled={loading || submitted}
+          >
+            <legend className="pv-order-sr-only">
+              Metodo di pagamento
+            </legend>
+
+            <MetodoPagamentoPicker
+              value={paymentMethod}
+              onChange={setPaymentMethod}
+              hint="Scegli come preferisci pagare"
             />
-          )}
+          </fieldset>
+        </section>
 
-          <Group justify="space-between" align="baseline" pt={4}>
-            <Text fw={700} tt="uppercase" style={{ color: "#fff", fontFamily: "'Oswald', sans-serif", fontSize: 14, letterSpacing: ".02em" }}>
-              Totale finale
-            </Text>
-            <Text
-              fw={700}
-              style={{
-                fontFamily: "'Oswald', sans-serif",
-                fontSize: 30,
-                background: "linear-gradient(180deg,#f2c94c,#c9962f)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}
-            >
-              {euro(totals.totaleDaAddebitare)} €
-            </Text>
-          </Group>
-        </Stack>
+        <section className="pv-order-section">
+          <h3>Dettaglio importi</h3>
 
-        {/* ✅ NUOVO: Picker metodo pagamento */}
-        <MetodoPagamentoPicker
-          value={paymentMethod}
-          onChange={(v) => setPaymentMethod(v)}
-          hint="Scegli come preferisci pagare"
-        />
+          <dl className="pv-order-list pv-order-prices">
+            <div>
+              <dt>Stampa e finiture</dt>
+              <dd>{euro(totals.baseLordo)} €</dd>
+            </div>
 
-        {/* ✅ VECCHIO: 2 bottoni (non cancellati) - li teniamo ma li nascondiamo */}
-        {false && (
-          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-            <Button
-              variant={paymentMethod === "cash" ? "light" : "default"}
-              onClick={() => setPaymentMethod("cash")}
-            >
-              💵 Contanti
-              <Text component="span" c="dimmed" size="xs" ml="xs">
-                Paga alla consegna
-              </Text>
-            </Button>
+            {totals.scontoGenerale > 0 && (
+              <div className="pv-order-discount">
+                <dt>
+                  {promoCfg.generalPromo.name || "Promo generale"}
+                  {" "}(-{totals.scontoGeneralePercent.toFixed(0)}%)
+                </dt>
+                <dd>−{euro(totals.scontoGenerale)} €</dd>
+              </div>
+            )}
 
-            <Button
-              variant={paymentMethod === "paypal" ? "light" : "default"}
-              onClick={() => setPaymentMethod("paypal")}
-            >
-              🟦 PayPal
-              <Text component="span" c="dimmed" size="xs" ml="xs">
-                Paga online
-              </Text>
-            </Button>
-          </SimpleGrid>
-        )}
+            {totals.scontoStudenti > 0 && (
+              <div className="pv-order-discount">
+                <dt>
+                  {promoCfg.studentPromo.name || "Promo studenti"}
+                  {" "}(-{totals.scontoStudentiPercent.toFixed(0)}%)
+                </dt>
+                <dd>−{euro(totals.scontoStudenti)} €</dd>
+              </div>
+            )}
 
-        {paymentMethod === "paypal" && (
-          <Card withBorder radius="md" p="md">
-            <Stack gap="xs">
-              <Text size="sm" c="dimmed">
-                Completa il pagamento di <strong>{euro(totals.totaleDaAddebitare)} €</strong>{" "}
-                con PayPal. Al termine l’ordine partirà automaticamente.
-              </Text>
+            {(totals.scontoGenerale > 0 || totals.scontoStudenti > 0) && (
+              <div>
+                <dt>Imponibile scontato</dt>
+                <dd>{euro(totals.base)} €</dd>
+              </div>
+            )}
 
-              {isStudent === null ? (
-                <Alert color="gold" variant="light" icon={<IconInfoCircle size={18} />}>
-                  Seleziona “Sì” oppure “No” per abilitare il pagamento.
-                </Alert>
-              ) : isStudent === true && !selectedSlot ? (
-                <Alert color="gold" variant="light" icon={<IconInfoCircle size={18} />}>
-                  Seleziona prima uno slot di consegna per abilitare il pagamento PayPal.
-                </Alert>
-              ) : (
-                <Box>
-                  {!paypalReady && (
+            <div>
+              <dt>IVA ({Number((fees.ivaRate * 100).toFixed(2))}%)</dt>
+              <dd>{euro(totals.iva)} €</dd>
+            </div>
+
+            {isStudent === true && (
+              <div>
+                <dt>Consegna</dt>
+                <dd>{euro(totals.trasporto)} €</dd>
+              </div>
+            )}
+
+            {paymentMethod === "paypal" && (
+              <div>
+                <dt>
+                  Commissione PayPal
+                  <small>
+                    {(fees.paypalPercent * 100).toFixed(2)}%
+                    {" + "}
+                    {euro(fees.paypalFixed)} €
+                  </small>
+                </dt>
+                <dd>{euro(totals.feePP)} €</dd>
+              </div>
+            )}
+          </dl>
+        </section>
+
+        {paymentMethod === "paypal" && !submitted && (
+          <section className="pv-order-paypal">
+            <p>
+              Completa il pagamento di{" "}
+              <strong>{euro(totals.totaleDaAddebitare)} €</strong>
+              {" "}con PayPal.
+            </p>
+
+            {isStudent === null ? (
+              <Alert
+                color="gold"
+                variant="light"
+                icon={<IconInfoCircle size={18} />}
+              >
+                Seleziona “Sì” oppure “No” nella sezione consegna.
+              </Alert>
+            ) : isStudent === true && !selectedSlot ? (
+              <Alert
+                color="gold"
+                variant="light"
+                icon={<IconInfoCircle size={18} />}
+              >
+                Seleziona uno slot di consegna per abilitare PayPal.
+              </Alert>
+            ) : (
+              <Box>
+                {paypalLoadError ? (
+                  <Alert
+                    color="red"
+                    variant="light"
+                    icon={<IconInfoCircle size={18} />}
+                  >
+                    {paypalLoadError}
+                  </Alert>
+                ) : (
+                  !paypalReady && (
                     <Group gap="sm">
-                      <Loader size="sm" />
+                      <Loader size="sm" color="gold" />
                       <Text size="sm" c="dimmed">
                         Caricamento PayPal…
                       </Text>
                     </Group>
-                  )}
-                  <Box ref={paypalButtonsContainerRef} mt="sm" />
-                </Box>
-              )}
-            </Stack>
-          </Card>
-        )}
+                  )
+                )}
 
-        {!loading && !submitted && paymentMethod === "cash" && (
-          <Button
-            fullWidth
-            size="md"
-            radius="xl"
+                <Box ref={paypalButtonsContainerRef} mt="sm" />
+              </Box>
+            )}
+          </section>
+        )}
+      </div>
+
+      <footer className="pv-order-footer">
+        <div className="pv-order-total">
+          <div>
+            <span>Totale ordine</span>
+            <small>IVA inclusa</small>
+          </div>
+
+          <strong aria-live="polite" aria-atomic="true">
+            {euro(totals.totaleDaAddebitare)}
+            <span> €</span>
+          </strong>
+        </div>
+
+        {!loading && !submitted && paymentMethod !== "paypal" && (
+          <button
+            type="button"
+            className="pv-order-confirm"
             onClick={handleConfirmOrderCash}
-            disabled={disabled || loading || submitted || !canProceedPay}
-            styles={{
-              root: {
-                background: "linear-gradient(180deg,#f2c94c,#c9962f)",
-                boxShadow: "0 16px 32px -10px rgba(242,201,76,.5)",
-                height: 50,
-              },
-              label: { color: "#10141c", fontWeight: 700, fontSize: 15 },
-            }}
+            disabled={
+              disabled ||
+              !canProceedPay ||
+              paymentMethod !== "cash"
+            }
           >
-            Conferma ordine
-          </Button>
+            <span>Conferma ordine</span>
+            <span aria-hidden="true">→</span>
+          </button>
         )}
 
-        {loading && <UploadProgressBar uploadProgress={uploadProgress} />}
+        {!loading && !submitted && (
+          <p className="pv-order-footnote">{footerHint}</p>
+        )}
+
+        {loading && (
+          <UploadProgressBar uploadProgress={uploadProgress} />
+        )}
 
         {submitted && (
-          <Alert color="gold" variant="light" icon={<IconCheck size={18} />}>
-            🎉 Ordine inviato con successo!
-          </Alert>
+          <div className="pv-order-success" role="status">
+            <IconCheck size={20} aria-hidden="true" />
+            Ordine inviato con successo!
+          </div>
         )}
-      </Stack>
-    </Card>
+      </footer>
+    </aside>
   );
 };
 

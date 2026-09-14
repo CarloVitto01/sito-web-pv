@@ -1,85 +1,86 @@
-// src/pages/NumeroCopieComponents/NumeroCopie.tsx
 import React from "react";
-import {
-  Card,
-  Group,
-  NumberInput,
-  Stack,
-  Text,
-  useMantineTheme,
-} from "@mantine/core";
+import { ControlFrame } from "../CardComponents/PrintControls";
 
-interface PropsContainer {
+type Props = {
   onSendData: (value: number) => void;
   hideTitle?: boolean;
-  /** Se true, non disegna la Card esterna (bordo/ombra): per essere annidato in un pannello padre. */
   bare?: boolean;
+  value?: number;
+};
+
+function normalize(value: number): number {
+  return Number.isFinite(value)
+    ? Math.max(1, Math.floor(value))
+    : 1;
 }
 
-const NumeroCopie: React.FC<PropsContainer> = ({ onSendData, hideTitle = false, bare = false }) => {
-  const theme = useMantineTheme();
-  const [copies, setCopies] = React.useState<number>(1);
+const NumeroCopie: React.FC<Props> = ({
+  onSendData,
+  hideTitle = false,
+  bare = false,
+  value,
+}) => {
+  const [internal, setInternal] = React.useState(1);
+  const copies = normalize(value ?? internal);
+  const inputId = React.useId();
 
-  const handleChange = (v: number | string) => {
-    const next = typeof v === "number" && v >= 1 ? v : 1;
-    setCopies(next);
-    onSendData(next);
+  const change = (next: number) => {
+    const result = normalize(next);
+
+    if (value === undefined) {
+      setInternal(result);
+    }
+
+    onSendData(result);
   };
 
-  const input = (
-    <NumberInput
-      value={copies}
-      onChange={handleChange}
-      min={1}
-      step={1}
-      allowDecimal={false}
-      clampBehavior="strict"
-      size="md"
-      styles={{
-        input: {
-          fontWeight: 800,
-          textAlign: "center",
-          fontSize: 16,
-        },
-      }}
-    />
-  );
-
-  if (bare) return input;
-
   return (
-    <Card
-      withBorder
-      radius="lg"
-      p="md"
-      style={{
-        background: theme.white,
-        borderColor: theme.colors.gray[3],
-        boxShadow: theme.shadows.sm,
-      }}
+    <ControlFrame
+      title="Numero copie"
+      hideTitle={hideTitle}
+      bare={bare}
     >
-      {!hideTitle && (
-        <Group justify="space-between" align="baseline" mb="sm">
-          <Text
-            fw={900}
-            tt="uppercase"
-            style={{
-              letterSpacing: 0.3,
-              fontSize: 13,
-              color: theme.colors.dark[7],
-            }}
-          >
-            Numero copie
-          </Text>
+      <div className="pc-copies">
+        <button
+          type="button"
+          aria-label="Diminuisci copie"
+          disabled={copies <= 1}
+          onClick={() => change(copies - 1)}
+        >
+          −
+        </button>
 
-          <Text size="xs" fw={700} c="dimmed">
-            minimo 1
-          </Text>
-        </Group>
-      )}
+        <label htmlFor={inputId} className="pc-sr-only">
+          Numero copie
+        </label>
 
-      <Stack gap="xs">{input}</Stack>
-    </Card>
+        <input
+          id={inputId}
+          type="number"
+          min={1}
+          step={1}
+          inputMode="numeric"
+          value={copies}
+          onChange={(event) =>
+            change(Number(event.target.value))
+          }
+        />
+
+        <button
+          type="button"
+          aria-label="Aumenta copie"
+          onClick={() => change(copies + 1)}
+        >
+          +
+        </button>
+      </div>
+
+      <p className="pc-helper">
+        {copies === 1
+          ? "Una copia del documento"
+          : `${copies} copie del documento`}
+      </p>
+    </ControlFrame>
   );
 };
 

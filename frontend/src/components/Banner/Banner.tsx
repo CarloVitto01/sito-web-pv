@@ -62,7 +62,7 @@ const Banner: React.FC = () => {
       return {
         bg: "rgba(199, 171, 43, 0.12)",
         border: "rgba(199, 171, 43, 0.45)",
-        text: "#f8f8f8",
+        text: "#000000",
         iconBg: "rgba(199, 171, 43, 0.18)",
         iconColor: ACCENT,
       };
@@ -71,7 +71,7 @@ const Banner: React.FC = () => {
       return {
         bg: "rgba(34, 197, 94, 0.12)",
         border: "rgba(34, 197, 94, 0.45)",
-        text: "#f8f8f8",
+        text: "#000000",
         iconBg: "rgba(34, 197, 94, 0.18)",
         iconColor: "#22c55e",
       };
@@ -80,7 +80,7 @@ const Banner: React.FC = () => {
       return {
         bg: "rgba(245, 158, 11, 0.13)",
         border: "rgba(245, 158, 11, 0.50)",
-        text: "#f8f8f8",
+        text: "#000000",
         iconBg: "rgba(245, 158, 11, 0.18)",
         iconColor: "#f59e0b",
       };
@@ -89,7 +89,7 @@ const Banner: React.FC = () => {
       return {
         bg: "rgba(239, 68, 68, 0.12)",
         border: "rgba(239, 68, 68, 0.45)",
-        text: "#f8f8f8",
+        text: "#000000",
         iconBg: "rgba(239, 68, 68, 0.18)",
         iconColor: "#ef4444",
       };
@@ -98,7 +98,7 @@ const Banner: React.FC = () => {
     return {
       bg: "rgba(59, 130, 246, 0.12)",
       border: "rgba(59, 130, 246, 0.45)",
-      text: "#f8f8f8",
+      text: "#000000",
       iconBg: "rgba(59, 130, 246, 0.18)",
       iconColor: "#3b82f6",
     };
