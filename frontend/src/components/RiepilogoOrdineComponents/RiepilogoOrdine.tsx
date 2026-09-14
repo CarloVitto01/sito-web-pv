@@ -959,18 +959,6 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
               </div>
             )}
 
-            <div>
-              <dt>IVA ({Number((fees.ivaRate * 100).toFixed(2))}%)</dt>
-              <dd>{euro(totals.iva)} €</dd>
-            </div>
-
-            {isStudent === true && (
-              <div>
-                <dt>Consegna</dt>
-                <dd>{euro(totals.trasporto)} €</dd>
-              </div>
-            )}
-
             {paymentMethod === "paypal" && (
               <div>
                 <dt>
@@ -981,6 +969,7 @@ const RiepilogoOrdine: React.FC<RiepilogoProps> = ({
                     {euro(fees.paypalFixed)} €
                   </small>
                 </dt>
+
                 <dd>{euro(totals.feePP)} €</dd>
               </div>
             )}

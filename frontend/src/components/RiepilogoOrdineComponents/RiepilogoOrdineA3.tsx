@@ -1162,6 +1162,7 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
                   {promoCfg.generalPromo.name || "Promo generale"}
                   {" "}(-{totals.scontoGeneralePercent.toFixed(0)}%)
                 </dt>
+
                 <dd>−{euro(totals.scontoGenerale)} €</dd>
               </div>
             )}
@@ -1172,6 +1173,7 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
                   {promoCfg.studentPromo.name || "Promo studenti"}
                   {" "}(-{totals.scontoStudentiPercent.toFixed(0)}%)
                 </dt>
+
                 <dd>−{euro(totals.scontoStudenti)} €</dd>
               </div>
             )}
@@ -1180,18 +1182,6 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
               <div>
                 <dt>Imponibile scontato</dt>
                 <dd>{euro(totals.base)} €</dd>
-              </div>
-            )}
-
-            <div>
-              <dt>IVA ({Number((fees.ivaRate * 100).toFixed(2))}%)</dt>
-              <dd>{euro(totals.iva)} €</dd>
-            </div>
-
-            {isStudent === true && (
-              <div>
-                <dt>Consegna</dt>
-                <dd>{euro(totals.trasporto)} €</dd>
               </div>
             )}
 
@@ -1205,6 +1195,7 @@ const RiepilogoOrdineA3: React.FC<RiepilogoA3Props> = ({
                     {euro(fees.paypalFixed)} €
                   </small>
                 </dt>
+
                 <dd>{euro(totals.feePP)} €</dd>
               </div>
             )}
